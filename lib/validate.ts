@@ -166,6 +166,23 @@ export function validateKeyword(raw: string | null): string | null {
   return q;
 }
 
+/**
+ * Validate a raw subject phrase (the "More like this" row on detail pages). Null = param
+ * absent (no filter). Same sanitizer as keywords; subjects are short archive.org tags like
+ * "film noir" or "science fiction".
+ */
+export function validateSubject(raw: string | null): string | null {
+  if (raw === null) return null;
+  if (raw.trim().length === 0 || raw.trim().length > MAX_QUERY_LENGTH) {
+    throw new ApiError(400, "invalid_subject", `Subject phrases are limited to ${MAX_QUERY_LENGTH} characters.`);
+  }
+  const q = sanitizeQuery(raw);
+  if (q.length === 0) {
+    throw new ApiError(400, "invalid_subject", "Please provide a subject.");
+  }
+  return q;
+}
+
 /** Parse a boolean flag param. Empty/missing -> false; "1" or "true" (case-insensitive) -> true; anything else -> 400. */
 export function validateFlag(raw: string | null): boolean {
   if (raw === null || raw.trim() === "") return false;

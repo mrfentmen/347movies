@@ -78,11 +78,13 @@ test("searchArchive selects the legality gate per variant (films / tv / anime / 
   await searchArchive({ page: 1, rows: 24, variant: "anime" }, fetchImpl);
   await searchArchive({ page: 1, rows: 24, variant: "cartoons" }, fetchImpl);
   await searchArchive({ page: 1, rows: 24, variant: "otr" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "music" }, fetchImpl);
   const filmsQ = qOf(calls[0] as string);
   const tvQ = qOf(calls[1] as string);
   const animeQ = qOf(calls[2] as string);
   const cartoonsQ = qOf(calls[3] as string);
   const otrQ = qOf(calls[4] as string);
+  const musicQ = qOf(calls[5] as string);
   assert.ok(
     filmsQ.includes("collection:(feature_films OR prelinger OR moviesandfilms)"),
     "films variant selects the curated film collections",
@@ -113,6 +115,13 @@ test("searchArchive selects the legality gate per variant (films / tv / anime / 
   );
   assert.ok(!otrQ.includes("mediatype:movies"), "otr gate is audio, not movies");
   assert.ok(!otrQ.includes("feature_films"), "otr gate does not include the films collections");
+  assert.ok(musicQ.includes("collection:(GratefulDead OR etree)"), "music variant selects the live-music pools");
+  assert.ok(
+    musicQ.includes("licenseurl:https://creativecommons.org*") && musicQ.includes("mediatype:etree"),
+    "music gate keeps the license gate and pins mediatype:etree (archive.org's live-music mediatype)",
+  );
+  assert.ok(!musicQ.includes("mediatype:movies"), "music gate is not movies");
+  assert.ok(!musicQ.includes("feature_films"), "music gate does not include the films collections");
 });
 
 test("searchArchive adds the films-only clause only when filmsOnly is true", async () => {

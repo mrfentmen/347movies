@@ -248,6 +248,16 @@ test("queryCatalog anime + cartoons variants: separate indexes, episodes NOT exc
   assert.equal(otr.total, 2);
   assert.deepEqual(otr.results.map((r) => r.identifier), ["radio-b", "radio-a"]);
   assert.ok(otr.results.every((r) => r.identifier !== "anime-a"));
+
+  // Music variant is its own index with its own cache slot.
+  const musicDocs: Record<string, unknown>[] = [
+    { identifier: "gd-1977", title: "Grateful Dead Live at Cornell 1977", year: 1977, addeddate: "2026-01-01T00:00:00Z", subject: [] },
+  ];
+  _resetCatalogIndexCacheForTests();
+  const music = await queryCatalog({ variant: "music", rows: 24 }, fakeFetch(musicDocs));
+  assert.equal(music.total, 1);
+  assert.equal(music.results[0]?.identifier, "gd-1977");
+  assert.ok(music.results.every((r) => r.identifier !== "radio-a"));
 });
 
 test("sortIndex recent: addeddate desc, unknown/missing addeddate last", () => {

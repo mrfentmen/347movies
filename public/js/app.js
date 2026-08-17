@@ -539,10 +539,14 @@
     loadHomeSection("anime", "/api/browse?anime=1&sort=recent&page=1");
     loadHomeSection("cartoons", "/api/browse?cartoons=1&sort=recent&page=1");
     loadHomeSection("otr", "/api/browse?otr=1&sort=recent&page=1");
+    loadHomeSection("music", "/api/browse?music=1&sort=recent&page=1");
     // Golden-age showcases: anime 1950s–70s (measured live 2026-08-17: 42 items) and
     // cartoons 1930s–40s (185 items), newest release years first.
     loadHomeSection("animegolden", "/api/browse?anime=1&from=1950&to=1970&sort=newest&page=1");
     loadHomeSection("cartoonsgolden", "/api/browse?cartoons=1&from=1930&to=1940&sort=newest&page=1");
+    // Newsreels: the Prelinger newsreel subset (measured live 2026-08-17: 52 title-matched
+    // items) — already inside the legal films pool, surfaced by title keyword.
+    loadHomeSection("newsreels", "/api/browse?q=newsreel&sort=recent&page=1");
     loadHomeSection("recent", "/api/browse?sort=recent&films=1&page=1");
     loadHomeSection("noir", "/api/browse?genre=film-noir&sort=recent&page=1");
     loadHomeSection("silents", "/api/browse?decade=1920&sort=recent&page=1");
@@ -556,13 +560,15 @@
     const anime = params.get("anime") === "1";
     const cartoons = params.get("cartoons") === "1";
     const otr = params.get("otr") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : null;
+    const music = params.get("music") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
       anime: { label: "Anime", noun: "title" },
       cartoons: { label: "Cartoons", noun: "title" },
       otr: { label: "Old Time Radio", noun: "series" },
+      music: { label: "Music & Concerts", noun: "recording" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -740,6 +746,24 @@
     initPlaybackTools();
     const poster = $(".movie-poster");
     if (poster && poster.parentElement) bindPosterFallbacks(poster.parentElement);
+    // More like this: fetch /api/browse?subject=<first usable subject tag> and render a
+    // related row; hide the section when the subject yields nothing (it ships hidden).
+    const relatedSection = $("#related-section");
+    const relatedGrid = $("#related");
+    if (relatedSection && relatedGrid) {
+      const subject = (relatedSection.getAttribute("data-subject") || "").trim();
+      if (subject) {
+        apiFetch(`/api/browse?subject=${encodeURIComponent(subject)}&sort=newest&page=1`)
+          .then((data) => {
+            if (!data.results || data.results.length === 0) return;
+            renderGrid(relatedGrid, data.results.slice(0, 8));
+            relatedSection.hidden = false;
+          })
+          .catch(() => {
+            /* fail closed: the related row stays hidden */
+          });
+      }
+    }
     // The player is a cross-origin iframe: focus inside the archive.org embed does NOT
     // propagate :focus-visible/:focus-within to the parent in every engine (verified
     // headless: activeElement is the iframe yet matches(':focus') is false), so a keyboard
@@ -918,6 +942,7 @@
   function initAnime() { initDestination("anime", "/anime"); }
   function initCartoons() { initDestination("cartoons", "/cartoons"); }
   function initOTR() { initDestination("otr", "/otr"); }
+  function initMusic() { initDestination("music", "/music"); }
 
   /* ---------- browse ---------- */
   const GENRE_LABELS = {
@@ -941,8 +966,9 @@
     const anime = params.get("anime") === "1";
     const cartoons = params.get("cartoons") === "1";
     const otr = params.get("otr") === "1";
-    // Which serialized pool this browse view serves (TV / anime / cartoons / OTR), if any.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : null;
+    const music = params.get("music") === "1";
+    // Which serialized pool this browse view serves (TV / anime / cartoons / OTR / music).
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -997,7 +1023,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1096,6 +1122,16 @@
   else if (page === "anime") initAnime();
   else if (page === "cartoons") initCartoons();
   else if (page === "otr") initOTR();
+  else if (page === "music") initMusic();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
+
+  // PWA: register the service worker (shell cache only — video, API, and third-party
+  // hosts are never touched by it). Failure is silent: the site is fully functional
+  // without the worker.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* no PWA in this browser/context — the site works identically */
+    });
+  }
 })();

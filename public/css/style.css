@@ -965,6 +965,29 @@ body[data-page="tv"] .hero {
   text-decoration: underline;
 }
 
+/* The advertising-inquiry CTA inside each reserved slot: a real mailto button, so
+   prospective advertisers can reach the booth from the slot itself. */
+.ad-slot__cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ad-slot__cta:hover,
+.ad-slot__cta:focus-visible {
+  background: var(--accent);
+  color: var(--surface);
+}
+
 .ad-slot--leaderboard {
   min-height: 90px;
   margin: 8px 0 24px;

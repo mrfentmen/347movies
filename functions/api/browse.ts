@@ -16,6 +16,7 @@ import {
   validateKeyword,
   validatePage,
   validateSort,
+  validateSubject,
 } from "../../lib/validate.ts";
 
 const ROWS = 24;
@@ -48,6 +49,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
       throw new ApiError(400, "invalid_decade_range", "Use either decade or from/to, not both.");
     }
     const keyword = validateKeyword(url.searchParams.get("q"));
+    // subject= is a raw subject phrase ("More like this" on detail pages), bypassing the
+    // curated genre map — any archive.org subject tag works.
+    const subject = validateSubject(url.searchParams.get("subject"));
     const sort = validateSort(url.searchParams.get("sort"));
     // The index makes the whole catalog pageable (768 pages at 24/page, and growing) — the
     // old 100-page cap applied to the archive-backed paging. Bound is generous and fail-closed.
@@ -63,17 +67,18 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const anime = validateFlag(url.searchParams.get("anime"));
     const cartoons = validateFlag(url.searchParams.get("cartoons"));
     const otr = validateFlag(url.searchParams.get("otr"));
-    if ([tv, anime, cartoons, otr].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr.");
+    const music = validateFlag(url.searchParams.get("music"));
+    if ([tv, anime, cartoons, otr, music].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an
     // un-awaited rejection escapes this catch and becomes a middleware 500 instead of the
     // intended 502 upstream_error.
     return await withEdgeCachedResponse(urlString, 300, async () => {
-      const genreSubject = genre ? GENRE_SUBJECTS[genre] : null;
+      const genreSubject = subject ?? (genre ? GENRE_SUBJECTS[genre] : null);
       const { results, total, pages } = await queryCatalog({
         genreSubject,
         decadeFrom: range.from !== null ? range.from : decade,
@@ -92,6 +97,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
         from: range.from,
         to: range.to,
         q: keyword,
+        subject,
         sort,
         page,
         rows: ROWS,
