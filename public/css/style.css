@@ -89,6 +89,12 @@
   --img-rotate-2: url("/images/04-nyc-lower-manhattan-skyline.jpg");
   --img-rotate-3: url("/images/05-nyc-brooklyn-sepia-noir.jpg");
   --img-rotate-4: url("/images/06-nyc-twilight-notfound.jpg");
+  --img-rotate-5: url("/images/07-nyc-times-square-night.png");
+  --img-rotate-6: url("/images/08-nyc-skyline-90s-dusk.webp");
+  --img-rotate-7: url("/images/09-nyc-wtc-liberty-dusk.jpg");
+  --img-rotate-8: url("/images/10-nyc-graffiti-alley.jpeg");
+  --img-rotate-9: url("/images/11-nyc-brooklyn-bridge-dusk.jpg");
+  --img-rotate-10: url("/images/12-nyc-avenue-wtc-day.jpeg");
   /* END generated */
   --radius: 10px;
   --maxw: 1120px;
@@ -375,7 +381,7 @@ button {
      the text so the eyebrow/headline/sub stay AA even over bright window lights. */
 }
 
-/* The rotating backdrop: up to four NYC photos crossfade slowly (36s cycle, 9s each)
+/* The rotating backdrop: up to ten NYC photos crossfade slowly (90s cycle, 9s each)
    behind the fixed scrim. The first photo is the LCP (preloaded in <head>). Under
    reduced motion the animation dies and the first photo simply shows. */
 .hero-slides {
@@ -391,7 +397,7 @@ button {
   background-size: cover;
   background-position: center;
   opacity: 0;
-  animation: hero-rotate 36s infinite;
+  animation: hero-rotate 90s infinite;
 }
 
 .hero-slide--1 {
@@ -414,19 +420,49 @@ button {
   animation-delay: 27s;
 }
 
+.hero-slide--5 {
+  background-image: var(--img-rotate-5, var(--img-hero));
+  animation-delay: 36s;
+}
+
+.hero-slide--6 {
+  background-image: var(--img-rotate-6, var(--img-hero));
+  animation-delay: 45s;
+}
+
+.hero-slide--7 {
+  background-image: var(--img-rotate-7, var(--img-hero));
+  animation-delay: 54s;
+}
+
+.hero-slide--8 {
+  background-image: var(--img-rotate-8, var(--img-hero));
+  animation-delay: 63s;
+}
+
+.hero-slide--9 {
+  background-image: var(--img-rotate-9, var(--img-hero));
+  animation-delay: 72s;
+}
+
+.hero-slide--10 {
+  background-image: var(--img-rotate-10, var(--img-hero));
+  animation-delay: 81s;
+}
+
 /* A slow crossfade: each photo fades in, holds, fades out — the city breathing behind
    the booth. Staggered delays keep exactly one photo dominant at a time. */
 @keyframes hero-rotate {
   0% {
     opacity: 0;
   }
-  4% {
+  1.5% {
     opacity: 1;
   }
-  22% {
+  8.5% {
     opacity: 1;
   }
-  26% {
+  10.5% {
     opacity: 0;
   }
   100% {

@@ -12,8 +12,11 @@
  *      position. New photos join the home-hero rotation automatically (the hero plus the
  *      next three, by name) — and can be pinned to a role by naming them e.g. nyc-*-hero.jpg.
  *   3. Rewrites the delimited --img-* block in public/css/style.css :root (between the
- *      BEGIN/END generated markers). The home hero rotation takes the hero plus the next
- *      three photos (--img-rotate-1/2/3/4) so the crossfade picks up new shots automatically.
+ *      BEGIN/END generated markers). The home hero rotation takes EVERY photo (hero first,
+ *      then the rest by name) as --img-rotate-1/2/3/… so the crossfade picks up new shots
+ *      automatically. NOTE: the matching .hero-slide--N rules, the staggered animation
+ *      delays, and the hero-rotate keyframes in style.css are hand-maintained and must be
+ *      extended to match the photo count (see the 2026-08-17 10-photo extension).
  *   4. Rewrites the hero/noir LCP preload hrefs in public/index.html and public/genre.html
  *      to match, so the LCP image stays correct.
  *   5. Writes public/images/registry.json (inventory + assignments) for transparency.
@@ -115,21 +118,18 @@ function main() {
   }
 
   const roles = assignRoles(photos, readCurrentRoles(css));
-  // The hero rotation: the hero photo first (LCP), then the next two by name — so a new
-  // photo joins the crossfade automatically, and the hero always leads.
+  // The hero rotation: EVERY photo, hero first (LCP), then the rest by name — so new photos
+  // join the crossfade automatically and the hero always leads.
   const hero = roles.hero || photos[0];
   const nonHero = photos.filter((p) => p !== hero);
-  const rotation = [hero, nonHero[0] || hero, nonHero[1] || hero, nonHero[2] || hero];
+  const rotation = [hero, ...nonHero];
 
   const lines = [
     `  --img-hero: url("/images/${roles.hero || hero}");`,
     `  --img-noir: url("/images/${roles.noir || hero}");`,
     `  --img-skyline: url("/images/${roles.skyline || hero}");`,
     `  --img-notfound: url("/images/${roles.notfound || hero}");`,
-    `  --img-rotate-1: url("/images/${rotation[0]}");`,
-    `  --img-rotate-2: url("/images/${rotation[1]}");`,
-    `  --img-rotate-3: url("/images/${rotation[2]}");`,
-    `  --img-rotate-4: url("/images/${rotation[3]}");`,
+    ...rotation.map((p, i) => `  --img-rotate-${i + 1}: url("/images/${p}");`),
   ].join("\n");
   const block = `${BEGIN}\n${lines}\n  ${END}`;
   const nextCss = css.slice(0, start) + block + css.slice(end + END.length);
