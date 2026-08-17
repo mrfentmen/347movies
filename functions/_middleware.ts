@@ -7,11 +7,19 @@
  */
 import type { PagesFunction } from "@cloudflare/workers-types";
 import type { Env } from "../lib/env.ts";
+import { AD_CSP_HOSTS, adsenseConfig } from "../lib/ad.ts";
 import { jsonResponse } from "../lib/http.ts";
 import { isRateLimitedPath, MemoryRateLimiter, rateLimitConfig } from "../lib/ratelimit.ts";
 
-const SECURITY_HEADERS: Record<string, string> = {
-  "Content-Security-Policy":
+/**
+ * The base CSP is strict: only self, plus archive.org for the player/poster/media. When the
+ * ad gate is enabled (AD_NETWORK_SCRIPT is the allowlisted AdSense loader with client id
+ * and AD_SLOT_IDS is set), the CSP gains exactly the AdSense hosts the loader, ad iframes,
+ * and creative assets need (AD_CSP_HOSTS). Dormant = strict, unchanged; enabled = the
+ * minimal, documented relaxation (T4.5) — fail-closed on every other host.
+ */
+function contentSecurityPolicy(env: Env): string {
+  let csp =
     "default-src 'self'; script-src 'self'; style-src 'self'; " +
     "img-src 'self' data: https://archive.org https://*.archive.org; " +
     "media-src https://archive.org https://*.archive.org; " +
@@ -22,13 +30,35 @@ const SECURITY_HEADERS: Record<string, string> = {
     // connection hint, never a data path. Deliberate, documented relaxation (perf pass).
     "connect-src 'self' https://archive.org https://*.archive.org; " +
     "object-src 'none'; base-uri 'self'; form-action 'self'; " +
-    "frame-ancestors 'self'; upgrade-insecure-requests",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "SAMEORIGIN",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "frame-ancestors 'self'; upgrade-insecure-requests";
+  if (adsenseConfig(env.AD_NETWORK_SCRIPT, env.AD_SLOT_IDS) !== null) {
+    csp = csp
+      .replace("script-src 'self'", `script-src 'self' ${AD_CSP_HOSTS.script.join(" ")}`)
+      .replace(
+        "img-src 'self' data: https://archive.org https://*.archive.org",
+        `img-src 'self' data: https://archive.org https://*.archive.org ${AD_CSP_HOSTS.img.join(" ")}`,
+      )
+      .replace(
+        "frame-src https://archive.org https://*.archive.org",
+        `frame-src https://archive.org https://*.archive.org ${AD_CSP_HOSTS.frame.join(" ")}`,
+      )
+      .replace(
+        "connect-src 'self' https://archive.org https://*.archive.org",
+        `connect-src 'self' https://archive.org https://*.archive.org ${AD_CSP_HOSTS.connect.join(" ")}`,
+      );
+  }
+  return csp;
+}
+
+function securityHeaders(env: Env): Record<string, string> {
+  return {
+    "Content-Security-Policy": contentSecurityPolicy(env),
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin-when-cross-origin",  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
 };
+}
 
 // Lazy-init: env bindings arrive per-request, so the limiter is built from the first
 // request's env. Production has no RATE_LIMIT -> the 60/min default; dev/CI raise it via
@@ -60,7 +90,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     );
   }
 
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+  for (const [name, value] of Object.entries(securityHeaders(context.env))) {
     if (!response.headers.has(name)) {
       response.headers.set(name, value);
     }

@@ -47,13 +47,16 @@
     return res.json();
   }
 
-  /* ---------- ad loader (Decision 001, T4.3: fail-closed, dormant until configured) ----------
-     Fetches the config gate on every page view; when the server reports enabled (a real
-     network is configured and allowlisted server-side), injects the network's async script
-     ONCE into <head>. Any failure — network error, 429, disabled, malformed — injects
-     nothing: the reserved slots keep their note, the page is untouched. Async injection
-     never blocks parsing; a failed or hanging network leaves the note in place (the
-     fail-closed UI). The CSP allowlist change that lets the script run is T4.5. */
+  /* ---------- ad loader (Decision 001, T4.3, enabled per T4.5: fail-closed, dormant
+     until the owner configures AD_NETWORK_SCRIPT + AD_SLOT_IDS) ----------
+     Fetches the config gate on every page view; when the server reports enabled, renders an
+     AdSense unit into each reserved slot that has a configured id (DOM APIs only — never
+     innerHTML with config values), then injects the network's async script ONCE into
+     <head>, then pushes one `(adsbygoogle=[]).push({})` per unit (the AdSense fill
+     protocol: units are filled in DOM order). Any failure — network error, 429, disabled,
+     malformed — renders nothing: the reserved slots keep their note, the page is
+     untouched. Async injection never blocks parsing; a failed or hanging network leaves
+     the note in place (the fail-closed UI). */
   function bootstrapAds() {
     fetch("/api/ad-config", { headers: { Accept: "application/json" } })
       .then((res) => (res.ok ? res.json() : null))
@@ -62,11 +65,41 @@
         // the client independently requires https before injecting anything.
         if (!cfg || cfg.enabled !== true || typeof cfg.scriptUrl !== "string") return;
         if (!/^https:\/\//.test(cfg.scriptUrl)) return;
+        const clientId = typeof cfg.clientId === "string" ? cfg.clientId : "";
+        const slots = cfg.slots && typeof cfg.slots === "object" ? cfg.slots : {};
+        if (!clientId) return;
+        // 1. Render a unit into every reserved slot that has a configured id.
+        document.querySelectorAll("[data-ad-slot]").forEach((container) => {
+          const unitId = slots[container.getAttribute("data-ad-slot")];
+          if (!unitId) return;
+          const ins = document.createElement("ins");
+          ins.className = "adsbygoogle";
+          ins.style.display = "block";
+          ins.dataset.adClient = clientId;
+          ins.dataset.adSlot = String(unitId);
+          ins.dataset.adFormat = "auto";
+          ins.dataset.fullWidthResponsive = "true";
+          container.classList.add("is-filled");
+          container.replaceChildren(ins);
+        });
+        // 2. Load the network loader (async, never blocks parsing).
         const tag = document.createElement("script");
         tag.async = true;
         tag.src = cfg.scriptUrl;
+        tag.crossOrigin = "anonymous";
         tag.dataset.adNetwork = "true";
         document.head.appendChild(tag);
+        // 3. Push once per rendered unit, in DOM order (AdSense fill protocol). Pushes
+        // queue on window.adsbygoogle until the loader script arrives, so ordering is
+        // safe even when the loader is still fetching.
+        try {
+          const units = document.querySelectorAll(".ad-slot.is-filled ins.adsbygoogle");
+          for (let i = 0; i < units.length; i++) {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          }
+        } catch {
+          /* fail closed: units stay empty, slot keeps its reserved size */
+        }
       })
       .catch(() => {
         /* fail closed: the reserved note stays, no third-party script is injected */

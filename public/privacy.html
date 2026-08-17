@@ -73,16 +73,19 @@
   <p>This site may carry ads. They appear <strong>only</strong> in clearly marked sidebar and
   leaderboard slots, labeled “Advertisement” — never over, inside, before, or around the
   movie player. The player is never wrapped, resized, paused, or covered by an ad.</p>
-  <p><strong>Right now, no ad network is configured and no third-party ad code runs</strong> —
-  the slots are reserved containers with a business contact, and this site ships no
-  third-party scripts. If an ad network is enabled in the future, this page will be updated
-  <em>first</em> to name the network and link its privacy policy, before any ad renders.</p>
-  <p>When a network is enabled, the only mechanism this site adds is a request to our own
-  <code>/api/ad-config</code> endpoint (edge-cached, returns either “disabled” or the
-  network's script URL) and the network's script running inside the marked slot containers.
-  We do not receive any data about you from the network, and we pass it none: no accounts,
-  no viewing history, no identifiers. The network's own cookies and tracking practices are
-  governed by its privacy policy, which we will link here before enabling it.</p>
+  <p><strong>The ad network this site is wired for is Google AdSense</strong> (Google's
+  <a href="https://policies.google.com/privacy" rel="noopener" target="_blank">privacy policy</a>
+  and <a href="https://policies.google.com/technologies/partner-sites" rel="noopener" target="_blank">partner-sites policy</a>
+  apply to any ad you see). <strong>Right now no ad network is active and no third-party ad
+  code runs</strong> — the slots are reserved containers with a business contact, and this
+  site still ships no third-party scripts. Ads activate only once the site owner adds an
+  AdSense publisher id and unit ids to the site's configuration and redeploys.</p>
+  <p>When ads are active, the only mechanisms this site adds are a request to our own
+  <code>/api/ad-config</code> endpoint (edge-cached, returns “disabled” or the network's
+  loader URL, publisher id, and slot ids) and the AdSense script running inside the marked
+  slot containers. We do not receive any data about you from the network, and we pass it
+  none: no accounts, no viewing history, no identifiers. The network's own cookies and
+  tracking practices are governed by its privacy policy, linked above.</p>
   <p>Advertising inquiries go to the publicly listed business contact on the <a href="/about#advertise">advertise</a> page. That address is a business contact published by the site owner — it is not a viewer-data channel, and nothing about your viewing is ever sent to it.</p>
 
   <h2>Changes</h2>
