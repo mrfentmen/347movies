@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  audioFilesFrom,
+  hasAudioFiles,
   hasVideoFiles,
   licenseFromRights,
   licenseFromUrl,
@@ -110,6 +112,31 @@ test("videoFilesFrom sorts h.264 first then largest, dedupes, and encodes paths"
 test("videoFilesFrom returns [] for non-arrays", () => {
   assert.deepEqual(videoFilesFrom(null), []);
   assert.deepEqual(videoFilesFrom("x"), []);
+});
+
+test("audioFilesFrom picks mp3/ogg, sorts MP3 first then largest, dedupes, encodes paths", () => {
+  const files = [
+    { name: "ep2.ogg", format: "Ogg Vorbis", size: "5000000" },
+    { name: "ep1.mp3", format: "VBR MP3", size: 3000000 },
+    { name: "ep1.mp3", format: "VBR MP3", size: 3000000 },
+    { name: "ep3.mp3", format: "128Kbps MP3", size: "8000000" },
+    { name: "cover.jpg", format: "JPEG" },
+  ];
+  const out = audioFilesFrom(files);
+  assert.equal(out.length, 3, "dedupes + drops non-audio");
+  assert.equal(out[0]?.name, "ep3.mp3", "largest MP3 first");
+  assert.equal(out[1]?.name, "ep1.mp3", "second MP3");
+  assert.equal(out[2]?.name, "ep2.ogg", "ogg last (mp3 preferred for compatibility)");
+  assert.equal(out[0]?.path, "ep3.mp3", "simple names encode cleanly");
+  assert.equal(out[0]?.label, "MP3 · 8 MB");
+  assert.equal(out[2]?.label, "Ogg Vorbis · 5 MB");
+  assert.ok(hasAudioFiles(files), "hasAudioFiles true when audio present");
+  assert.ok(!hasAudioFiles([{ name: "a.txt", format: "Text" }]), "hasAudioFiles false without audio");
+});
+
+test("audioFilesFrom returns [] for non-arrays", () => {
+  assert.deepEqual(audioFilesFrom(null), []);
+  assert.deepEqual(audioFilesFrom("x"), []);
 });
 
 test("normalizeSearchDoc builds a typed record", () => {

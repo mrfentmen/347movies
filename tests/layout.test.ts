@@ -23,6 +23,8 @@ const RECORD: MovieRecord = {
   source_url: "https://archive.org/details/it-1927",
   hasVideo: true,
   videoFiles: [],
+  hasAudio: false,
+  audioFiles: [],
   server: null,
   dir: null,
 };

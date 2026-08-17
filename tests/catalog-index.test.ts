@@ -236,6 +236,18 @@ test("queryCatalog anime + cartoons variants: separate indexes, episodes NOT exc
   assert.equal(cartoons.total, 1);
   assert.equal(cartoons.results[0]?.identifier, "cartoon-a");
   assert.ok(cartoons.results.every((r) => r.identifier !== "anime-a"));
+
+  // OTR variant is its own index with its own cache slot, and keeps episodes (each item
+  // is a multi-episode radio series — the installments ARE the content).
+  const otrDocs: Record<string, unknown>[] = [
+    { identifier: "radio-a", title: "The Shadow Episode 1", year: 1938, addeddate: "2026-01-01T00:00:00Z", subject: [] },
+    { identifier: "radio-b", title: "Suspense Episode 42", year: 1943, addeddate: "2026-02-01T00:00:00Z", subject: [] },
+  ];
+  _resetCatalogIndexCacheForTests();
+  const otr = await queryCatalog({ variant: "otr", rows: 24 }, fakeFetch(otrDocs));
+  assert.equal(otr.total, 2);
+  assert.deepEqual(otr.results.map((r) => r.identifier), ["radio-b", "radio-a"]);
+  assert.ok(otr.results.every((r) => r.identifier !== "anime-a"));
 });
 
 test("sortIndex recent: addeddate desc, unknown/missing addeddate last", () => {

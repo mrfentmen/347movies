@@ -42,7 +42,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       }
     }
 
-    const staticPaths = ["/", "/about", "/privacy", "/terms", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons"];
+    const staticPaths = ["/", "/about", "/privacy", "/terms", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons", "/otr"];
     const movieUrls = entries.map(([id, added]) => {
       const lastmod = addedDateOf(added);
       return `  <url><loc>${escapeHtml(site + `/movie/${encodeURIComponent(id)}`)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;

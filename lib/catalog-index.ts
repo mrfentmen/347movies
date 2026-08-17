@@ -41,6 +41,7 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   // cache key forces a rebuild instead of waiting out the 24h edge TTL on the old pool.
   anime: "https://347movies.internal/anime-index-v2",
   cartoons: "https://347movies.internal/cartoons-index-v1",
+  otr: "https://347movies.internal/otr-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */

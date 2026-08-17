@@ -212,7 +212,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -280,6 +280,7 @@ try {
   ok(js.includes("/api/browse?tv=1&decade=1960&sort=newest&page=1"), "JS: 1960s TV showcase wired");
   ok(js.includes("/api/browse?anime=1&sort=recent&page=1"), "JS: Anime home feed wired to the anime pool");
   ok(js.includes("/api/browse?cartoons=1&sort=recent&page=1"), "JS: Cartoons home feed wired to the animation pool");
+  ok(js.includes("/api/browse?otr=1&sort=recent&page=1"), "JS: Old Time Radio home feed wired to the audio pool");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
   ok(js.includes("browse the catalog</a>"), "JS: search no-results state offers the next step (browse link, TV-aware)");
   ok(js.includes("Your watchlist is empty"), "JS: empty watchlist invites action (direction copy)");
@@ -343,6 +344,8 @@ try {
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
   ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
+  ok(home.includes('id="otr"'), "Home: Old Time Radio section present (audio feed)");
+  ok(home.includes("/search?otr=1"), "Home: Search radio shortcut present");
   ok(home.includes('href="https://archive.org"'), "Home: noscript fallback points to archive.org (no-JS visitors)");
   const browse = await (await request("GET", `/browse?smoke=${Date.now()}`)).text();
   const search = await (await request("GET", `/search?smoke=${Date.now()}`)).text();
@@ -372,6 +375,12 @@ try {
   const movie = await (await request("GET", `/movie/it-1927?smoke=${Date.now()}`)).text();
   ok(home.includes('<main id="main" tabindex="-1">'), "Home: skip link can move focus into main (tabindex=-1)");
   ok(movie.includes('<main id="main" tabindex="-1">'), "Movie: skip link can move focus into main (tabindex=-1)");
+  // Old Time Radio items are audio: the detail page must render an audio player (the
+  // embed iframe renders archive.org's audio player; data-kind drives the native swap).
+  const otrMovie = await (await request("GET", `/movie/AdventuresOfMaisie?smoke=${Date.now()}`)).text();
+  ok(otrMovie.includes('data-kind="audio"'), "OTR movie: player marked audio (native swap becomes <audio>)");
+  ok(otrMovie.includes('"@type":"AudioObject"'), "OTR movie: JSON-LD is an AudioObject, not a video");
+  ok(otrMovie.includes("Now playing"), "OTR movie: hero eyebrow says Now playing, not Now showing");
 } catch (err) {
   failures += 1;
   checks += 1;
@@ -845,7 +854,9 @@ try {
   const freshLocs = (freshXml.match(/<loc>/g) || []).length;
   const freshLastmods = (freshXml.match(/<lastmod>/g) || []).length;
   ok(freshLocs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS})`);
-  ok(freshLastmods >= freshLocs - 10, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  // Static paths (/, /about, /privacy, /terms, /browse, /search, /genre, /tv, /anime,
+  // /cartoons, /otr) carry no lastmod; every catalog URL does.
+  ok(freshLastmods >= freshLocs - 11, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await request("GET", "/sitemap.xml");
