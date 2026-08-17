@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0d11">
+<title>Your watchlist — 347movies</title>
+<meta name="description" content="Films you saved on 347movies. Stored only in your browser — no account needed, nothing is ever sent to a server.">
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://archive.org">
+<link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="watchlist">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/browse">Browse</a>
+      <a href="/watchlist" aria-current="page">Watchlist</a>
+      <a href="/about">About</a>
+    </nav>
+    <form class="header-search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="search-input">Search films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
+      <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path class="theme-toggle__moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+        <g class="theme-toggle__sun" fill="currentColor">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M19.3 4.7l-1.7 1.7M6.4 17.6l-1.7 1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+</header>
+<main class="container" id="main" tabindex="-1">
+  <section class="page-head">
+    <p class="section-eyebrow">Saved for later</p>
+    <h1>Your watchlist</h1>
+    <p class="watchlist-note">Saved films live only in this browser — no account needed, and nothing about your watchlist is ever sent to a server. Export a backup file any time, or import one to restore it here.</p>
+  </section>
+  <!-- Ad slot: leaderboard, reserved for a compliant ad network. Never over or inside any player. -->
+  <aside class="ad-slot ad-slot--leaderboard" data-ad-slot="leaderboard" role="complementary" aria-label="Advertisement slot">
+    <span class="ad-slot__label">Advertisement</span>
+    <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+  </aside>
+  <div class="watchlist-actions">
+    <button type="button" class="watch-utility" id="watchlist-export">Export</button>
+    <button type="button" class="watch-utility" id="watchlist-import">Import</button>
+    <button type="button" class="watch-clear" id="watchlist-clear">Clear watchlist</button>
+    <input type="file" id="watchlist-file" accept="application/json,.json" hidden>
+  </div>
+  <p class="watchlist-note" id="watchlist-status" role="status"></p>
+  <div class="grid" id="watchlist"><p class="empty">Loading your watchlist&hellip;</p></div>
+  <noscript><p class="empty">The watchlist is stored in your browser and needs JavaScript to load. Enable JavaScript to see your saved films.</p></noscript>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-tag">Free movies. No interruptions. Ever.</p>
+    <nav aria-label="Footer">
+      <a href="/about">About</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about#advertise">Advertise</a>
+      <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+  </div>
+</footer>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

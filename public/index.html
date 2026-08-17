@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0d11">
+<title>347movies — Free Movies. No Interruptions. Ever.</title>
+<meta name="description" content="Watch full public domain and Creative Commons films for free, embedded from the Internet Archive. No accounts, no paywall, and ads never interrupt the movie.">
+<link rel="canonical" href="https://347movies.pages.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="347movies">
+<meta property="og:title" content="347movies — Free movies. No interruptions. Ever.">
+<meta property="og:description" content="Full public domain and Creative Commons films, free in your browser. No accounts, no paywall, ads never interrupt the movie.">
+<meta property="og:url" content="https://347movies.pages.dev/">
+<meta property="og:image" content="https://archive.org/services/img/it-1927?width=1200">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"347movies","url":"https://347movies.pages.dev/","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://347movies.pages.dev/search?q={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://archive.org">
+<link rel="preload" as="image" href="/images/01-nyc-skyline-night-hero.jpg" fetchpriority="high">
+<link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="home">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-current="page"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/browse">Browse</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about">About</a>
+    </nav>
+    <form class="header-search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="search-input">Search films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
+      <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path class="theme-toggle__moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+        <g class="theme-toggle__sun" fill="currentColor">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M19.3 4.7l-1.7 1.7M6.4 17.6l-1.7 1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+</header>
+<main id="main" tabindex="-1">
+  <section class="hero">
+    <div class="hero-slides" aria-hidden="true">
+      <div class="hero-slide hero-slide--1"></div>
+      <div class="hero-slide hero-slide--2"></div>
+      <div class="hero-slide hero-slide--3"></div>
+      <div class="hero-slide hero-slide--4"></div>
+    </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="container">
+      <p class="hero-eyebrow">A free cinema of the public domain</p>
+      <h1>Free movies. No interruptions. Ever.</h1>
+      <p class="hero-sub">Full public domain and Creative Commons films, streamed free in your browser — embedded from the Internet Archive. No accounts, no paywall, and ads never interrupt the film.</p>
+      <div class="hero-search">
+        <form action="/search" method="get" role="search">
+          <label class="visually-hidden" for="hero-q">Search films</label>
+          <input id="hero-q" name="q" type="search" placeholder="Search a title, actor, or genre…" maxlength="80" required>
+          <button type="submit">Search</button>
+        </form>
+        <a class="hero-surprise" href="/api/random">Surprise me</a>
+      </div>
+      <nav class="genre-chips" aria-label="Genres">
+        <a class="genre-chip" href="/tv">Classic TV</a>
+        <a class="genre-chip" href="/genre">Film Noir</a>
+        <a class="genre-chip" href="/browse?genre=western">Western</a>
+        <a class="genre-chip" href="/browse?genre=sci-fi">Sci-Fi</a>
+        <a class="genre-chip" href="/browse?genre=horror">Horror</a>
+        <a class="genre-chip" href="/browse?genre=silent">Silent</a>
+        <a class="genre-chip" href="/browse?genre=comedy">Comedy</a>
+        <a class="genre-chip" href="/browse?genre=drama">Drama</a>
+      </nav>
+    </div>
+  </section>
+  <div class="container">
+    <!-- Ad slot: leaderboard, reserved for a compliant ad network. Nothing renders here until one is configured (constitution §4, vow 2: ads never interrupt the movie). -->
+    <aside class="ad-slot ad-slot--leaderboard" data-ad-slot="leaderboard" role="complementary" aria-label="Advertisement slot">
+      <span class="ad-slot__label">Advertisement</span>
+      <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+    </aside>
+    <section class="section">
+      <p class="section-eyebrow">This century</p>
+      <div class="section-head">
+        <h2>Modern picks</h2>
+        <a class="see-all" href="/browse?from=2000&to=2020">See all &rarr;</a>
+      </div>
+      <div class="grid" id="modern"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">Kung fu &amp; mayhem</p>
+      <div class="section-head">
+        <h2>Hong Kong action</h2>
+        <a class="see-all" href="/browse?q=dubbed+subtitled+kung+shaolin+wong">See all &rarr;</a>
+      </div>
+      <div class="grid" id="hkaction"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">Public domain television</p>
+      <div class="section-head">
+        <h2>Classic TV</h2>
+        <div class="section-actions">
+          <a class="see-all" href="/search?tv=1">Search TV shows &rarr;</a>
+          <a class="see-all" href="/browse?tv=1">See all &rarr;</a>
+        </div>
+      </div>
+      <div class="grid" id="tvclassics"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">The golden age of the tube</p>
+      <div class="section-head">
+        <h2>1960s TV</h2>
+        <a class="see-all" href="/browse?tv=1&decade=1960">See all &rarr;</a>
+      </div>
+      <div class="grid" id="tv1960s"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">New arrivals</p>
+      <div class="section-head">
+        <h2>Recently added</h2>
+        <a class="see-all" href="/browse">See all &rarr;</a>
+      </div>
+      <div class="grid" id="recent"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <!-- Ad slot: leaderboard (mid-page), reserved for a compliant ad network. Never over or inside any player. -->
+    <aside class="ad-slot ad-slot--leaderboard" data-ad-slot="leaderboard-2" role="complementary" aria-label="Advertisement slot">
+      <span class="ad-slot__label">Advertisement</span>
+      <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+    </aside>
+    <section class="section">
+      <p class="section-eyebrow">Crime &amp; shadows</p>
+      <div class="section-head">
+        <h2>Film noir, free</h2>
+        <a class="see-all" href="/browse?genre=film-noir">See all &rarr;</a>
+      </div>
+      <div class="grid" id="noir"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">The silent era</p>
+      <div class="section-head">
+        <h2>From the 1920s silent era</h2>
+        <a class="see-all" href="/browse?decade=1920">See all &rarr;</a>
+      </div>
+      <div class="grid" id="silents"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <noscript><p class="empty">This page loads films with JavaScript. Enable JavaScript to browse the catalog — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-tag">Free movies. No interruptions. Ever.</p>
+    <nav aria-label="Footer">
+      <a href="/about">About</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about#advertise">Advertise</a>
+      <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+  </div>
+</footer>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

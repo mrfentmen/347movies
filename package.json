@@ -1,0 +1,36 @@
+{
+  "name": "347movies",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free movies. No interruptions. Ever. Public domain & Creative Commons films embedded from the Internet Archive, built entirely on Cloudflare.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler pages dev public --port 8787",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "audit": "npm audit --audit-level=high",
+    "smoke": "node scripts/smoke.mjs",
+    "images": "node scripts/register-images.mjs",
+    "test:e2e": ".venv-test/bin/python scripts/e2e_test.py",
+    "test:keyboard": ".venv-test/bin/python scripts/e2e_keyboard.py",
+    "test:mobile": ".venv-test/bin/python scripts/e2e_mobile.py",
+    "test:a11y": ".venv-test/bin/python scripts/axe-audit.py",
+    "test:browser": "npm run test:e2e && npm run test:keyboard && npm run test:mobile && npm run test:a11y && npm run test:live-surfaces && npm run test:prototype",
+    "test:live-surfaces": "node scripts/browser-battery.mjs live",
+    "test:prototype": "node scripts/browser-battery.mjs prototype",
+    "health": "bash scripts/health-battery.sh",
+    "warmup": "node scripts/warmup.mjs",
+    "new-arrivals": "node scripts/new-arrivals.ts",
+    "deploy": "node scripts/deploy.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260815.1",
+    "@types/node": "26.2.0",
+    "axe-core": "^4.13.0",
+    "typescript": "7.0.2",
+    "wrangler": "4.123.0"
+  }
+}

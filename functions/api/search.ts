@@ -1,0 +1,77 @@
+import type { PagesFunction } from "@cloudflare/workers-types";
+import { searchArchive } from "../../lib/archive.ts";
+import { cacheGet, cacheKey, cachePut } from "../../lib/cache.ts";
+import { withStaleOnErrorResponse } from "../../lib/edge-cache.ts";
+import type { Env } from "../../lib/env.ts";
+import { headHandler } from "../_head.ts";
+import { jsonResponse } from "../../lib/http.ts";
+import { normalizeSearchDoc } from "../../lib/normalize.ts";
+import { routeError } from "../../lib/route-error.ts";
+import { validateFlag, validatePage, validateQuery } from "../../lib/validate.ts";
+
+const ROWS = 24;
+const MAX_PAGES = 100;
+
+/** GET /api/search?q=&page= — full-text search over the legal catalog (task T2.1). */
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  const url = new URL(request.url);
+  const urlString = request.url;
+  try {
+    // tv=1 searches the classic-TV pool (same license gate). An empty query is allowed
+    // there: it returns the TV pool newest-first — the "Search TV shows" shortcut
+    // lands on something useful instead of a 400.
+    const tv = validateFlag(url.searchParams.get("tv"));
+    const q = validateQuery(url.searchParams.get("q"), tv);
+    const page = validatePage(url.searchParams.get("page"));
+
+    // NOTE: must be awaited inside the try — returning the promise directly would let a
+    // rejection (ArchiveError from archive.org) escape this catch and surface as a generic
+    // middleware 500 instead of the intended 502 upstream_error (root-caused 2026-08-16:
+    // q="a\" OR 1=1 --" sanitized to "a OR 1=1 --" is rejected by archive.org's Solr, and
+    // the 502 mapping was dead code).
+    // Stale-on-error: a 300s fresh copy serves the hot path; a 3600s last-known-good copy
+    // is served (marked STALE) when archive.org 502s, so a transient outage stops flaking
+    // the UI and the browser battery instead of surfacing as upstream_error. This layer is
+    // the production resilience path — KV is not yet bound (the deploy token is Pages-scoped
+    // only), so the 24h KV cache is a no-op until that permission lands.
+    return await withStaleOnErrorResponse(urlString, 300, 3600, async () => {
+      const cacheKey_ = cacheKey("search", [q, page, tv ? "tv" : "films"]);
+      const cached = await cacheGet(env.MOVIES_KV, cacheKey_);
+      if (cached !== null) {
+        try {
+          return jsonResponse(JSON.parse(cached), 200, { "Cache-Control": "public, max-age=300" });
+        } catch {
+          // corrupt cache entry: refetch from archive.org
+        }
+      }
+
+      // filmsOnly is catalog policy, not a UI preference: the same episode+trailer exclusion
+      // browse/home/random apply, so search never surfaces "Episode 18" or "X trailer" as a
+      // film (verified live: a top "noir" hit used to be "Nightmare Alley trailer").
+      const { numFound, docs } = await searchArchive({
+        query: q,
+        page,
+        rows: ROWS,
+        filmsOnly: !tv,
+        variant: tv ? "tv" : "films",
+        // Empty TV query = the pool newest-first (the search shortcut's landing view).
+        sort: tv && !q ? "recent" : undefined,
+      });
+      const results = docs.map(normalizeSearchDoc);
+      const body = {
+        query: q,
+        page,
+        rows: ROWS,
+        total: numFound,
+        pages: Math.min(Math.max(1, Math.ceil(numFound / ROWS)), MAX_PAGES),
+        results,
+      };
+      await cachePut(env.MOVIES_KV, cacheKey_, body);
+      return jsonResponse(body, 200, { "Cache-Control": "public, max-age=300" });
+    });
+  } catch (err) {
+    return routeError(err);
+  }
+};
+
+export const onRequestHead = headHandler(onRequestGet);

@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* 347movies DESIGN.md tokens — "The Projection Booth" (docs/DESIGN.md is the source of
+   truth for the live vanilla site; these mirror the exact shipped hex values). */
+:root {
+  --radius: 0.625rem;
+  --background: #0c0d11; /* Cold Black Wall */
+  --foreground: #ede9df; /* Warm Screen White */
+  --card: #14161c; /* Raised Slate */
+  --card-foreground: #ede9df;
+  --popover: #14161c;
+  --popover-foreground: #ede9df;
+  --primary: #f2a93b; /* Tungsten Amber — the one accent */
+  --primary-foreground: #1a1206; /* Amber Ink */
+  --secondary: #1c1f27; /* Deep Slate */
+  --secondary-foreground: #ede9df;
+  --muted: #1c1f27;
+  --muted-foreground: #a29ca9; /* Muted Lavender-Gray */
+  --accent: #f2a93b;
+  --accent-foreground: #1a1206;
+  --destructive: #e07a7a; /* Fade Red — the one alarm light */
+  --destructive-foreground: #0c0d11;
+  --border: #272b36; /* Hairline Border */
+  --input: #272b36;
+  --ring: #f2a93b;
+  --font-sans:
+    "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-display: "Limelight", Georgia, "Times New Roman", serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --amber-glow: rgba(242, 169, 59, 0.18);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Three self-hosted faces (same roles as the live site): Limelight for display
+   moments only, Plex Sans for all reading, Plex Mono for film-slate metadata. */
+@import "@fontsource/limelight";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+  /* Film-slate metadata voice: mono, uppercase, wide tracking — the system's
+     signature eyebrow/date/chip treatment. */
+  .film-slate {
+    @apply font-mono text-[0.7rem] font-medium uppercase tracking-[0.18em];
+  }
+}

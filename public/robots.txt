@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# API endpoints are data, not pages (they also carry X-Robots-Tag: noindex).
+Disallow: /api/
+
+Sitemap: https://347movies.pages.dev/sitemap.xml

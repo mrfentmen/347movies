@@ -1,0 +1,38 @@
+name: Weekly new-arrivals report
+
+on:
+  schedule:
+    # Mondays 12:00 UTC — check the curated collections for fresh legal films.
+    - cron: "0 12 * * 1"
+  workflow_dispatch: # also run manually: Actions → Weekly new-arrivals report → Run workflow
+
+permissions:
+  contents: read
+  issues: write # opens the weekly report issue when fresh films landed
+
+jobs:
+  new-arrivals:
+    name: Check for new legal films
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Query archive.org for new legal films
+        id: report
+        run: |
+          # One archive.org query, two artifacts: JSON for the count, markdown for the issue.
+          node scripts/new-arrivals.ts --days=7 --json --body-out=/tmp/new-arrivals.md > /tmp/new-arrivals.json
+          COUNT=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/new-arrivals.json','utf8')).count")
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Found $COUNT new film(s)."
+      - name: Open the weekly report issue
+        if: steps.report.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WEEK=$(date -u +%Y-%m-%d)
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "New arrivals — week of $WEEK" \
+            --body "$(cat /tmp/new-arrivals.md)"

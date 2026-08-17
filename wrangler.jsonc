@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "347movies",
+  "pages_build_output_dir": "public",
+  "compatibility_date": "2026-08-15",
+  // KV cache namespace: NOT yet configured — the API token available at first deploy is
+  // scoped to Cloudflare Pages only and cannot create/manage Workers KV ("Workers KV Storage:
+  // Edit" permission missing; verified: `wrangler kv namespace create/list` → authentication
+  // error 10000). The site runs fully without KV (cache misses fall through to archive.org).
+  // To enable the 24h KV cache, with a token that has KV permissions run:
+  //   npx wrangler kv namespace create MOVIES_KV
+  // then paste the returned id into the kv_namespaces block below and redeploy:
+  //   "kv_namespaces": [{ "binding": "MOVIES_KV", "id": "<id>", "preview_id": "<id>" }]
+  // Public site URL used for canonical/OG tags. Override per environment if needed.
+  "vars": {
+    "SITE_URL": "https://347movies.pages.dev"
+  }
+}

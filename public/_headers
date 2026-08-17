@@ -1,0 +1,12 @@
+/*
+  # connect-src allows archive.org so the <link rel=preconnect> hint to the poster/player
+  # host is honored; the page's own JS never fetches archive.org (server-side only).
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://archive.org https://*.archive.org; media-src https://archive.org https://*.archive.org; frame-src https://archive.org https://*.archive.org; connect-src 'self' https://archive.org https://*.archive.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cache-Control: public, max-age=3600
+/404.html
+  X-Robots-Tag: noindex

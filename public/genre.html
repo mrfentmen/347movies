@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0d11">
+<title>Film Noir — 347movies</title>
+<meta name="description" content="Shadows, smoke, and moral ambiguity — the hard-boiled classics of the 1940s and 50s, free in the public domain on 347movies.">
+<link rel="canonical" href="https://347movies.pages.dev/genre">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="347movies">
+<meta property="og:title" content="Film Noir — 347movies">
+<meta property="og:description" content="Free public domain film noir: shadows, smoke, and moral ambiguity, streamed without interruption.">
+<meta property="og:url" content="https://347movies.pages.dev/genre">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://archive.org">
+<link rel="preload" as="image" href="/images/05-nyc-brooklyn-sepia-noir.jpg" fetchpriority="high">
+<link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="genre">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/browse" aria-current="page">Browse</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about">About</a>
+    </nav>
+    <form class="header-search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="search-input">Search films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
+      <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path class="theme-toggle__moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+        <g class="theme-toggle__sun" fill="currentColor">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M19.3 4.7l-1.7 1.7M6.4 17.6l-1.7 1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+</header>
+<main id="main" tabindex="-1">
+  <!-- The genre hero: the projection beam spilling from the booth, Limelight genre title,
+       mono eyebrow — the DESIGN.md display rhythm applied to a destination page. -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero-eyebrow">The projection booth presents</p>
+      <h1>Film Noir</h1>
+      <p class="hero-sub">Shadows, smoke, and moral ambiguity — the hard-boiled classics of the 1940s and 50s, free in the public domain. No accounts, no paywall, and ads never interrupt the film.</p>
+      <nav class="genre-chips" aria-label="Genres">
+        <a class="genre-chip is-active" href="/genre" aria-current="page">Film Noir</a>
+        <a class="genre-chip" href="/browse?genre=western">Western</a>
+        <a class="genre-chip" href="/browse?genre=sci-fi">Sci-Fi</a>
+        <a class="genre-chip" href="/browse?genre=horror">Horror</a>
+        <a class="genre-chip" href="/browse?genre=silent">Silent</a>
+        <a class="genre-chip" href="/browse?genre=comedy">Comedy</a>
+        <a class="genre-chip" href="/browse?genre=drama">Drama</a>
+      </nav>
+      <p><a class="hero-surprise" href="/api/random">Surprise me — jump to a random film</a></p>
+    </div>
+  </section>
+  <div class="container">
+    <div class="genre">
+      <div class="genre-main">
+        <p class="section-eyebrow">Crime &amp; shadows</p>
+        <div class="section-head">
+          <h2>The noir canon, free</h2>
+          <a class="see-all" href="/browse?genre=film-noir">See all &rarr;</a>
+        </div>
+        <p class="count" id="count" role="status"></p>
+        <!-- Skeleton grid reserves the card space before the JS fetch completes (CLS) —
+             the same pattern as browse/search. -->
+        <div class="grid" id="results" aria-busy="true">
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+        </div>
+        <div id="pagination"></div>
+        <noscript><p class="empty">This page loads films with JavaScript. Enable JavaScript to browse the genre — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+      </div>
+      <aside class="genre-side">
+        <!-- Ad slot: sidebar, reserved for a compliant ad network. Never over or inside any player. -->
+        <aside class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar" role="complementary" aria-label="Advertisement slot">
+          <span class="ad-slot__label">Advertisement</span>
+          <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+        </aside>
+        <aside class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar-2" role="complementary" aria-label="Advertisement slot 2">
+          <span class="ad-slot__label">Advertisement</span>
+          <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+        </aside>
+        <div class="affiliate-slot">
+          <p class="affiliate-note">The noir canon is wide and the catalog is bigger — every film on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the movie.</p>
+          <a class="affiliate-link" href="/browse?genre=film-noir">Browse every film noir &rarr;</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-tag">Free movies. No interruptions. Ever.</p>
+    <nav aria-label="Footer">
+      <a href="/about">About</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about#advertise">Advertise</a>
+      <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+  </div>
+</footer>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

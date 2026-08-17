@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0d11">
+<title>Privacy — 347movies</title>
+<meta name="description" content="347movies privacy policy: no accounts, no tracking, no data collection. Your viewing is your business.">
+<link rel="canonical" href="https://347movies.pages.dev/privacy">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="347movies">
+<meta property="og:title" content="Privacy — 347movies">
+<meta property="og:description" content="No accounts, no tracking, no data collection.">
+<meta property="og:url" content="https://347movies.pages.dev/privacy">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://archive.org">
+<link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="static">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/browse">Browse</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about">About</a>
+    </nav>
+    <form class="header-search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="search-input">Search films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
+      <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path class="theme-toggle__moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+        <g class="theme-toggle__sun" fill="currentColor">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M19.3 4.7l-1.7 1.7M6.4 17.6l-1.7 1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+</header>
+<main class="container prose" id="main" tabindex="-1">
+  <p class="section-eyebrow">Your privacy</p>
+  <h1>Privacy policy</h1>
+  <p>Short version: <strong>we collect nothing about you.</strong> No accounts. No sign-up walls. No tracking scripts. No fingerprinting. What you watch is your business and stays on your side of the screen.</p>
+
+  <h2>What we do not do</h2>
+  <ul>
+    <li>We do not create accounts, ask for emails, or require sign-in to watch anything.</li>
+    <li>We do not set our own cookies, run analytics, or embed tracking scripts.</li>
+    <li>We do not fingerprint browsers or devices.</li>
+    <li>We do not sell, rent, or share personal data — we have none to share.</li>
+    <li>We do not store viewing history. Our only server-side storage is a cache of <em>public catalog metadata</em> (titles, descriptions, thumbnails) in Cloudflare KV, keyed by validated search terms and archive.org identifiers — never by you.</li>
+  </ul>
+
+  <h2>What happens when you use the site</h2>
+  <p>The site runs on Cloudflare Pages. Your requests pass through Cloudflare's edge network (CDN, WAF, bot protection), which processes IP addresses in the standard way to serve pages and protect the site; Cloudflare's privacy policy applies to that traffic. Our API applies per-IP rate limits to protect the service; those limits live in memory and are never logged or stored.</p>
+  <p>The <a href="/watchlist">watchlist</a> is an optional convenience: films you save are stored only in your browser's local storage on your own device. It is never sent to us, never stored on any server, and you can clear it at any time with the “Clear watchlist” button or by clearing your browser's site data. An <em>Export</em> button downloads your list as a file you own; an <em>Import</em> button restores a previously exported file. Both run entirely in your browser — no data leaves your device either way.</p>
+  <p>Films play through the Internet Archive's embedded player. When you press play, archive.org's player, cookies, and privacy practices apply — the same as visiting archive.org directly.</p>
+  <p>Affiliate links go to third-party retailers (such as Amazon); the retailer's privacy policy applies after you click.</p>
+
+  <h2>Advertising — the standing disclosure</h2>
+  <p>This site may carry ads. They appear <strong>only</strong> in clearly marked sidebar and
+  leaderboard slots, labeled “Advertisement” — never over, inside, before, or around the
+  movie player. The player is never wrapped, resized, paused, or covered by an ad.</p>
+  <p><strong>Right now, no ad network is configured and no third-party ad code runs</strong> —
+  the slots are reserved containers with a business contact, and this site ships no
+  third-party scripts. If an ad network is enabled in the future, this page will be updated
+  <em>first</em> to name the network and link its privacy policy, before any ad renders.</p>
+  <p>When a network is enabled, the only mechanism this site adds is a request to our own
+  <code>/api/ad-config</code> endpoint (edge-cached, returns either “disabled” or the
+  network's script URL) and the network's script running inside the marked slot containers.
+  We do not receive any data about you from the network, and we pass it none: no accounts,
+  no viewing history, no identifiers. The network's own cookies and tracking practices are
+  governed by its privacy policy, which we will link here before enabling it.</p>
+  <p>Advertising inquiries go to the publicly listed business contact on the <a href="/about#advertise">advertise</a> page. That address is a business contact published by the site owner — it is not a viewer-data channel, and nothing about your viewing is ever sent to it.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy ever changes, this page will change first, with a dated entry. We will never start collecting data silently.</p>
+  <p>Last updated: August 15, 2026.</p>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-tag">Free movies. No interruptions. Ever.</p>
+    <nav aria-label="Footer">
+      <a href="/about">About</a>
+      <a href="/tv">TV</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about#advertise">Advertise</a>
+      <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+  </div>
+</footer>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

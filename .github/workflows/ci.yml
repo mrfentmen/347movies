@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  secrets-scan:
+    name: Secret scan (whole tree)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Scan for token-shaped strings
+        run: |
+          # Whole-tree guard: the 2026-08-16 incident put a live Cloudflare deploy
+          # token in tests/, outside the deploy scan's roots (public/functions/lib/
+          # wrangler.jsonc). Anything token-shaped anywhere now fails CI. The only
+          # allowed occurrences are the three synthetic scanner fixtures in
+          # tests/deploy.test.ts, excluded verbatim below — a real token pasted into
+          # the same file still fails.
+          HITS=$(grep -rInE --exclude-dir=.git '\b(?:cfut_|CF_API_TOKEN|CLOUDFLARE_API_TOKEN)[A-Za-z0-9_=.-]{8,}\b' . || true)
+          HITS=$(printf '%s\n' "$HITS" | grep -vF -e 'cfut_syntheticFixture00000000000000000000000000' -e 'cfut_ABCdef123XYZ456abcDEF789ghiJKL012mnoPQR345' || true)
+          if [ -n "$HITS" ]; then
+            echo "::error::token-shaped string found in the tree:"
+            printf '%s\n' "$HITS"
+            exit 1
+          fi
+          echo "ok: no token-shaped strings outside the synthetic fixtures"
+
+  smoke:
+    name: Live smoke (local dev server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Boot wrangler dev and run the live smoke suite
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          # The smoke suite is the project's live health check (182+ real network
+          # requests against the served site). Run it against a local wrangler dev
+          # server so a PR is tested on its own code, not the deployed site.
+          # SMOKE_MIN_SITEMAP_URLS is relaxed vs the canonical floor (18000) purely
+          # for CI speed — the full catalog build still runs; only the assertion
+          # floor is lower.
+          # RATE_LIMIT is raised for the smoke run: the suite intentionally issues well
+          # over 60 rate-limited requests per run, so the dev server's production default
+          # would 429 it mid-run (production keeps the default).
+          npx wrangler pages dev public --port 8788 --binding RATE_LIMIT=10000 > /tmp/wrangler-dev.log 2>&1 &
+          SERVER_PID=$!
+          HEALTHY=0
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8788/api/health > /dev/null 2>&1; then
+              HEALTHY=1
+              echo "dev server healthy after ~$((i * 2))s"
+              break
+            fi
+            sleep 2
+          done
+          if [ "$HEALTHY" != "1" ]; then
+            echo "::error::wrangler dev did not become healthy — log tail:"
+            tail -40 /tmp/wrangler-dev.log
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          SMOKE_BASE_URL=http://127.0.0.1:8788 SMOKE_MIN_SITEMAP_URLS=500 npm run smoke
+          STATUS=$?
+          kill $SERVER_PID 2>/dev/null || true
+          exit $STATUS
+
+  browser-batteries:
+    name: Browser battery (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: live
+            script: live-surfaces
+          - target: prototype
+            script: prototype
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install the prototype's own dependencies
+        if: matrix.target == 'prototype'
+        run: cd ui-prototype && npm ci
+      - name: Install Playwright (python) + bundled chromium
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Run the ${{ matrix.target }} browser battery
+        env:
+          BATTERY_CI: "1"
+        run: npm run test:${{ matrix.script }}
+
+  browser:
+    name: Browser battery (E2E / keyboard / mobile / axe)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: pip install playwright
+      # The axe audit uses system Chrome via channel="chrome"; ubuntu-latest ships it.
+      - run: python -m playwright install --with-deps chromium
+      - name: Boot wrangler dev and run the browser battery
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          # The UI/a11y battery (E2E flows, keyboard walk, mobile/zoom, axe-core) catches
+          # regressions no unit test can: watchlist lifecycle, focus rings, reflow at
+          # 375px/640px, WCAG violations. Scripts hardcode BASE=http://127.0.0.1:8787.
+          npx wrangler pages dev public --port 8787 > /tmp/wrangler-browser.log 2>&1 &
+          SERVER_PID=$!
+          HEALTHY=0
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8787/api/health > /dev/null 2>&1; then
+              HEALTHY=1
+              echo "dev server healthy after ~$((i * 2))s"
+              break
+            fi
+            sleep 2
+          done
+          if [ "$HEALTHY" != "1" ]; then
+            echo "::error::wrangler dev did not become healthy — log tail:"
+            tail -40 /tmp/wrangler-browser.log
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          python scripts/e2e_test.py && \
+          python scripts/e2e_keyboard.py && \
+          python scripts/e2e_mobile.py && \
+          python scripts/axe-audit.py
+          STATUS=$?
+          kill $SERVER_PID 2>/dev/null || true
+          exit $STATUS
