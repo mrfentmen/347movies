@@ -73,7 +73,7 @@
 
   <h2>The page-view counter</h2>
   <p>The <a href="/advertise">advertise page</a> shows approximate traffic numbers, and they come from a deliberately minimal first-party counter. Each page load reports its path to our own <code>/api/view</code>; the server adds one to an aggregate daily bucket — nothing more. We store no IP address, no browser or device details, no account, and no identifier; we set no cookie for it and read none; and the count can never be traced back to you.</p>
-  <p>Counts are approximate by design: a view is a JavaScript-enabled page load (no-JS visitors and bots that don't run the page's script aren't counted), the numbers live in memory with an optional edge cache and reset whenever we redeploy, and the client report is a single fire-and-forget request with no retries. The aggregate totals — never any individual's activity — are what the advertise page displays. We never sell or share the numbers, and we can't use them to identify anyone.</p>
+  <p>Counts are approximate by design: a view is a JavaScript-enabled page load (no-JS visitors and bots that don't run the page's script aren't counted), the numbers live in a short-lived edge cache (expiring after roughly a month, then the count starts again), and the client report is a single fire-and-forget request with no retries. The aggregate totals — never any individual's activity — are what the advertise page displays. We never sell or share the numbers, and we can't use them to identify anyone.</p>
 
   <h2>Advertising — the standing disclosure</h2>
   <p>This site may carry ads. They appear <strong>only</strong> in clearly marked sidebar and
