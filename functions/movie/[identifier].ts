@@ -30,10 +30,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
       });
     }
 
-    // A legal catalog item with no playable video derivative gets an honest no-video page
-    // instead of a dead player embed (verified live: `mrs.-pumpkin`). Still cached (bounded),
-    // still noindex, and the source link keeps the viewer unblocked.
-    const html = result.record.hasVideo
+    // A legal catalog item with no playable video OR audio derivative gets an honest
+    // no-video page instead of a dead player embed (verified live: `mrs.-pumpkin`). Old
+    // Time Radio items are mediatype:audio — they render the same page with an audio
+    // player. Still cached (bounded), still noindex, and the source link keeps the viewer
+    // unblocked.
+    const playable = result.record.hasVideo || result.record.hasAudio;
+    const html = playable
       ? renderMoviePage(result.record, siteUrl, env.AMAZON_TAG)
       : renderMovieNoVideo(result.record, siteUrl);
     return new Response(html, {

@@ -74,8 +74,19 @@ export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND media
  */
 export const CARTOONS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:animationandcartoons AND mediatype:movies`;
 
-/** Which curated catalog an index/query serves: films, classic TV, anime, or cartoons. */
-export type IndexVariant = "films" | "tv" | "anime" | "cartoons";
+/**
+ * Old Time Radio catalog gate: the same license gate over `oldtimeradio`. Measured live
+ * 2026-08-17: 1,653 license-marked items (Suspense, The Shadow, Burns & Allen, Fibber
+ * McGee…), all mediatype:audio — the collection is pure radio drama/comedy from the
+ * golden age, so the gate swaps the mediatype bound instead of the year bound. Episodes
+ * ARE the content (each item is a multi-episode series), so the films-only exclusion does
+ * not apply. The detail page renders an audio player for these (lib/layout.ts) and still
+ * fails closed per-item on license verification.
+ */
+export const OTR_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:oldtimeradio AND mediatype:audio`;
+
+/** Which curated catalog an index/query serves: films, classic TV, anime, cartoons, or OTR. */
+export type IndexVariant = "films" | "tv" | "anime" | "cartoons" | "otr";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -90,6 +101,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return ANIME_BASE_CLAUSE;
     case "cartoons":
       return CARTOONS_BASE_CLAUSE;
+    case "otr":
+      return OTR_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

@@ -24,6 +24,17 @@ export interface VideoFile {
   path: string;
 }
 
+/** A playable audio derivative (Old Time Radio items — VBR MP3 / Ogg Vorbis). */
+export interface AudioFile {
+  name: string;
+  format: string;
+  /** Human label for the quality selector, e.g. "VBR MP3 · 12.4 MB". */
+  label: string;
+  size: number | null;
+  /** URL-encoded path segment for the direct download URL (name, exactly encoded). */
+  path: string;
+}
+
 export interface MovieRecord {
   identifier: string;
   title: string;
@@ -42,6 +53,10 @@ export interface MovieRecord {
   hasVideo: boolean;
   /** Playable video derivatives (empty for search-index docs; populated on the detail path). */
   videoFiles: VideoFile[];
+  /** True when the item's files include a playable audio derivative (Old Time Radio). */
+  hasAudio: boolean;
+  /** Playable audio derivatives (empty for search-index docs; populated on the detail path). */
+  audioFiles: AudioFile[];
   /** archive.org download node (`server` field), only meaningful with `dir`. */
   server: string | null;
   /** archive.org storage path (`dir` field), e.g. `/0/items/it-1927`. */
@@ -262,6 +277,65 @@ export function videoFilesFrom(files: unknown): VideoFile[] {
   return out.slice(0, 6);
 }
 
+const AUDIO_FORMAT_HINTS = ["mp3", "ogg vorbis", "vorbis"];
+
+/** True when a file entry is a playable audio derivative (mp3/ogg format hint or extension). */
+function isAudioFileEntry(f: unknown): boolean {
+  if (!f || typeof f !== "object") return false;
+  const rec = f as Record<string, unknown>;
+  const fmt = String(rec["format"] ?? "").toLowerCase();
+  if (AUDIO_FORMAT_HINTS.some((hint) => fmt.includes(hint))) return true;
+  return /\.(mp3|ogg)$/i.test(String(rec["name"] ?? ""));
+}
+
+/** True when an audio item's file list contains a playable derivative (detail path). */
+export function hasAudioFiles(files: unknown): boolean {
+  if (!Array.isArray(files)) return false;
+  return files.some(isAudioFileEntry);
+}
+
+function audioFormatLabel(format: string): string {
+  const f = format.toLowerCase();
+  if (f.includes("ogg") || f.includes("vorbis")) return "Ogg Vorbis";
+  if (f.includes("mp3")) return "MP3";
+  return "Audio";
+}
+
+/**
+ * Extract the playable audio derivatives (Old Time Radio). Sorted MP3 first (best browser
+ * compatibility), then largest first; capped so the quality selector stays short even on
+ * multi-episode series (the first episode files dominate by size anyway).
+ */
+export function audioFilesFrom(files: unknown): AudioFile[] {
+  if (!Array.isArray(files)) return [];
+  const out: AudioFile[] = [];
+  const seen = new Set<string>();
+  for (const f of files) {
+    if (!isAudioFileEntry(f)) continue;
+    const rec = f as Record<string, unknown>;
+    const name = String(rec["name"] ?? "");
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    const format = String(rec["format"] ?? "audio");
+    const sizeRaw = rec["size"];
+    const size =
+      typeof sizeRaw === "number"
+        ? sizeRaw
+        : typeof sizeRaw === "string" && /^\d+$/.test(sizeRaw)
+          ? parseInt(sizeRaw, 10)
+          : null;
+    const label = size != null ? `${audioFormatLabel(format)} · ${formatBytes(size)}` : audioFormatLabel(format);
+    out.push({ name, format, label, size, path: encodeURIComponent(name) });
+  }
+  out.sort((a, b) => {
+    const am = a.format.toLowerCase().includes("mp3") ? 0 : 1;
+    const bm = b.format.toLowerCase().includes("mp3") ? 0 : 1;
+    if (am !== bm) return am - bm;
+    return (b.size ?? 0) - (a.size ?? 0);
+  });
+  return out.slice(0, 6);
+}
+
 function descriptionOf(value: unknown, maxLength: number): string | null {
   if (Array.isArray(value)) return descriptionOf(value.join("\n"), maxLength);
   const s = asString(value);
@@ -289,10 +363,13 @@ export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
     runtimeSeconds: parseRuntimeSeconds(runtime),
     license: licenseFromUrl(asString(doc["licenseurl"])) ?? licenseFromRights(asString(doc["rights"])),
     source_url: `https://archive.org/details/${encodeURIComponent(identifier)}`,
-    // Search results come from mediatype:movies in curated collections; the list view does
-    // not render a player, so hasVideo is a permissive default (the detail page verifies files).
+    // Search results come from curated collections; the list view does not render a player,
+    // so hasVideo is a permissive default (the detail page verifies files). Audio items
+    // (Old Time Radio) are not video — hasAudio is false here; the detail page verifies.
     hasVideo: true,
     videoFiles: [],
+    hasAudio: false,
+    audioFiles: [],
     server: null,
     dir: null,
   };
@@ -325,6 +402,8 @@ export function normalizeMetadata(
     source_url: `https://archive.org/details/${encodeURIComponent(identifier)}`,
     hasVideo: hasVideoFiles(files),
     videoFiles: videoFilesFrom(files),
+    hasAudio: hasAudioFiles(files),
+    audioFiles: audioFilesFrom(files),
     server,
     dir,
   };

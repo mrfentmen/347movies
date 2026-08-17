@@ -15,6 +15,7 @@ const HEADER = `<header class="site-header">
       <a href="/tv">TV</a>
       <a href="/anime">Anime</a>
       <a href="/cartoons">Cartoons</a>
+      <a href="/otr">Radio</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/about">About</a>
     </nav>
@@ -43,6 +44,7 @@ const FOOTER = `<footer class="site-footer">
       <a href="/tv">TV</a>
       <a href="/anime">Anime</a>
       <a href="/cartoons">Cartoons</a>
+      <a href="/otr">Radio</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/about#advertise">Advertise</a>
       <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
@@ -169,8 +171,12 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
 
   // The player is the above-the-fold LCP element: eager + high fetch priority (no lazy — a
   // lazy hint defers the embed fetch; the poster below is preloaded in <head> by pageShell).
+  // Old Time Radio items are audio-only: the same embed URL renders archive.org's audio
+  // player, and the native swap becomes an <audio> element (data-kind drives app.js).
+  const kind = record.hasVideo ? "video" : "audio";
+  const verb = kind === "audio" ? "Listen to" : "Watch";
   const player = `<div class="player-wrap">
-  <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="Watch ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
+  <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="${verb} ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
 </div>`;
 
   const body = `<div class="container">
@@ -178,9 +184,9 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
     <div class="movie-main">
       <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> <span aria-hidden="true">/</span> <span aria-current="page">${escapeHtml(title)}</span></nav>
       ${player}
-      ${playbackTools(record)}
+      ${playbackTools(record, kind)}
       <div class="movie-head">
-        <p class="now-showing">Now showing</p>
+        <p class="now-showing">${kind === "audio" ? "Now playing" : "Now showing"}</p>
         <h1>${escapeHtml(title)}</h1>
         <div class="movie-meta">${metaChips}</div>
         <button type="button" class="watch-btn watch-btn--hero" data-watch-id="${escapeHtml(id)}" data-watch-title="${escapeHtml(title)}" data-watch-year="${escapeHtml(String(record.year ?? ""))}" data-watch-thumb="${escapeHtml(record.thumbnails.small)}" aria-pressed="false">Save</button>
@@ -215,11 +221,12 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
     ? truncatePlain(record.description, 300)
     : `Watch ${title} free — a public domain or Creative Commons film embedded from the Internet Archive.`;
 
-  // schema.org structured data in a JSON-LD data block: a BreadcrumbList (Home → film) plus
-  // the VideoObject shape Google uses for video indexing and rich results. uploadDate is the
-  // real archive.org added date; duration is derived from the real runtime. Both are omitted
-  // when unavailable — never fabricated.
   const siteBase = siteUrl.replace(/\/$/, "");
+
+  // schema.org structured data in a JSON-LD data block: a BreadcrumbList (Home → film) plus
+  // the VideoObject shape Google uses for video indexing and rich results — or AudioObject
+  // for Old Time Radio items. uploadDate is the real archive.org added date; duration is
+  // derived from the real runtime. Both are omitted when unavailable — never fabricated.
   const breadcrumb: Record<string, unknown> = {
     "@type": "BreadcrumbList",
     itemListElement: [
@@ -232,19 +239,19 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
       },
     ],
   };
-  const video: Record<string, unknown> = {
-    "@type": "VideoObject",
-    name: `${pageTitle} — watch free on 347movies`,
+  const media: Record<string, unknown> = {
+    "@type": kind === "audio" ? "AudioObject" : "VideoObject",
+    name: `${pageTitle} — ${kind === "audio" ? "listen" : "watch"} free on 347movies`,
     description,
     thumbnailUrl: record.thumbnails.large,
     embedUrl: `https://archive.org/embed/${encodeURIComponent(id)}`,
   };
-  if (record.addeddate) video["uploadDate"] = record.addeddate;
-  if (record.runtimeSeconds) video["duration"] = isoDuration(record.runtimeSeconds);
-  if (record.genres.length > 0) video["genre"] = record.genres;
+  if (record.addeddate) media["uploadDate"] = record.addeddate;
+  if (record.runtimeSeconds) media["duration"] = isoDuration(record.runtimeSeconds);
+  if (record.genres.length > 0) media["genre"] = record.genres;
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@graph": [breadcrumb, video],
+    "@graph": [breadcrumb, media],
   };
 
   return pageShell(
@@ -267,14 +274,14 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
 }
 
 /**
- * Playback controls for the movie page: a quality selector (the item's playable video
- * derivatives) and a server selector (embed player vs a direct stream vs the mirror node).
- * The embed iframe stays the default and no-JS path; app.js swaps in a native <video>
- * streaming the chosen file when the visitor picks a non-embed option. Rendered only when
- * the item has at least one playable derivative.
+ * Playback controls for the movie page: a quality selector (the item's playable video or
+ * audio derivatives) and a server selector (embed player vs a direct stream vs the mirror
+ * node). `kind` is "video" or "audio" — audio (Old Time Radio) swaps in a native <audio>
+ * element via data-kind, video a native <video>. The embed iframe stays the default and
+ * no-JS path. Rendered only when the item has at least one playable derivative.
  */
-function playbackTools(record: MovieRecord): string {
-  const files = record.videoFiles;
+function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
+  const files = kind === "audio" ? record.audioFiles : record.videoFiles;
   if (files.length === 0) return "";
   const id = record.identifier;
   const title = record.title || "film";
@@ -304,7 +311,7 @@ function playbackTools(record: MovieRecord): string {
   </select>
 </div>`;
 
-  return `<div class="player-tools" role="group" aria-label="Playback options" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(files[0]?.path ?? "")}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}">
+  return `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(files[0]?.path ?? "")}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}">
   ${quality}
   ${server}
 </div>`;

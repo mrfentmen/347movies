@@ -18,16 +18,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const url = new URL(request.url);
   const urlString = request.url;
   try {
-    // tv=1 / anime=1 / cartoons=1 search their pool (same license gate). An empty query is
-    // allowed there: it returns the pool newest-first — the "Search TV shows" shortcut
-    // lands on something useful instead of a 400. At most one may be set.
+    // tv=1 / anime=1 / cartoons=1 / otr=1 search their pool (same license gate). An empty
+    // query is allowed there: it returns the pool newest-first — the "Search TV shows"
+    // shortcut lands on something useful instead of a 400. At most one may be set.
     const tv = validateFlag(url.searchParams.get("tv"));
     const anime = validateFlag(url.searchParams.get("anime"));
     const cartoons = validateFlag(url.searchParams.get("cartoons"));
-    if ([tv, anime, cartoons].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons.");
+    const otr = validateFlag(url.searchParams.get("otr"));
+    if ([tv, anime, cartoons, otr].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : "films";
     const serialized = variant !== "films";
     const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));

@@ -538,6 +538,7 @@
     // collections (same license gate as TV), newest uploads first.
     loadHomeSection("anime", "/api/browse?anime=1&sort=recent&page=1");
     loadHomeSection("cartoons", "/api/browse?cartoons=1&sort=recent&page=1");
+    loadHomeSection("otr", "/api/browse?otr=1&sort=recent&page=1");
     // Golden-age showcases: anime 1950s–70s (measured live 2026-08-17: 42 items) and
     // cartoons 1930s–40s (185 items), newest release years first.
     loadHomeSection("animegolden", "/api/browse?anime=1&from=1950&to=1970&sort=newest&page=1");
@@ -554,12 +555,14 @@
     const tv = params.get("tv") === "1";
     const anime = params.get("anime") === "1";
     const cartoons = params.get("cartoons") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : null;
+    const otr = params.get("otr") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
       anime: { label: "Anime", noun: "title" },
       cartoons: { label: "Cartoons", noun: "title" },
+      otr: { label: "Old Time Radio", noun: "series" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -638,6 +641,7 @@
     const server = tools.querySelector(".player-server");
     if (!wrap || !server) return;
     const quality = tools.querySelector(".player-quality");
+    const kind = tools.getAttribute("data-kind") === "audio" ? "audio" : "video";
     const identifier = tools.getAttribute("data-identifier") || "";
     const title = tools.getAttribute("data-title") || "film";
     const poster = tools.getAttribute("data-poster") || "";
@@ -707,16 +711,18 @@
       }
       const path = quality ? quality.value : defaultPath;
       if (!path) return;
-      const video = document.createElement("video");
-      video.className = "player player--video";
-      video.controls = true;
-      video.playsInline = true;
-      video.preload = "metadata";
-      if (poster) video.poster = poster;
-      video.src = srcFor(mode, path);
-      video.setAttribute("aria-label", `Watch ${title}`);
-      wrap.replaceChildren(video);
-      track(video);
+      // Old Time Radio items are audio: the native swap becomes an <audio> element (the
+      // same embed iframe renders archive.org's audio player as the default).
+      const el = document.createElement(kind === "audio" ? "audio" : "video");
+      el.className = kind === "audio" ? "player player--audio" : "player player--video";
+      el.controls = true;
+      el.playsInline = true;
+      el.preload = "metadata";
+      if (poster) el.poster = poster;
+      el.src = srcFor(mode, path);
+      el.setAttribute("aria-label", `${kind === "audio" ? "Listen to" : "Watch"} ${title}`);
+      wrap.replaceChildren(el);
+      track(el);
     }
 
     server.addEventListener("change", apply);
@@ -911,6 +917,7 @@
   function initTV() { initDestination("tv", "/tv"); }
   function initAnime() { initDestination("anime", "/anime"); }
   function initCartoons() { initDestination("cartoons", "/cartoons"); }
+  function initOTR() { initDestination("otr", "/otr"); }
 
   /* ---------- browse ---------- */
   const GENRE_LABELS = {
@@ -933,8 +940,9 @@
     const tv = params.get("tv") === "1";
     const anime = params.get("anime") === "1";
     const cartoons = params.get("cartoons") === "1";
-    // Which serialized pool this browse view serves (TV / anime / cartoons), if any.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : null;
+    const otr = params.get("otr") === "1";
+    // Which serialized pool this browse view serves (TV / anime / cartoons / OTR), if any.
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -989,7 +997,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1087,6 +1095,7 @@
   else if (page === "tv") initTV();
   else if (page === "anime") initAnime();
   else if (page === "cartoons") initCartoons();
+  else if (page === "otr") initOTR();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
 })();

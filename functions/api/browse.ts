@@ -55,16 +55,18 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     // Absent films= means the catalog policy default (films-only); "0" opts into everything.
     const filmsParam = url.searchParams.get("films");
     const films = filmsParam === null ? undefined : validateFlag(filmsParam);
-    // tv=1 / anime=1 / cartoons=1 switch the browse surface to the classic-TV, anime, or
-    // animation catalog (each the same license gate over its collection). At most one may be
-    // set. In all three, episodes ARE the content, so the films-only policy does not apply.
+    // tv=1 / anime=1 / cartoons=1 / otr=1 switch the browse surface to the classic-TV,
+    // anime, animation, or Old Time Radio catalog (each the same license gate over its
+    // collection). At most one may be set. In all four, episodes ARE the content, so the
+    // films-only policy does not apply.
     const tv = validateFlag(url.searchParams.get("tv"));
     const anime = validateFlag(url.searchParams.get("anime"));
     const cartoons = validateFlag(url.searchParams.get("cartoons"));
-    if ([tv, anime, cartoons].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons.");
+    const otr = validateFlag(url.searchParams.get("otr"));
+    if ([tv, anime, cartoons, otr].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an
