@@ -37,7 +37,9 @@ const MAX_CATALOG_URLS = 50000;
 const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   films: "https://347movies.internal/catalog-index-v1",
   tv: "https://347movies.internal/tv-index-v1",
-  anime: "https://347movies.internal/anime-index-v1",
+  // v2: the 2026-08-17 gate change added year:[* TO 1974] to the anime pool — bumping the
+  // cache key forces a rebuild instead of waiting out the 24h edge TTL on the old pool.
+  anime: "https://347movies.internal/anime-index-v2",
   cartoons: "https://347movies.internal/cartoons-index-v1",
 };
 
