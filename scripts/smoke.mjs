@@ -296,6 +296,8 @@ try {
   ok(js.includes("/api/browse?cartoons=1&sort=recent&page=1"), "JS: Cartoons home feed wired to the animation pool");
   ok(js.includes("/api/browse?otr=1&sort=recent&page=1"), "JS: Old Time Radio home feed wired to the audio pool");
   ok(js.includes("/api/browse?music=1&sort=recent&page=1"), "JS: Music & Concerts home feed wired");
+  ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
+  ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
@@ -677,6 +679,17 @@ try {
   // union. The films browse view stays TV-free by construction (separate index).
   const tvPage = await (await request("GET", `/api/browse?tv=1&sort=recent&page=1&smoke=${Date.now()}`)).json();
   ok(Array.isArray(tvPage.results) && tvPage.results.length > 0, "tv=1 returns TV results");
+
+  // Audio-pool card enrichment (2026-08-17): OTR/music browse results carry the episode
+  // count + series tag fields (populated from per-item metadata, edge-cached per
+  // identifier). The field must EXIST on every result — a null value means the enrichment
+  // hadn't cached it yet, which is the honest "unknown" state, not a broken contract.
+  const otrBrowse = await (await request("GET", `/api/browse?otr=1&sort=recent&page=1&smoke=${Date.now()}`)).json();
+  ok(Array.isArray(otrBrowse.results) && otrBrowse.results.length > 0, "otr=1 returns results");
+  ok(
+    otrBrowse.results.every((r) => "episodeCount" in r && "seriesTag" in r),
+    "OTR cards carry episodeCount + seriesTag fields (audio enrichment wired)",
+  );
   ok(tvPage.films === undefined, "tv=1 response does not claim the films catalog (films field absent)");
   ok(
     typeof tvPage.total === "number" && tvPage.total > 0 && tvPage.total < 15000,

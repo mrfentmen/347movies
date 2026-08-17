@@ -65,6 +65,10 @@ export interface MovieRecord {
   server: string | null;
   /** archive.org storage path (`dir` field), e.g. `/0/items/it-1927`. */
   dir: string | null;
+  /** Playable episode/track count (audio pools only, populated by the card enrichment). */
+  episodeCount: number | null;
+  /** Series/artist tag (audio pools only, populated by the card enrichment). */
+  seriesTag: string | null;
 }
 
 export function asString(value: unknown): string | null {
@@ -414,6 +418,9 @@ export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
     audioFiles: [],
     server: null,
     dir: null,
+    // Search-index docs carry no file data — the audio card enrichment fills these in.
+    episodeCount: null,
+    seriesTag: null,
   };
 }
 
@@ -448,5 +455,7 @@ export function normalizeMetadata(
     audioFiles: audioFilesFrom(files),
     server,
     dir,
+    episodeCount: null,
+    seriesTag: null,
   };
 }

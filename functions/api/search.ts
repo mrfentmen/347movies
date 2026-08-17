@@ -1,5 +1,6 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
 import type { IndexVariant } from "../../lib/archive.ts";
+import { enrichAudioCardMeta } from "../../lib/audio-meta.ts";
 import { searchArchive } from "../../lib/archive.ts";
 import { cacheGet, cacheKey, cachePut } from "../../lib/cache.ts";
 import { withStaleOnErrorResponse } from "../../lib/edge-cache.ts";
@@ -69,6 +70,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         sort: serialized && !q ? "recent" : undefined,
       });
       const results = docs.map(normalizeSearchDoc);
+      // Audio pools: cards show an episode count + series tag from per-item metadata
+      // (edge-cached 24h — lib/audio-meta.ts), matching the browse path.
+      if (variant === "otr" || variant === "music") {
+        await enrichAudioCardMeta(results, variant);
+      }
       const body = {
         query: q,
         page,
