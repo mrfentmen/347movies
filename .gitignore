@@ -16,3 +16,15 @@ public/images/registry.json
 # These must NEVER be committed.
 .freebuff/
 .venv-test/
+
+# Root-level photo attachments (the raw originals from the design handoff — the site
+# serves the resized web copies under public/images/; the originals are never deployed).
+/2000s-new-york-city-lower-manhattan-vintage-images.jpg
+/2576805859_fcd5066eb3_b.jpg
+/gettyimages-597-38-640x640.jpg
+/zy21f38s9lqa1.jpg
+
+# Scratch notes from working sessions (not site content; kept on disk for reference).
+/findings.md
+/progress.md
+/task_plan.md
