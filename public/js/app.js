@@ -156,6 +156,61 @@
     return `<button type="button" class="watch-btn${saved ? " is-saved" : ""}" data-watch-id="${escapeHtml(item.id)}" data-watch-title="${escapeHtml(item.title)}" data-watch-year="${escapeHtml(item.year)}" data-watch-thumb="${escapeHtml(item.thumb)}" aria-pressed="${saved ? "true" : "false"}">${saved ? "Saved" : "Save"}</button>`;
   }
 
+  /* ---------- continue watching (privacy by default: localStorage only, never sent
+     anywhere — same vow as the watchlist) ----------
+     Playback position is tracked only on the native <video> path (Direct stream / Mirror
+     node). The default embed iframe is cross-origin — archive.org's player owns its own
+     time and exposes none of it to this page — so embed-only viewers record nothing.
+     Entries are {id, title, thumb, pos, dur, at}; most recent first, capped at 20. */
+  const PROGRESS_KEY = "347movies.progress.v1";
+  const PROGRESS_MAX = 20;
+
+  function progressLoad() {
+    try {
+      const raw = localStorage.getItem(PROGRESS_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr)
+        ? arr.filter((x) => x && typeof x.id === "string" && x.id && typeof x.pos === "number" && Number.isFinite(x.pos))
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function progressSave(list) {
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(list.slice(0, PROGRESS_MAX)));
+    } catch {
+      /* storage unavailable (private mode, quota): the feature degrades silently */
+    }
+  }
+
+  function progressUpdate(item) {
+    const list = progressLoad();
+    const i = list.findIndex((x) => x.id === item.id);
+    if (i >= 0) list.splice(i, 1);
+    list.unshift({
+      id: item.id,
+      title: item.title || "Untitled",
+      thumb: item.thumb || "",
+      pos: Math.max(0, item.pos),
+      dur: item.dur > 0 ? item.dur : 0,
+      at: Date.now(),
+    });
+    progressSave(list);
+  }
+
+  function progressRemove(id) {
+    const list = progressLoad();
+    const next = list.filter((x) => x.id !== id);
+    if (next.length !== list.length) progressSave(next);
+  }
+
+  function progressGet(id) {
+    return progressLoad().find((x) => x.id === id) || null;
+  }
+
   /* The single card builder — every movie card on the site (grids, watchlist, search,
      browse, genre) is this markup. Takes a normalized item {id, title, year, thumb} and
      whether the film is saved (drives the watch button state). */
@@ -422,7 +477,49 @@
       .catch((err) => renderError(container, err.message, () => loadHomeSection(id, path)));
   }
 
+  /* ---------- continue watching row (home) ----------
+     The resume card mirrors cardShell's markup (poster, title, save button) plus a
+     progress bar and a time-left label instead of the year. The section stays hidden
+     (the section itself carries `hidden`) until there is at least one entry, so an
+     empty session renders nothing at all. */
+  function formatRemaining(entry) {
+    const left = entry.dur > 0 ? entry.dur - entry.pos : 0;
+    if (left <= 0) return "Continue";
+    const mins = Math.max(1, Math.round(left / 60));
+    if (mins < 60) return `${mins}m left`;
+    return `${Math.floor(mins / 60)}h ${mins % 60}m left`;
+  }
+
+  function resumeCard(entry) {
+    const title = entry.title || "Untitled";
+    const img = entry.thumb
+      ? `<img class="card__poster" src="${escapeHtml(entry.thumb)}" alt="" data-title="${escapeHtml(title)}" loading="lazy" decoding="async">`
+      : `<div class="card__poster card__poster--empty" aria-hidden="true">${escapeHtml(initialsOf(title))}</div>`;
+    const frac = entry.dur > 0 && entry.pos < entry.dur ? Math.min(1, entry.pos / entry.dur) : 0;
+    const pct = Math.round(frac * 100);
+    const item = { id: entry.id, title, year: "", thumb: entry.thumb };
+    return `<div class="card card--resume"><a class="card__main" href="/movie/${encodeURIComponent(entry.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span><span class="card__year">${escapeHtml(formatRemaining(entry))}</span></span></a>${watchBtnHtml(item, watchHas(entry.id))}<span class="card__progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% watched"><span class="card__progress-bar" style="width:${pct}%"></span></span></div>`;
+  }
+
+  function renderContinueWatching() {
+    const section = $("#continue-section");
+    const grid = $("#continue");
+    if (!section || !grid) return;
+    const entries = progressLoad();
+    if (entries.length === 0) {
+      section.hidden = true;
+      return;
+    }
+    grid.innerHTML = entries.map(resumeCard).join("");
+    bindPosterFallbacks(grid);
+    bindWatchButtons(grid);
+    section.hidden = false;
+  }
+
   function initHome() {
+    // Continue watching first: it is the visitor's own history, rendered from
+    // localStorage before any network feed lands.
+    renderContinueWatching();
     // films=1 excludes serial-episode uploads (podcasts etc.) from the curated showcase.
     // Modern picks leads: films released this century (2000–2029), sorted by addeddate so
     // the wave of new CC uploads (HK restorations, indies) lands first — without the
@@ -555,6 +652,53 @@
       return `${base}/${path}`;
     }
 
+    // Continue-watching tracking: only the native <video> path is observable (the embed
+    // iframe is cross-origin and keeps its own time). Saved positions drive both the
+    // resume seek below and the home-page "Continue watching" row.
+    let activeVideo = null;
+    const savedEntry = progressGet(identifier);
+
+    function track(video) {
+      activeVideo = video;
+      // Resume: seek to the saved position once metadata is known. The 30s guard skips
+      // near-start bookmarks (a visitor who peeked and left doesn't want to be dropped
+      // 5 seconds before the opening credits); the 30s-from-the-end guard treats a film
+      // as effectively finished.
+      video.addEventListener("loadedmetadata", () => {
+        if (savedEntry && savedEntry.pos > 30 && (savedEntry.dur === 0 || savedEntry.pos < savedEntry.dur - 30)) {
+          try {
+            video.currentTime = savedEntry.pos;
+          } catch {
+            /* seek can fail before the source is ready — the visitor can scrub manually */
+          }
+        }
+      });
+      // Throttled saves (≤1 per 5s) of the position; the first 10s of playback are not
+      // recorded so a stray click doesn't bookmark the opening frame. `ended` clears the
+      // entry — a finished film leaves the Continue row.
+      let lastSaveAt = 0;
+      video.addEventListener("timeupdate", () => {
+        if (video.ended) {
+          progressRemove(identifier);
+          return;
+        }
+        const now = Date.now();
+        if (now - lastSaveAt < 5000 || video.currentTime < 10) return;
+        lastSaveAt = now;
+        progressUpdate({ id: identifier, title, thumb: poster, pos: video.currentTime, dur: video.duration || 0 });
+      });
+      video.addEventListener("ended", () => progressRemove(identifier));
+    }
+
+    // One final save when the page goes away, so a visitor who closes the tab mid-scene
+    // is resumed where they actually were, not 5s stale.
+    window.addEventListener("pagehide", () => {
+      const v = activeVideo;
+      if (v && !v.ended && v.currentTime > 10) {
+        progressUpdate({ id: identifier, title, thumb: poster, pos: v.currentTime, dur: v.duration || 0 });
+      }
+    });
+
     function apply() {
       const mode = server.value;
       if (mode === "embed") {
@@ -572,6 +716,7 @@
       video.src = srcFor(mode, path);
       video.setAttribute("aria-label", `Watch ${title}`);
       wrap.replaceChildren(video);
+      track(video);
     }
 
     server.addEventListener("change", apply);

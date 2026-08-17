@@ -283,6 +283,8 @@ try {
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
   ok(js.includes("browse the catalog</a>"), "JS: search no-results state offers the next step (browse link, TV-aware)");
   ok(js.includes("Your watchlist is empty"), "JS: empty watchlist invites action (direction copy)");
+  ok(js.includes("347movies.progress.v1"), "JS: continue-watching storage key wired (localStorage only)");
+  ok(js.includes('progressRemove(identifier)'), "JS: finishing a film clears its continue-watching entry");
   ok(js.includes("No films match these filters"), "JS: browse empty-filter view points to the next step");
   ok(js.includes("https:\\/\\/"), "JS: ad bootstrap independently requires https before injection");
   // Web-interface-guidelines pass (2026-08-16): the dark theme signals color-scheme,
@@ -339,6 +341,8 @@ try {
   ok(home.includes('id="tvclassics"'), "Home: Classic TV section present (classic_tv feed)");
   ok(home.includes('id="tv1960s"'), "Home: 1960s TV showcase present");
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
+  ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
+  ok(home.includes("Continue watching"), "Home: Continue watching heading present");
   ok(home.includes('href="https://archive.org"'), "Home: noscript fallback points to archive.org (no-JS visitors)");
   const browse = await (await request("GET", `/browse?smoke=${Date.now()}`)).text();
   const search = await (await request("GET", `/search?smoke=${Date.now()}`)).text();

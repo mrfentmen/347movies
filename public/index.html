@@ -98,6 +98,16 @@
       <span class="ad-slot__label">Advertisement</span>
       <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
     </aside>
+    <!-- Continue watching: rendered client-side from localStorage (nothing leaves the
+         browser). `hidden` until there is at least one saved position, so an empty
+         session shows no dead section. -->
+    <section class="section" id="continue-section" hidden>
+      <p class="section-eyebrow">Pick up where you left off</p>
+      <div class="section-head">
+        <h2>Continue watching</h2>
+      </div>
+      <div class="grid" id="continue"></div>
+    </section>
     <section class="section">
       <p class="section-eyebrow">This century</p>
       <div class="section-head">
