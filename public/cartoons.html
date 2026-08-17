@@ -35,8 +35,9 @@
       <a href="/about">About</a>
     </nav>
     <form class="header-search" action="/search" method="get" role="search">
-      <label class="visually-hidden" for="search-input">Search films</label>
-      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <label class="visually-hidden" for="search-input">Search cartoons</label>
+      <input id="search-input" name="q" type="search" placeholder="Search cartoons…" maxlength="80" autocomplete="off" required>
+      <input type="hidden" name="cartoons" value="1">
       <button type="submit">Search</button>
     </form>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
