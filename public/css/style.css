@@ -750,6 +750,21 @@ body[data-page="tv"] .hero {
   flex: 1;
 }
 
+/* Continue-watching progress bar — a 4px track across the card bottom, filled to the
+   watched fraction. The card's own overflow:hidden clips it to the corner radius. */
+.card__progress {
+  display: block;
+  height: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.card__progress-bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
 /* Watchlist save toggle (localStorage only — never sent to any server, vow 5/11). */
 .watch-btn {
   width: 100%;
