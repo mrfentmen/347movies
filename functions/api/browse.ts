@@ -1,5 +1,6 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
 import type { IndexVariant } from "../../lib/archive.ts";
+import { enrichAudioCardMeta } from "../../lib/audio-meta.ts";
 import { queryCatalog } from "../../lib/catalog-index.ts";
 import { withEdgeCachedResponse } from "../../lib/edge-cache.ts";
 import type { Env } from "../../lib/env.ts";
@@ -90,6 +91,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
         filmsOnly: serialized ? false : films,
         variant,
       });
+      // Audio pools: the index carries no file data, so enrich each card with an episode
+      // count + series tag from per-item metadata (edge-cached 24h — lib/audio-meta.ts).
+      if (variant === "otr" || variant === "music") {
+        await enrichAudioCardMeta(results, variant);
+      }
 
       const body = {
         genre,

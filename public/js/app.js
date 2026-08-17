@@ -217,13 +217,24 @@
   function cardShell(item, saved) {
     const title = item.title || "Untitled";
     const year = item.year ? `<span class="card__year">${escapeHtml(String(item.year))}</span>` : "";
+    // Audio pools (OTR/music): an episode/track count + series tag chip from the server's
+    // per-item enrichment (lib/audio-meta.ts). Only rendered when the server could derive
+    // it — a missing chip means the metadata wasn't available, never a dead element.
+    let meta = "";
+    if (Number.isFinite(item.episodeCount) && item.episodeCount > 0) {
+      const n = String(item.episodeCount);
+      const label = item.seriesTag && item.seriesTag !== title
+        ? `${escapeHtml(item.seriesTag)} · ${n} ep${item.episodeCount === 1 ? "" : "s"}`
+        : `${n} ep${item.episodeCount === 1 ? "" : "s"}`;
+      meta = `<span class="card__meta">${label}</span>`;
+    }
     // The poster sits inside the link whose text is already the title, so it is decorative
     // there: empty alt avoids a duplicated accessible name ("Poster for X X"). data-title
     // keeps the initials fallback working when the image fails to load.
     const img = item.thumb
       ? `<img class="card__poster" src="${escapeHtml(item.thumb)}" alt="" data-title="${escapeHtml(title)}" loading="lazy" decoding="async">`
       : `<div class="card__poster card__poster--empty" aria-hidden="true">${escapeHtml(initialsOf(title))}</div>`;
-    return `<div class="card"><a class="card__main" href="/movie/${encodeURIComponent(item.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span>${year}</span></a>${watchBtnHtml(item, saved)}</div>`;
+    return `<div class="card"><a class="card__main" href="/movie/${encodeURIComponent(item.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span>${year}${meta}</span></a>${watchBtnHtml(item, saved)}</div>`;
   }
 
   function watchCardHtml(item) {
@@ -248,12 +259,15 @@
   function movieCard(m) {
     // Normalize the API shape to the card's item shape; year/thumb are raw archive.org
     // metadata (untrusted third-party input): escape like every other field — a hostile
-    // year must never reach the DOM (stored-XSS class fixed 2026-08-16).
+    // year must never reach the DOM (stored-XSS class fixed 2026-08-16). episodeCount is
+    // a validated server number (audio pools only) — also escaped at render via cardShell.
     const item = {
       id: m.identifier,
       title: m && m.title ? String(m.title) : "Untitled",
       year: m.year || "",
       thumb: m && m.thumbnails && m.thumbnails.small ? String(m.thumbnails.small) : "",
+      episodeCount: typeof m.episodeCount === "number" ? m.episodeCount : null,
+      seriesTag: m && m.seriesTag ? String(m.seriesTag) : "",
     };
     return cardShell(item, watchHas(m.identifier));
   }

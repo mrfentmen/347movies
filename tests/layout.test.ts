@@ -27,6 +27,8 @@ const RECORD: MovieRecord = {
   audioFiles: [],
   server: null,
   dir: null,
+  episodeCount: null,
+  seriesTag: null,
 };
 
 test("renderMoviePage embeds the archive.org player for playable items", () => {

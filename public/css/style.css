@@ -899,6 +899,18 @@ body[data-page="tv"] .hero {
   font-family: var(--font-mono);
 }
 
+/* Audio-pool card chip (OTR/music): the series tag + episode count, e.g. "Suspense · 66 eps".
+   Same mono voice as the year, accented so it reads as a fact about the item, not a link. */
+.card__meta {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Browse skeleton grid: reserves the cards' space before the JS fetch completes so results
    pop in without layout shift. Mirrors a real card (3:4 poster box + title/year lines). */
 .card--skeleton {
