@@ -51,16 +51,42 @@ const BASE_CLAUSE = `${LEGAL_CLAUSE} AND ${LEGAL_COLLECTIONS} AND mediatype:movi
  */
 export const TV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:classic_tv AND mediatype:movies`;
 
-/** Which curated catalog an index/query serves: the films union or the classic-TV pool. */
-export type IndexVariant = "films" | "tv";
+/**
+ * Anime catalog gate: the same license gate over archive.org's `anime` collection. Measured
+ * live 2026-08-17: 37,632 movies in the collection, 1,185 carry the license mark — the
+ * licensed subset is the pool (the rest are fan uploads of copyrighted shows with dubious
+ * self-declared marks; same trust model as classic_tv, which documents the same tradeoff).
+ * Episodes ARE the content, so the films-only exclusion does not apply here.
+ */
+export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND mediatype:movies`;
+
+/**
+ * Animation/cartoons catalog gate: the same license gate over `animationandcartoons`.
+ * Measured live 2026-08-17: 15,680 movies in the collection, 226 carry the license mark
+ * (mostly genuine public-domain shorts — Looney Tunes, Merrie Melodies, early Disney).
+ * Episodes ARE the content, so the films-only exclusion does not apply here.
+ */
+export const CARTOONS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:animationandcartoons AND mediatype:movies`;
+
+/** Which curated catalog an index/query serves: films, classic TV, anime, or cartoons. */
+export type IndexVariant = "films" | "tv" | "anime" | "cartoons";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
  * variant use": both the live search path and the index-build path select through this,
- * so a gate change (or a third variant) lands in exactly one place.
+ * so a gate change (or a fourth variant) lands in exactly one place.
  */
 function baseClauseFor(variant: IndexVariant = "films"): string {
-  return variant === "tv" ? TV_BASE_CLAUSE : BASE_CLAUSE;
+  switch (variant) {
+    case "tv":
+      return TV_BASE_CLAUSE;
+    case "anime":
+      return ANIME_BASE_CLAUSE;
+    case "cartoons":
+      return CARTOONS_BASE_CLAUSE;
+    default:
+      return BASE_CLAUSE;
+  }
 }
 
 const SEARCH_FIELDS = [

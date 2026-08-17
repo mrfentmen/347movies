@@ -213,6 +213,31 @@ test("queryCatalog tv variant: separate index, episodes NOT excluded, films defa
   assert.ok(films.results.every((r) => r.identifier !== "film-d"));
 });
 
+test("queryCatalog anime + cartoons variants: separate indexes, episodes NOT excluded", async () => {
+  const animeDocs: Record<string, unknown>[] = [
+    { identifier: "anime-a", title: "Astro Boy Episode 1", year: 1963, addeddate: "2026-01-01T00:00:00Z", subject: [] },
+    { identifier: "anime-b", title: "Gigantor Episode 5", year: 1963, addeddate: "2026-02-01T00:00:00Z", subject: [] },
+  ];
+  const cartoonsDocs: Record<string, unknown>[] = [
+    { identifier: "cartoon-a", title: "Bugs Bunny Episode 12", year: 1943, addeddate: "2026-01-01T00:00:00Z", subject: [] },
+  ];
+  _resetCatalogIndexCacheForTests();
+
+  // Anime variant keeps episodes (they ARE the content) and serves only the anime docs;
+  // default sort is recent (addeddate desc): anime-b (2026-02), anime-a (2026-01).
+  const anime = await queryCatalog({ variant: "anime", rows: 24 }, fakeFetch(animeDocs));
+  assert.equal(anime.total, 2);
+  assert.deepEqual(anime.results.map((r) => r.identifier), ["anime-b", "anime-a"]);
+
+  // Cartoons variant is its own index with its own cache slot: it does NOT see the anime
+  // docs, and keeps episodes (a serial installment is the show you came for).
+  _resetCatalogIndexCacheForTests();
+  const cartoons = await queryCatalog({ variant: "cartoons", rows: 24 }, fakeFetch(cartoonsDocs));
+  assert.equal(cartoons.total, 1);
+  assert.equal(cartoons.results[0]?.identifier, "cartoon-a");
+  assert.ok(cartoons.results.every((r) => r.identifier !== "anime-a"));
+});
+
 test("sortIndex recent: addeddate desc, unknown/missing addeddate last", () => {
   const sorted = sortIndex(docs, "recent");
   assert.deepEqual(

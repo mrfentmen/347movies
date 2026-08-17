@@ -1,4 +1,5 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
+import type { IndexVariant } from "../../lib/archive.ts";
 import { searchArchive } from "../../lib/archive.ts";
 import { cacheGet, cacheKey, cachePut } from "../../lib/cache.ts";
 import { withStaleOnErrorResponse } from "../../lib/edge-cache.ts";
@@ -7,7 +8,7 @@ import { headHandler } from "../_head.ts";
 import { jsonResponse } from "../../lib/http.ts";
 import { normalizeSearchDoc } from "../../lib/normalize.ts";
 import { routeError } from "../../lib/route-error.ts";
-import { validateFlag, validatePage, validateQuery } from "../../lib/validate.ts";
+import { ApiError, validateFlag, validatePage, validateQuery } from "../../lib/validate.ts";
 
 const ROWS = 24;
 const MAX_PAGES = 100;
@@ -17,11 +18,18 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const url = new URL(request.url);
   const urlString = request.url;
   try {
-    // tv=1 searches the classic-TV pool (same license gate). An empty query is allowed
-    // there: it returns the TV pool newest-first — the "Search TV shows" shortcut
-    // lands on something useful instead of a 400.
+    // tv=1 / anime=1 / cartoons=1 search their pool (same license gate). An empty query is
+    // allowed there: it returns the pool newest-first — the "Search TV shows" shortcut
+    // lands on something useful instead of a 400. At most one may be set.
     const tv = validateFlag(url.searchParams.get("tv"));
-    const q = validateQuery(url.searchParams.get("q"), tv);
+    const anime = validateFlag(url.searchParams.get("anime"));
+    const cartoons = validateFlag(url.searchParams.get("cartoons"));
+    if ([tv, anime, cartoons].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons.");
+    }
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : "films";
+    const serialized = variant !== "films";
+    const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));
 
     // NOTE: must be awaited inside the try — returning the promise directly would let a
@@ -35,7 +43,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     // the production resilience path — KV is not yet bound (the deploy token is Pages-scoped
     // only), so the 24h KV cache is a no-op until that permission lands.
     return await withStaleOnErrorResponse(urlString, 300, 3600, async () => {
-      const cacheKey_ = cacheKey("search", [q, page, tv ? "tv" : "films"]);
+      const cacheKey_ = cacheKey("search", [q, page, variant]);
       const cached = await cacheGet(env.MOVIES_KV, cacheKey_);
       if (cached !== null) {
         try {
@@ -52,10 +60,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         query: q,
         page,
         rows: ROWS,
-        filmsOnly: !tv,
-        variant: tv ? "tv" : "films",
-        // Empty TV query = the pool newest-first (the search shortcut's landing view).
-        sort: tv && !q ? "recent" : undefined,
+        filmsOnly: !serialized,
+        variant,
+        // Empty serialized-pool query = the pool newest-first (the search shortcut's
+        // landing view).
+        sort: serialized && !q ? "recent" : undefined,
       });
       const results = docs.map(normalizeSearchDoc);
       const body = {

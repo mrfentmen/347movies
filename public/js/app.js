@@ -404,6 +404,10 @@
     loadHomeSection("tvclassics", "/api/browse?tv=1&sort=recent&page=1");
     // 1960s TV: the golden-age decade showcase, newest release years first (1969 → 1960).
     loadHomeSection("tv1960s", "/api/browse?tv=1&decade=1960&sort=newest&page=1");
+    // Anime + cartoons: the licensed subsets of archive.org's anime and animationandcartoons
+    // collections (same license gate as TV), newest uploads first.
+    loadHomeSection("anime", "/api/browse?anime=1&sort=recent&page=1");
+    loadHomeSection("cartoons", "/api/browse?cartoons=1&sort=recent&page=1");
     loadHomeSection("recent", "/api/browse?sort=recent&films=1&page=1");
     loadHomeSection("noir", "/api/browse?genre=film-noir&sort=recent&page=1");
     loadHomeSection("silents", "/api/browse?decade=1920&sort=recent&page=1");
@@ -414,18 +418,28 @@
     const params = new URLSearchParams(window.location.search);
     const q = (params.get("q") || "").trim();
     const tv = params.get("tv") === "1";
+    const anime = params.get("anime") === "1";
+    const cartoons = params.get("cartoons") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : null;
+    // Per-pool display vocabulary (label + noun) for the search landing/result copy.
+    const CATALOG_META = {
+      tv: { label: "Classic TV", noun: "show" },
+      anime: { label: "Anime", noun: "title" },
+      cartoons: { label: "Cartoons", noun: "title" },
+    };
+    const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
     const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
 
     const input = $("#search-input");
     if (input) input.value = q;
-    // The header form posts to /search?q=… — keep a TV search on the TV pool.
-    if (tv && input) {
+    // The header form posts to /search?q=… — keep a serialized-pool search on its pool.
+    if (catalog && input) {
       const form = input.closest("form");
-      if (form && !form.querySelector('input[name="tv"]')) {
+      if (form && !form.querySelector(`input[name="${catalog}"]`)) {
         const hidden = document.createElement("input");
         hidden.type = "hidden";
-        hidden.name = "tv";
+        hidden.name = catalog;
         hidden.value = "1";
         form.appendChild(hidden);
       }
@@ -436,15 +450,15 @@
     const nav = $("#pagination");
 
     if (!q) {
-      if (tv) {
-        // The "Search TV shows" shortcut: no query yet — browse the TV pool newest-first.
-        if (head) head.textContent = "Classic TV — newest first";
-        apiFetch(`/api/search?tv=1&page=${page}`)
+      if (catalog) {
+        // The "Search TV shows" shortcut: no query yet — browse the pool newest-first.
+        if (head) head.textContent = `${meta.label} — newest first`;
+        apiFetch(`/api/search?${catalog}=1&page=${page}`)
           .then((data) => {
-            if (count) count.textContent = `${data.total.toLocaleString()} show${data.total === 1 ? "" : "s"} in the classic-TV pool`;
+            if (count) count.textContent = `${data.total.toLocaleString()} ${meta.noun}${data.total === 1 ? "" : "s"} in the ${meta.label.toLowerCase()} pool`;
             if (grid) renderGrid(grid, data.results);
             if (nav) {
-              nav.innerHTML = paginationHtml(data.page, data.pages, (p) => `/search?tv=1&page=${p}`);
+              nav.innerHTML = paginationHtml(data.page, data.pages, (p) => `/search?${catalog}=1&page=${p}`);
             }
           })
           .catch((err) => renderError(grid, err.message));
@@ -457,25 +471,25 @@
     // The #results grid ships with a skeleton grid (see search.html) that reserves the
     // cards' space while this fetch runs, so results pop in without layout shift.
 
-    const tvParam = tv ? "&tv=1" : "";
-    apiFetch(`/api/search?q=${encodeURIComponent(q)}&page=${page}${tvParam}`)
+    const poolParam = catalog ? `&${catalog}=1` : "";
+    apiFetch(`/api/search?q=${encodeURIComponent(q)}&page=${page}${poolParam}`)
       .then((data) => {
-        if (head) head.textContent = tv ? `Classic TV · results for “${q}”` : `Results for “${q}”`;
+        if (head) head.textContent = catalog ? `${meta.label} · results for “${q}”` : `Results for “${q}”`;
         if (count) {
-          count.textContent = `${data.total.toLocaleString()} ${tv ? "show" : "film"}${data.total === 1 ? "" : "s"} found`;
+          count.textContent = `${data.total.toLocaleString()} ${catalog ? meta.noun : "film"}${data.total === 1 ? "" : "s"} found`;
         }
         if (grid) renderGrid(grid, data.results);
         if (data.total === 0 && grid) {
-          grid.innerHTML = `<p class="empty">No free ${tv ? "shows" : "films"} match “${escapeHtml(q)}”. Try another title, actor, or genre, or <a href="${tv ? "/browse?tv=1" : "/browse"}">browse the catalog</a>.</p>`;
+          grid.innerHTML = `<p class="empty">No free ${catalog ? `${meta.noun}s` : "films"} match “${escapeHtml(q)}”. Try another title, actor, or genre, or <a href="${catalog ? `/browse?${catalog}=1` : "/browse"}">browse the catalog</a>.</p>`;
           return;
         }
         if (nav) {
-          nav.innerHTML = paginationHtml(data.page, data.pages, (p) => `/search?q=${encodeURIComponent(q)}&page=${p}${tvParam}`);
+          nav.innerHTML = paginationHtml(data.page, data.pages, (p) => `/search?q=${encodeURIComponent(q)}&page=${p}${poolParam}`);
         }
       })
       .catch((err) => {
         renderError(grid, err.message);
-        if (head) head.textContent = tv ? "Classic TV search" : "Search";
+        if (head) head.textContent = catalog ? `${meta.label} search` : "Search";
       });
   }
 
@@ -698,19 +712,23 @@
       .catch((err) => renderError(grid, err.message));
   }
 
-  /* ---------- TV destination ----------
-     The /tv page (public/tv.html, data-page="tv"): a first-class home for the classic-TV
-     catalog, mirroring the /genre destination. TV episodes ARE the content, so no films=1
-     exclusion here — the newest uploads in the classic_tv pool lead. */
-  function initTV() {
+  /* ---------- serialized destinations (TV / anime / cartoons) ----------
+     The /tv, /anime, /cartoons pages (public/{tv,anime,cartoons}.html, data-page="tv" /
+     "anime" / "cartoons"): first-class homes for the classic-TV, anime, and animation
+     catalogs, mirroring the /genre destination. Episodes ARE the content in these pools,
+     so no films=1 exclusion here — the newest uploads in each pool lead. */
+  function initDestination(flag, pagePath) {
     const rawPage = parseInt(new URLSearchParams(window.location.search).get("page") || "1", 10);
     const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
 
     const grid = $("#results");
-    apiFetch(`/api/browse?tv=1&sort=recent&page=${page}`)
-      .then((data) => renderResults(grid, $("#count"), $("#pagination"), data, (p) => `/tv?page=${p}`))
+    apiFetch(`/api/browse?${flag}=1&sort=recent&page=${page}`)
+      .then((data) => renderResults(grid, $("#count"), $("#pagination"), data, (p) => `${pagePath}?page=${p}`))
       .catch((err) => renderError(grid, err.message));
   }
+  function initTV() { initDestination("tv", "/tv"); }
+  function initAnime() { initDestination("anime", "/anime"); }
+  function initCartoons() { initDestination("cartoons", "/cartoons"); }
 
   /* ---------- browse ---------- */
   const GENRE_LABELS = {
@@ -731,6 +749,10 @@
     const to = params.get("to");
     const q = params.get("q");
     const tv = params.get("tv") === "1";
+    const anime = params.get("anime") === "1";
+    const cartoons = params.get("cartoons") === "1";
+    // Which serialized pool this browse view serves (TV / anime / cartoons), if any.
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -739,7 +761,7 @@
 
     const chips = document.querySelectorAll("#genre-chips .genre-chip");
     for (const chip of chips) {
-      if (chip.getAttribute("href") === `/browse?genre=${genre}` || (tv && (chip.getAttribute("href") === "/browse?tv=1" || chip.getAttribute("href") === "/tv"))) {
+      if (chip.getAttribute("href") === `/browse?genre=${genre}` || (catalog && (chip.getAttribute("href") === `/browse?${catalog}=1` || chip.getAttribute("href") === `/${catalog}`))) {
         chip.classList.add("is-active");
       }
     }
@@ -763,7 +785,7 @@
     // Without this the selects only *display* the current filter — changing them did nothing.
     const applyFilters = () => {
       const parts = [];
-      if (tv) parts.push("tv=1");
+      if (catalog) parts.push(`${catalog}=1`);
       else if (genre) parts.push(`genre=${genre}`);
       if (fromSel && fromSel.value) {
         parts.push(`from=${fromSel.value}`, "to=2020"); // to = latest decade start: XXXXs–2029
@@ -785,7 +807,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = tv ? "Classic TV" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -795,9 +817,8 @@
 
     // films=1 excludes serial-episode uploads (podcasts) so browse presents films, matching
     // the home showcase — a default browse view led by "Episode 18" is a poor first impression.
-    const parts = tv ? [`page=${page}`] : ["films=1", `page=${page}`];
-    if (tv) parts.push("tv=1");
-    else if (genre) parts.push(`genre=${genre}`);
+    const parts = catalog ? [`page=${page}`, `${catalog}=1`] : ["films=1", `page=${page}`];
+    if (!catalog && genre) parts.push(`genre=${genre}`);
     if (from && to) parts.push(`from=${from}`, `to=${to}`);
     else if (decade) parts.push(`decade=${decade}`);
     if (q) parts.push(`q=${q}`);
@@ -882,6 +903,8 @@
   else if (page === "browse") initBrowse();
   else if (page === "genre") initGenre();
   else if (page === "tv") initTV();
+  else if (page === "anime") initAnime();
+  else if (page === "cartoons") initCartoons();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
 })();

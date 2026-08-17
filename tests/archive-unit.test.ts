@@ -65,7 +65,7 @@ test("searchArchive always pins the legal base clause", async () => {
   assert.ok(q.includes("collection:(feature_films OR prelinger OR moviesandfilms)"), "collections in the query");
 });
 
-test("searchArchive selects the legality gate per variant (films union vs classic_tv)", async () => {
+test("searchArchive selects the legality gate per variant (films / tv / anime / cartoons)", async () => {
   const calls: string[] = [];
   const fetchImpl = makeFetch({
     handler: (url) => {
@@ -75,8 +75,12 @@ test("searchArchive selects the legality gate per variant (films union vs classi
   });
   await searchArchive({ page: 1, rows: 24 }, fetchImpl);
   await searchArchive({ page: 1, rows: 24, variant: "tv" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "anime" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "cartoons" }, fetchImpl);
   const filmsQ = qOf(calls[0] as string);
   const tvQ = qOf(calls[1] as string);
+  const animeQ = qOf(calls[2] as string);
+  const cartoonsQ = qOf(calls[3] as string);
   assert.ok(
     filmsQ.includes("collection:(feature_films OR prelinger OR moviesandfilms)"),
     "films variant selects the curated film collections",
@@ -87,6 +91,18 @@ test("searchArchive selects the legality gate per variant (films union vs classi
     "tv gate keeps the license gate and mediatype:movies",
   );
   assert.ok(!tvQ.includes("feature_films"), "tv gate does not include the films collections");
+  assert.ok(animeQ.includes("collection:anime"), "anime variant selects the anime pool");
+  assert.ok(
+    animeQ.includes("licenseurl:https://creativecommons.org*") && animeQ.includes("mediatype:movies"),
+    "anime gate keeps the license gate and mediatype:movies",
+  );
+  assert.ok(!animeQ.includes("feature_films"), "anime gate does not include the films collections");
+  assert.ok(cartoonsQ.includes("collection:animationandcartoons"), "cartoons variant selects the animation pool");
+  assert.ok(
+    cartoonsQ.includes("licenseurl:https://creativecommons.org*") && cartoonsQ.includes("mediatype:movies"),
+    "cartoons gate keeps the license gate and mediatype:movies",
+  );
+  assert.ok(!cartoonsQ.includes("feature_films"), "cartoons gate does not include the films collections");
 });
 
 test("searchArchive adds the films-only clause only when filmsOnly is true", async () => {
