@@ -408,6 +408,10 @@
     // collections (same license gate as TV), newest uploads first.
     loadHomeSection("anime", "/api/browse?anime=1&sort=recent&page=1");
     loadHomeSection("cartoons", "/api/browse?cartoons=1&sort=recent&page=1");
+    // Golden-age showcases: anime 1950s–70s (measured live 2026-08-17: 42 items) and
+    // cartoons 1930s–40s (185 items), newest release years first.
+    loadHomeSection("animegolden", "/api/browse?anime=1&from=1950&to=1970&sort=newest&page=1");
+    loadHomeSection("cartoonsgolden", "/api/browse?cartoons=1&from=1930&to=1940&sort=newest&page=1");
     loadHomeSection("recent", "/api/browse?sort=recent&films=1&page=1");
     loadHomeSection("noir", "/api/browse?genre=film-noir&sort=recent&page=1");
     loadHomeSection("silents", "/api/browse?decade=1920&sort=recent&page=1");
