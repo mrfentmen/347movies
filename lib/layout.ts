@@ -16,6 +16,7 @@ const HEADER = `<header class="site-header">
       <a href="/anime">Anime</a>
       <a href="/cartoons">Cartoons</a>
       <a href="/otr">Radio</a>
+      <a href="/music">Music</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/about">About</a>
     </nav>
@@ -45,6 +46,7 @@ const FOOTER = `<footer class="site-footer">
       <a href="/anime">Anime</a>
       <a href="/cartoons">Cartoons</a>
       <a href="/otr">Radio</a>
+      <a href="/music">Music</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/about#advertise">Advertise</a>
       <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
@@ -105,9 +107,10 @@ export function pageShell(meta: PageMeta, bodyHtml: string, siteUrl: string): st
 <meta name="description" content="${escapeHtml(meta.description)}">
 <link rel="canonical" href="${escapeHtml(canonical)}">
 ${og}
-${robots}${jsonLd}
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css">
+${robots}${jsonLd}  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="alternate" type="application/rss+xml" title="347movies — new additions" href="/api/rss.xml">
+  <link rel="stylesheet" href="/css/style.css">
 <link rel="preconnect" href="https://archive.org">
 ${meta.preloadImage ? `<link rel="preload" as="image" href="${escapeHtml(meta.preloadImage)}" fetchpriority="high">` : ""}
 <link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
@@ -127,7 +130,12 @@ ${FOOTER}
 </html>`;
 }
 
-export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag: string | undefined): string {
+export function renderMoviePage(
+  record: MovieRecord,
+  siteUrl: string,
+  amazonTag: string | undefined,
+  patreonUrl: string | undefined = undefined,
+): string {
   const id = record.identifier;
   const title = record.title || "Untitled";
   const licenseLabel =
@@ -164,6 +172,19 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
   <a class="affiliate-link" href="${escapeHtml(affiliate.url)}" target="_blank" rel="${affiliate.rel}">Rent or buy ${escapeHtml(title)}</a>
 </div>`
     : "";
+
+  // Patreon: a second support rail, rendered only when PATREON_URL is configured (same
+  // config-gated precedent as the affiliate tag — dormant by default, never a placeholder).
+  // https + patreon host only, so a misconfigured binding can never inject markup.
+  const patreonHref = /^https:\/\/(www\.)?patreon\.com\//.test(patreonUrl ?? "") ? (patreonUrl as string) : null;
+  const patreonHtml = patreonHref
+    ? `<a class="support-box" href="${escapeHtml(patreonHref)}" target="_blank" rel="noopener">&#127912; Support the booth on Patreon</a>`
+    : "";
+
+  // More like this: the first subject tag short enough to be a useful related-search phrase
+  // (skip collection-name-ish tags). App.js fetches /api/browse?subject=… client-side.
+  const relatedSubject =
+    record.subjects.find((s) => s.length > 2 && s.length <= 40 && !/\b(feature|silent|short|documentary) films?\b/i.test(s)) ?? "";
 
   // Archive titles often already contain the year ("It (1927)"); avoid doubling it.
   const yearSuffix = record.year && !title.includes(String(record.year)) ? ` (${escapeHtml(String(record.year))})` : "";
@@ -205,16 +226,26 @@ export function renderMoviePage(record: MovieRecord, siteUrl: string, amazonTag:
       <!-- Ad slot: sidebar, reserved for a compliant ad network. Nothing renders here until one is configured (constitution §4, vow 2: ads never interrupt the movie). -->
       <div class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar" role="complementary" aria-label="Advertisement slot">
         <span class="ad-slot__label">Advertisement</span>
-        <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+        <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
       </div>
       <div class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar-2" role="complementary" aria-label="Advertisement slot 2">
         <span class="ad-slot__label">Advertisement</span>
-        <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
+        <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
       </div>
       <a class="support-box" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">☕ Buy me a coffee — keep the booth running</a>
       ${affiliateHtml}
+      ${patreonHtml}
     </aside>
   </div>
+  <!-- More like this: filled client-side from the first usable subject tag (app.js fetches
+       /api/browse?subject=…). Ships hidden until a related row actually renders. -->
+  <section class="section" id="related-section" data-subject="${escapeHtml(relatedSubject)}" hidden>
+    <p class="section-eyebrow">More from the vault</p>
+    <div class="section-head">
+      <h2>More like this</h2>
+    </div>
+    <div class="grid" id="related"></div>
+  </section>
 </div>`;
 
   const description = record.description

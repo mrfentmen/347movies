@@ -75,6 +75,21 @@ export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND media
 export const CARTOONS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:animationandcartoons AND mediatype:movies`;
 
 /**
+ * Music & concert catalog gate: the same license gate over the live-music collections
+ * `GratefulDead` + `etree` (measured live 2026-08-17: 1,455 license-marked recordings —
+ * tapers' audience/soundboard recordings, CC-licensed by the tapers). The mediatype is
+ * `etree` (archive.org's dedicated live-music mediatype — NOT `audio`, verified live:
+ * `mediatype:audio` matches 0 in these collections), so the gate pins that; the detail
+ * page renders the audio player like Old Time Radio (the items carry mp3/ogg files).
+ * Episodes/tracks ARE the content, so the films-only exclusion does not apply.
+ * (The `documentary`/`educationalfilms` collections were probed and REJECTED for this
+ * gate: educationalfilms has only 10 license-marked items of 4,131 — like classic_films,
+ * the PD documentary canon mostly carries no licenseurl, so a gate there would be
+ * dishonest or nearly empty. Prelinger newsreels (52) are already inside the films pool.)
+ */
+export const MUSIC_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:(GratefulDead OR etree) AND mediatype:etree`;
+
+/**
  * Old Time Radio catalog gate: the same license gate over `oldtimeradio`. Measured live
  * 2026-08-17: 1,653 license-marked items (Suspense, The Shadow, Burns & Allen, Fibber
  * McGee…), all mediatype:audio — the collection is pure radio drama/comedy from the
@@ -85,8 +100,8 @@ export const CARTOONS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:animationand
  */
 export const OTR_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:oldtimeradio AND mediatype:audio`;
 
-/** Which curated catalog an index/query serves: films, classic TV, anime, cartoons, or OTR. */
-export type IndexVariant = "films" | "tv" | "anime" | "cartoons" | "otr";
+/** Which curated catalog an index/query serves: films, TV, anime, cartoons, OTR, or music. */
+export type IndexVariant = "films" | "tv" | "anime" | "cartoons" | "otr" | "music";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -103,6 +118,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return CARTOONS_BASE_CLAUSE;
     case "otr":
       return OTR_BASE_CLAUSE;
+    case "music":
+      return MUSIC_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

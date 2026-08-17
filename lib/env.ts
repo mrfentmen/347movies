@@ -21,6 +21,11 @@ export interface Env {
    * names sidebar, sidebar-2, leaderboard, leaderboard-2 are accepted. Empty = disabled.
    */
   AD_SLOT_IDS?: string;
+  /**
+   * Optional Patreon page URL — renders a second support link on movie pages. Ignored
+   * unless it is https on a patreon host (dormant by default, like the affiliate tag).
+   */
+  PATREON_URL?: string;
   /** Public site origin used for canonical/OG URLs. */
   SITE_URL?: string;
   /**

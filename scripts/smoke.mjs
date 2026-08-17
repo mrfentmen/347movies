@@ -40,6 +40,11 @@ const CASES = [
   ["GET", "/sitemap.xml", 200],
   ["GET", "/api/health", 200],
   ["GET", "/api/ad-config", 200],
+  ["GET", "/api/rss.xml", 200],
+  ["GET", "/sw.js", 200],
+  ["GET", "/manifest.webmanifest", 200],
+  ["GET", "/api/browse?music=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?subject=film+noir&sort=newest&page=1", 200],
   ["GET", "/api/search?q=caligari", 200],
   ["GET", "/api/browse?sort=recent&films=1&page=1", 200],
   ["GET", "/api/browse?from=2000&to=2020&sort=recent&films=1&page=1", 200],
@@ -212,7 +217,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -281,6 +286,10 @@ try {
   ok(js.includes("/api/browse?anime=1&sort=recent&page=1"), "JS: Anime home feed wired to the anime pool");
   ok(js.includes("/api/browse?cartoons=1&sort=recent&page=1"), "JS: Cartoons home feed wired to the animation pool");
   ok(js.includes("/api/browse?otr=1&sort=recent&page=1"), "JS: Old Time Radio home feed wired to the audio pool");
+  ok(js.includes("/api/browse?music=1&sort=recent&page=1"), "JS: Music & Concerts home feed wired");
+  ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
+  ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
+  ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
   ok(js.includes("browse the catalog</a>"), "JS: search no-results state offers the next step (browse link, TV-aware)");
   ok(js.includes("Your watchlist is empty"), "JS: empty watchlist invites action (direction copy)");
@@ -346,6 +355,11 @@ try {
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
   ok(home.includes('id="otr"'), "Home: Old Time Radio section present (audio feed)");
   ok(home.includes("/search?otr=1"), "Home: Search radio shortcut present");
+  ok(home.includes('id="music"'), "Home: Music & Concerts section present (audio feed)");
+  ok(home.includes('id="newsreels"'), "Home: Newsreels section present (Prelinger subset)");
+  ok(home.includes('rel="alternate" type="application/rss+xml"'), "Home: RSS feed alternate link present");
+  ok(home.includes('rel="manifest" href="/manifest.webmanifest"'), "Home: PWA manifest linked");
+  ok(home.includes('class="ad-slot__cta"'), "Home: ad slots carry an email inquiry CTA");
   ok(home.includes('href="https://archive.org"'), "Home: noscript fallback points to archive.org (no-JS visitors)");
   const browse = await (await request("GET", `/browse?smoke=${Date.now()}`)).text();
   const search = await (await request("GET", `/search?smoke=${Date.now()}`)).text();
@@ -855,8 +869,8 @@ try {
   const freshLastmods = (freshXml.match(/<lastmod>/g) || []).length;
   ok(freshLocs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS})`);
   // Static paths (/, /about, /privacy, /terms, /browse, /search, /genre, /tv, /anime,
-  // /cartoons, /otr) carry no lastmod; every catalog URL does.
-  ok(freshLastmods >= freshLocs - 11, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  // /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
+  ok(freshLastmods >= freshLocs - 12, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await request("GET", "/sitemap.xml");

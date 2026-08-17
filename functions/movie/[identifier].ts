@@ -37,7 +37,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
     // unblocked.
     const playable = result.record.hasVideo || result.record.hasAudio;
     const html = playable
-      ? renderMoviePage(result.record, siteUrl, env.AMAZON_TAG)
+      ? renderMoviePage(result.record, siteUrl, env.AMAZON_TAG, env.PATREON_URL)
       : renderMovieNoVideo(result.record, siteUrl);
     return new Response(html, {
       status: 200,

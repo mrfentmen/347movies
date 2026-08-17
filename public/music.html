@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0c0d11">
-<title>Cartoons — 347movies</title>
-<meta name="description" content="Classic cartoons, free in the public domain — Looney Tunes, Merrie Melodies, and golden-age animation from the Internet Archive, streamed without interruption on 347movies.">
-<link rel="canonical" href="https://347movies.pages.dev/cartoons">
+<title>Music &amp; Concerts — 347movies</title>
+<meta name="description" content="Live concerts and music, free in the public domain — Grateful Dead, etree audience recordings, and more, streamed as audio without interruption on 347movies.">
+<link rel="canonical" href="https://347movies.pages.dev/music">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="347movies">
-<meta property="og:title" content="Cartoons — 347movies">
-<meta property="og:description" content="Free public domain cartoons: golden-age animation streamed without interruption.">
-<meta property="og:url" content="https://347movies.pages.dev/cartoons">
+<meta property="og:title" content="Music &amp; Concerts — 347movies">
+<meta property="og:description" content="Free public domain music: live concerts and recordings streamed without interruption.">
+<meta property="og:url" content="https://347movies.pages.dev/music">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="preconnect" href="https://archive.org">
@@ -21,7 +21,7 @@
 <link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
 </head>
-<body data-page="cartoons">
+<body data-page="music">
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="container header-inner">
@@ -37,9 +37,9 @@
       <a href="/about">About</a>
     </nav>
     <form class="header-search" action="/search" method="get" role="search">
-      <label class="visually-hidden" for="search-input">Search cartoons</label>
-      <input id="search-input" name="q" type="search" placeholder="Search cartoons…" maxlength="80" autocomplete="off" required>
-      <input type="hidden" name="cartoons" value="1">
+      <label class="visually-hidden" for="search-input">Search music</label>
+      <input id="search-input" name="q" type="search" placeholder="Search music…" maxlength="80" autocomplete="off" required>
+      <input type="hidden" name="music" value="1">
       <button type="submit">Search</button>
     </form>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
@@ -54,18 +54,19 @@
   </div>
 </header>
 <main id="main" tabindex="-1">
-  <!-- The TV hero: the projection beam over the dusk skyline, Limelight title, mono
-       eyebrow — the same display rhythm as the /genre destination. -->
+  <!-- The projection booth presents, on the air: the same display rhythm as the other
+       destination pages, tuned for audio. -->
   <section class="hero">
     <div class="container">
-      <p class="hero-eyebrow">The projection booth presents</p>
-      <h1>Cartoons</h1>
-      <p class="hero-sub">Golden-age animation, free in the public domain — Looney Tunes, Merrie Melodies, and the rest of the classics, streamed embedded from the Internet Archive. No accounts, no paywall, and ads never interrupt the show.</p>
+      <p class="hero-eyebrow">The projection booth presents, live</p>
+      <h1>Music &amp; Concerts</h1>
+      <p class="hero-sub">Live music, free in the public domain — Grateful Dead soundboards, etree audience recordings, and more. Every show streams as audio embedded from the Internet Archive; no accounts, no paywall, and ads never interrupt the music.</p>
       <nav class="genre-chips" aria-label="Genres">
         <a class="genre-chip" href="/tv">Classic TV</a>
         <a class="genre-chip" href="/anime">Anime</a>
-        <a class="genre-chip is-active" href="/cartoons" aria-current="page">Cartoons</a>
-        <a class="genre-chip" href="/browse?cartoons=1&from=1930&to=1940">Golden Age (1930s&ndash;40s)</a>
+        <a class="genre-chip" href="/cartoons">Cartoons</a>
+        <a class="genre-chip" href="/otr">Old Time Radio</a>
+        <a class="genre-chip is-active" href="/music" aria-current="page">Music &amp; Concerts</a>
         <a class="genre-chip" href="/genre">Film Noir</a>
         <a class="genre-chip" href="/browse?genre=western">Western</a>
         <a class="genre-chip" href="/browse?genre=sci-fi">Sci-Fi</a>
@@ -80,10 +81,10 @@
   <div class="container">
     <div class="genre">
       <div class="genre-main">
-        <p class="section-eyebrow">The golden age of animation</p>
+        <p class="section-eyebrow">Live from the archive</p>
         <div class="section-head">
-          <h2>Cartoons, free</h2>
-          <a class="see-all" href="/browse?cartoons=1">See all &rarr;</a>
+          <h2>Music &amp; concerts, free</h2>
+          <a class="see-all" href="/browse?music=1">See all &rarr;</a>
         </div>
         <p class="count" id="count" role="status"></p>
         <!-- Skeleton grid reserves the card space before the JS fetch completes (CLS) —
@@ -113,10 +114,9 @@
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
-          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
         </div>
         <div id="pagination"></div>
-        <noscript><p class="empty">This page loads shows with JavaScript. Enable JavaScript to browse the cartoon catalog — or watch these titles directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+        <noscript><p class="empty">This page loads shows with JavaScript. Enable JavaScript to browse the music catalog — or listen to these series directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
       </div>
       <aside class="genre-side">
         <!-- Ad slot: sidebar, reserved for a compliant ad network. Never over or inside any player. -->
@@ -129,8 +129,8 @@
           <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
         </aside>
         <div class="affiliate-slot">
-          <p class="affiliate-note">The golden age of animation ran long — every title on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the show.</p>
-          <a class="affiliate-link" href="/browse?cartoons=1">Browse every cartoon title &rarr;</a>
+          <p class="affiliate-note">Every show on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the music.</p>
+          <a class="affiliate-link" href="/browse?music=1">Browse every concert &rarr;</a>
         </div>
       </aside>
     </div>
@@ -152,7 +152,7 @@
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
     </nav>
-    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video or audio. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
   </div>
 </footer>
 <script src="/js/app.js" defer></script>

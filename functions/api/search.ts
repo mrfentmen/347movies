@@ -25,10 +25,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const anime = validateFlag(url.searchParams.get("anime"));
     const cartoons = validateFlag(url.searchParams.get("cartoons"));
     const otr = validateFlag(url.searchParams.get("otr"));
-    if ([tv, anime, cartoons, otr].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr.");
+    const music = validateFlag(url.searchParams.get("music"));
+    if ([tv, anime, cartoons, otr, music].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : "films";
     const serialized = variant !== "films";
     const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));
