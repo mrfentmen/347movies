@@ -959,6 +959,27 @@ body[data-page="tv"] .hero {
   min-height: 250px;
 }
 
+/* A filled slot (an ad unit rendered by the client bootstrap) hides the reserved-note
+   chrome and lets the unit own the space. The dashed border becomes a solid hairline so
+   the unit reads as content, not a placeholder. */
+.ad-slot.is-filled {
+  border-style: solid;
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.ad-slot.is-filled .ad-slot__label,
+.ad-slot.is-filled .ad-slot__note {
+  display: none;
+}
+
+.ad-slot.is-filled ins.adsbygoogle {
+  width: 100%;
+  min-height: 90px;
+}
+
 /* ---------- movie detail ---------- */
 .movie {
   display: grid;
