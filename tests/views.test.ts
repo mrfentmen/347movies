@@ -147,3 +147,46 @@ test("uncounted input still returns 204-safe success (recordPageView returns fal
   }
   assert.equal(COUNTED_PATHS.length, 12, "the bounded bucket set stays small and deliberate");
 });
+
+test("the edge Cache API persists counts across isolates and is read back after memory resets", async () => {
+  _resetViewsForTests();
+  // Fake caches.default with URL-keyed match/put storing the body as text and rebuilding a
+  // fresh Response per match — mirroring the real Cache API (a real cached body can be read
+  // repeatedly; a stale consumed stream would be a fake-cache artifact, not a product bug).
+  const store = new Map<string, string>();
+  const fakeCaches = {
+    default: {
+      match: async (request: Request) => {
+        const text = store.get(request.url);
+        return text === undefined ? undefined : new Response(text, { headers: { "Content-Type": "application/json" } });
+      },
+      put: async (request: Request, response: Response) => {
+        store.set(request.url, await response.clone().text());
+      },
+    },
+  };
+  const prev = (globalThis as { caches?: unknown }).caches;
+  (globalThis as { caches?: unknown }).caches = fakeCaches as unknown;
+  try {
+    const env: Env = {}; // no KV — the edge cache is the persistence layer
+    await recordPageView(env, "/");
+    await recordPageView(env, "/browse");
+    await recordPageView(env, "/movie/it-1927");
+
+    // A different isolate: memory is empty (simulated by reset), but the cache still knows.
+    _resetViewsForTests();
+    const stats = await getViewStats(env, 7);
+    assert.equal(stats.total, 3, "counts survive the in-memory reset via the edge cache");
+    assert.deepEqual(stats.byPath, { "/": 1, "/browse": 1, "/movie": 1 });
+
+    // A view reported from this "new isolate" reconciles to the larger of the layers.
+    await recordPageView(env, "/browse");
+    _resetViewsForTests();
+    const stats2 = await getViewStats(env, 7);
+    assert.equal(stats2.byPath["/browse"], 2, "cache RMW carries the increment forward");
+  } finally {
+    if (prev === undefined) delete (globalThis as { caches?: unknown }).caches;
+    else (globalThis as { caches?: unknown }).caches = prev;
+    _resetViewsForTests();
+  }
+});
