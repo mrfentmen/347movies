@@ -52,13 +52,19 @@ const BASE_CLAUSE = `${LEGAL_CLAUSE} AND ${LEGAL_COLLECTIONS} AND mediatype:movi
 export const TV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:classic_tv AND mediatype:movies`;
 
 /**
- * Anime catalog gate: the same license gate over archive.org's `anime` collection. Measured
- * live 2026-08-17: 37,632 movies in the collection, 1,185 carry the license mark — the
- * licensed subset is the pool (the rest are fan uploads of copyrighted shows with dubious
- * self-declared marks; same trust model as classic_tv, which documents the same tradeoff).
- * Episodes ARE the content, so the films-only exclusion does not apply here.
+ * Anime catalog gate: the same license gate over archive.org's `anime` collection, plus a
+ * pre-1975 year cutoff. Measured live 2026-08-17: 37,632 movies in the collection; the
+ * licensed subset is 1,744 — but the vast majority are modern fan uploads of copyrighted
+ * shows with self-declared marks (Keroro Korean dubs, 1080p rips). Year-band breakdown of
+ * the licensed subset: 1975+ = 1,434, year missing = 286, pre-1975 = 24. The strict
+ * pre-1975 cutoff keeps only the genuinely golden-age titles (New 3 Stooges, Golden Bat,
+ * Princess Knight, Batfink…); the year-missing band is NOT included because in the anime
+ * collection missing year ≈ modern upload (Slayers Next, Kamikaze Kaitou Jeanne, Dragon
+ * Ball — sampled live), unlike classic_tv where yearless ≈ old. Every excluded title stays
+ * reachable by direct URL (the detail page still verifies license per-item). Episodes ARE
+ * the content, so the films-only exclusion does not apply here.
  */
-export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND mediatype:movies`;
+export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND mediatype:movies AND year:[* TO 1974]`;
 
 /**
  * Animation/cartoons catalog gate: the same license gate over `animationandcartoons`.
