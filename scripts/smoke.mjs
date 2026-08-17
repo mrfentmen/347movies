@@ -212,7 +212,7 @@ console.log("\nâ€” HTML structure (one h1, skip link, main landmark per page) â€
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -278,7 +278,9 @@ try {
   ok(js.includes('get("sort") || "newest"'), "JS: browse defaults to newest releases sort");
   ok(js.includes("/api/browse?tv=1&sort=recent&page=1"), "JS: Classic TV home feed wired to the TV catalog");
   ok(js.includes("/api/browse?tv=1&decade=1960&sort=newest&page=1"), "JS: 1960s TV showcase wired");
-  ok(js.includes("/api/search?tv=1&page=${page}"), "JS: TV search shortcut wired (empty query = TV pool)");
+  ok(js.includes("/api/browse?anime=1&sort=recent&page=1"), "JS: Anime home feed wired to the anime pool");
+  ok(js.includes("/api/browse?cartoons=1&sort=recent&page=1"), "JS: Cartoons home feed wired to the animation pool");
+  ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
   ok(js.includes("browse the catalog</a>"), "JS: search no-results state offers the next step (browse link, TV-aware)");
   ok(js.includes("Your watchlist is empty"), "JS: empty watchlist invites action (direction copy)");
   ok(js.includes("No films match these filters"), "JS: browse empty-filter view points to the next step");
@@ -795,7 +797,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;

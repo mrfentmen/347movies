@@ -1,4 +1,5 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
+import type { IndexVariant } from "../../lib/archive.ts";
 import { queryCatalog } from "../../lib/catalog-index.ts";
 import { withEdgeCachedResponse } from "../../lib/edge-cache.ts";
 import type { Env } from "../../lib/env.ts";
@@ -20,9 +21,11 @@ import {
 const ROWS = 24;
 
 /**
- * GET /api/browse?genre=&decade=&from=&to=&q=&sort=&page=&films=&tv= — browse + home
- * sections (task T3.2). tv=1 switches to the classic-TV catalog (classic_tv + the same
- * license gate); episodes ARE the content there, so films-only does not apply.
+ * GET /api/browse?genre=&decade=&from=&to=&q=&sort=&page=&films=&tv=&anime=&cartoons= —
+ * browse + home sections (task T3.2). tv=1 switches to the classic-TV catalog, anime=1 to
+ * the anime pool, cartoons=1 to the animation pool (each the same license gate over its
+ * collection); in all three, episodes ARE the content, so films-only does not apply. At
+ * most one of tv/anime/cartoons may be set.
  * from/to is a decade range (decade starts, both required,
  * mutually exclusive with decade) mapped to year bounds — from=2000&to=2020 means years
  * 2000–2029, the "Modern picks" home feed. q is a title-keyword filter (ANY token,
@@ -52,9 +55,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     // Absent films= means the catalog policy default (films-only); "0" opts into everything.
     const filmsParam = url.searchParams.get("films");
     const films = filmsParam === null ? undefined : validateFlag(filmsParam);
-    // tv=1 switches the browse surface to the classic-TV catalog (classic_tv + same license
-    // gate). TV episodes ARE the content, so the films-only policy does not apply there.
+    // tv=1 / anime=1 / cartoons=1 switch the browse surface to the classic-TV, anime, or
+    // animation catalog (each the same license gate over its collection). At most one may be
+    // set. In all three, episodes ARE the content, so the films-only policy does not apply.
     const tv = validateFlag(url.searchParams.get("tv"));
+    const anime = validateFlag(url.searchParams.get("anime"));
+    const cartoons = validateFlag(url.searchParams.get("cartoons"));
+    if ([tv, anime, cartoons].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons.");
+    }
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : "films";
+    const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an
     // un-awaited rejection escapes this catch and becomes a middleware 500 instead of the
@@ -69,8 +80,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
         sort,
         page,
         rows: ROWS,
-        filmsOnly: tv ? false : films,
-        variant: tv ? "tv" : "films",
+        filmsOnly: serialized ? false : films,
+        variant,
       });
 
       const body = {
@@ -84,9 +95,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
         rows: ROWS,
         total,
         pages,
-        // tv=1 responses must not claim the films catalog: the flag identifies which pool
-        // the results came from, and a TV response is not films-only (episodes ARE content).
-        films: tv ? undefined : (films ?? true) || undefined,
+        // tv/anime/cartoons responses must not claim the films catalog: the flag identifies
+        // which pool the results came from, and a serialized response is not films-only
+        // (episodes ARE content).
+        films: serialized ? undefined : (films ?? true) || undefined,
         results,
       };
       return jsonResponse(body, 200, { "Cache-Control": "public, max-age=300" });

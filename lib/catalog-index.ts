@@ -37,6 +37,8 @@ const MAX_CATALOG_URLS = 50000;
 const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   films: "https://347movies.internal/catalog-index-v1",
   tv: "https://347movies.internal/tv-index-v1",
+  anime: "https://347movies.internal/anime-index-v1",
+  cartoons: "https://347movies.internal/cartoons-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -400,8 +402,9 @@ export async function queryCatalog(
   const sort: IndexSort = query.sort ?? "recent";
   const page = query.page ?? 1;
   const rows = query.rows ?? 24;
-  // Films-only is the films catalog's policy default; for TV, episodes ARE the content.
-  const filmsOnly = query.filmsOnly ?? (variant === "tv" ? false : true);
+  // Films-only is the films catalog's policy default; for TV/anime/cartoons, episodes ARE
+  // the content (a serial's installments are the shows you came for).
+  const filmsOnly = query.filmsOnly ?? (variant === "films" ? true : false);
   const filtered = filterIndex(docs, { genreSubject, decadeFrom, decadeTo, keyword, filmsOnly });
   const sorted = sortIndex(filtered, sort);
   const { results, total, pages } = paginateIndex(sorted, page, rows);

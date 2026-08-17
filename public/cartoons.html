@@ -4,30 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0c0d11">
-<title>Film Noir — 347movies</title>
-<meta name="description" content="Shadows, smoke, and moral ambiguity — the hard-boiled classics of the 1940s and 50s, free in the public domain on 347movies.">
-<link rel="canonical" href="https://347movies.pages.dev/genre">
+<title>Cartoons — 347movies</title>
+<meta name="description" content="Classic cartoons, free in the public domain — Looney Tunes, Merrie Melodies, and golden-age animation from the Internet Archive, streamed without interruption on 347movies.">
+<link rel="canonical" href="https://347movies.pages.dev/cartoons">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="347movies">
-<meta property="og:title" content="Film Noir — 347movies">
-<meta property="og:description" content="Free public domain film noir: shadows, smoke, and moral ambiguity, streamed without interruption.">
-<meta property="og:url" content="https://347movies.pages.dev/genre">
+<meta property="og:title" content="Cartoons — 347movies">
+<meta property="og:description" content="Free public domain cartoons: golden-age animation streamed without interruption.">
+<meta property="og:url" content="https://347movies.pages.dev/cartoons">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="preconnect" href="https://archive.org">
-<link rel="preload" as="image" href="/images/06-nyc-brooklyn-sepia-noir.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="/images/07-nyc-lower-manhattan-skyline.jpg" fetchpriority="high">
 <link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
 </head>
-<body data-page="genre">
+<body data-page="cartoons">
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="/"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
     <nav class="site-nav" aria-label="Main">
-      <a href="/browse" aria-current="page">Browse</a>
+      <a href="/browse">Browse</a>
       <a href="/tv">TV</a>
       <a href="/anime">Anime</a>
       <a href="/cartoons">Cartoons</a>
@@ -51,15 +51,18 @@
   </div>
 </header>
 <main id="main" tabindex="-1">
-  <!-- The genre hero: the projection beam spilling from the booth, Limelight genre title,
-       mono eyebrow — the DESIGN.md display rhythm applied to a destination page. -->
+  <!-- The TV hero: the projection beam over the dusk skyline, Limelight title, mono
+       eyebrow — the same display rhythm as the /genre destination. -->
   <section class="hero">
     <div class="container">
       <p class="hero-eyebrow">The projection booth presents</p>
-      <h1>Film Noir</h1>
-      <p class="hero-sub">Shadows, smoke, and moral ambiguity — the hard-boiled classics of the 1940s and 50s, free in the public domain. No accounts, no paywall, and ads never interrupt the film.</p>
+      <h1>Cartoons</h1>
+      <p class="hero-sub">Golden-age animation, free in the public domain — Looney Tunes, Merrie Melodies, and the rest of the classics, streamed embedded from the Internet Archive. No accounts, no paywall, and ads never interrupt the show.</p>
       <nav class="genre-chips" aria-label="Genres">
-        <a class="genre-chip is-active" href="/genre" aria-current="page">Film Noir</a>
+        <a class="genre-chip" href="/tv">Classic TV</a>
+        <a class="genre-chip" href="/anime">Anime</a>
+        <a class="genre-chip is-active" href="/cartoons" aria-current="page">Cartoons</a>
+        <a class="genre-chip" href="/genre">Film Noir</a>
         <a class="genre-chip" href="/browse?genre=western">Western</a>
         <a class="genre-chip" href="/browse?genre=sci-fi">Sci-Fi</a>
         <a class="genre-chip" href="/browse?genre=horror">Horror</a>
@@ -73,15 +76,16 @@
   <div class="container">
     <div class="genre">
       <div class="genre-main">
-        <p class="section-eyebrow">Crime &amp; shadows</p>
+        <p class="section-eyebrow">The golden age of animation</p>
         <div class="section-head">
-          <h2>The noir canon, free</h2>
-          <a class="see-all" href="/browse?genre=film-noir">See all &rarr;</a>
+          <h2>Cartoons, free</h2>
+          <a class="see-all" href="/browse?cartoons=1">See all &rarr;</a>
         </div>
         <p class="count" id="count" role="status"></p>
         <!-- Skeleton grid reserves the card space before the JS fetch completes (CLS) —
-             the same pattern as browse/search. -->
+             the same pattern as genre/browse/search. -->
         <div class="grid" id="results" aria-busy="true">
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
@@ -108,7 +112,7 @@
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
         </div>
         <div id="pagination"></div>
-        <noscript><p class="empty">This page loads films with JavaScript. Enable JavaScript to browse the genre — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+        <noscript><p class="empty">This page loads shows with JavaScript. Enable JavaScript to browse the cartoon catalog — or watch these titles directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
       </div>
       <aside class="genre-side">
         <!-- Ad slot: sidebar, reserved for a compliant ad network. Never over or inside any player. -->
@@ -121,8 +125,8 @@
           <span class="ad-slot__note">This reserved slot is never placed over or inside a film. To advertise, contact <a href="mailto:contactae2000@gmail.com">contactae2000@gmail.com</a>.</span>
         </aside>
         <div class="affiliate-slot">
-          <p class="affiliate-note">The noir canon is wide and the catalog is bigger — every film on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the movie.</p>
-          <a class="affiliate-link" href="/browse?genre=film-noir">Browse every film noir &rarr;</a>
+          <p class="affiliate-note">The golden age of animation ran long — every title on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the show.</p>
+          <a class="affiliate-link" href="/browse?cartoons=1">Browse every cartoon title &rarr;</a>
         </div>
       </aside>
     </div>
