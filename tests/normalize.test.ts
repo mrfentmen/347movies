@@ -93,20 +93,34 @@ test("hasVideoFiles detects video derivatives", () => {
 
 test("videoFilesFrom sorts h.264 first then largest, dedupes, and encodes paths", () => {
   const files = [
-    { name: "big.mkv", format: "Matroska", size: "900000000" },
-    { name: "small.mp4", format: "h.264", size: 1000000 },
-    { name: "small.mp4", format: "h.264", size: 1000000 },
+    { name: "big.mkv", format: "Matroska", size: "900000000", width: 928, height: 720 },
+    { name: "small.mp4", format: "h.264", size: 1048576, width: 400, height: 300 },
+    { name: "small.mp4", format: "h.264", size: 1048576, width: 400, height: 300 },
     { name: "a.txt", format: "Text" },
-    { name: "film (1927).mp4", format: "h.264", size: "2000000" },
+    { name: "film (1927).mp4", format: "h.264", size: "2000000", width: 618, height: 480 },
+    { name: "tiny.webm", format: "WebM", width: 160, height: 120 },
   ];
   const out = videoFilesFrom(files);
-  assert.equal(out.length, 3, "dedupes + drops non-video");
+  assert.equal(out.length, 4, "dedupes + drops non-video");
   assert.equal(out[0]?.name, "film (1927).mp4", "largest h.264 first");
   assert.equal(out[0]?.path, "film%20(1927).mp4", "exact URL-encoding");
   assert.equal(out[1]?.name, "small.mp4", "second h.264");
   assert.equal(out[2]?.name, "big.mkv", "non-h.264 last");
-  assert.equal(out[0]?.label, "HD · h.264 · 2 MB");
-  assert.equal(out[2]?.label, "Original · MKV · 858 MB");
+  assert.equal(out[0]?.label, "480p · HD · h.264 · 2 MB", "resolution shorthand + size");
+  assert.equal(out[1]?.label, "240p · HD · h.264 · 1 MB", "height 300 maps to the 240p tier");
+  assert.equal(out[2]?.label, "720p · Original · MKV · 858 MB");
+  assert.equal(out[3]?.label, "160×120 · WebM", "sub-240 frame size falls back to WxH, no size shown");
+  assert.equal(out[0]?.width, 618, "width extracted from metadata");
+  assert.equal(out[0]?.height, 480, "height extracted from metadata");
+});
+
+test("videoFilesFrom keeps label useful when resolution or size is missing", () => {
+  const out = videoFilesFrom([{ name: "a.mp4", format: "h.264" }]);
+  assert.equal(out[0]?.label, "HD · h.264", "no size, no resolution → format only");
+  const withSize = videoFilesFrom([{ name: "b.mp4", format: "h.264", size: 500000000 }]);
+  assert.equal(withSize[0]?.label, "HD · h.264 · 477 MB", "size without resolution still shows");
+  assert.equal(withSize[0]?.width, null);
+  assert.equal(withSize[0]?.height, null);
 });
 
 test("videoFilesFrom returns [] for non-arrays", () => {

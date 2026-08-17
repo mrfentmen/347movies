@@ -48,7 +48,7 @@ const FOOTER = `<footer class="site-footer">
       <a href="/otr">Radio</a>
       <a href="/music">Music</a>
       <a href="/watchlist">Watchlist</a>
-      <a href="/about#advertise">Advertise</a>
+      <a href="/advertise">Advertise</a>
       <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
@@ -197,6 +197,7 @@ export function renderMoviePage(
   const kind = record.hasVideo ? "video" : "audio";
   const verb = kind === "audio" ? "Listen to" : "Watch";
   const player = `<div class="player-wrap">
+  <div id="resume-chip" class="resume-chip" hidden></div>
   <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="${verb} ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
 </div>`;
 

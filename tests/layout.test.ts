@@ -39,15 +39,15 @@ test("renderMoviePage renders quality + server playback controls when derivative
   const withFiles = {
     ...RECORD,
     videoFiles: [
-      { name: "It  (1927).mp4", format: "h.264", label: "HD · h.264 · 447 MB", size: 468262609, path: "It%20%20%281927%29.mp4" },
-      { name: "It  (1927).mkv", format: "Matroska", label: "Original · MKV · 877 MB", size: 919691750, path: "It%20%20%281927%29.mkv" },
+      { name: "It  (1927).mp4", format: "h.264", label: "480p · HD · h.264 · 447 MB", size: 468262609, width: 618, height: 480, path: "It%20%20%281927%29.mp4" },
+      { name: "It  (1927).mkv", format: "Matroska", label: "720p · Original · MKV · 877 MB", size: 919691750, width: 928, height: 720, path: "It%20%20%281927%29.mkv" },
     ],
     server: "dn600208.us.archive.org",
     dir: "/0/items/it-1927",
   };
   const html = renderMoviePage(withFiles, "https://347movies.pages.dev", undefined);
   assert.ok(html.includes('id="player-quality"'), "quality select present");
-  assert.ok(html.includes("HD · h.264"), "quality label shown");
+  assert.ok(html.includes("480p · HD · h.264"), "quality label shows resolution + size");
   assert.ok(html.includes('id="player-server"'), "server select present");
   assert.ok(html.includes('value="mirror"'), "mirror option present");
   assert.ok(html.includes('data-mirror="https://dn600208.us.archive.org/0/items/it-1927"'), "mirror base present");
@@ -58,7 +58,7 @@ test("renderMoviePage omits quality select for a single derivative and mirror wi
   const single = {
     ...RECORD,
     videoFiles: [
-      { name: "It  (1927).mp4", format: "h.264", label: "HD · h.264 · 447 MB", size: 468262609, path: "It%20%20%281927%29.mp4" },
+      { name: "It  (1927).mp4", format: "h.264", label: "480p · HD · h.264 · 447 MB", size: 468262609, width: 618, height: 480, path: "It%20%20%281927%29.mp4" },
     ],
   };
   const html = renderMoviePage(single, "https://347movies.pages.dev", undefined);

@@ -498,7 +498,7 @@
     const frac = entry.dur > 0 && entry.pos < entry.dur ? Math.min(1, entry.pos / entry.dur) : 0;
     const pct = Math.round(frac * 100);
     const item = { id: entry.id, title, year: "", thumb: entry.thumb };
-    return `<div class="card card--resume"><a class="card__main" href="/movie/${encodeURIComponent(entry.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span><span class="card__year">${escapeHtml(formatRemaining(entry))}</span></span></a>${watchBtnHtml(item, watchHas(entry.id))}<span class="card__progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% watched"><span class="card__progress-bar" style="width:${pct}%"></span></span></div>`;
+    return `<div class="card card--resume" data-progress-id="${escapeHtml(entry.id)}"><a class="card__main" href="/movie/${encodeURIComponent(entry.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span><span class="card__year">${escapeHtml(formatRemaining(entry))}</span></span></a>${watchBtnHtml(item, watchHas(entry.id))}<button type="button" class="resume-dismiss" data-dismiss-id="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(title)} from continue watching">\u00d7</button><span class="card__progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% watched"><span class="card__progress-bar" style="width:${pct}%"></span></span></div>`;
   }
 
   function renderContinueWatching() {
@@ -513,6 +513,24 @@
     grid.innerHTML = entries.map(resumeCard).join("");
     bindPosterFallbacks(grid);
     bindWatchButtons(grid);
+    // Dismiss button: removes the entry from continue watching without finishing it.
+    grid.addEventListener("click", (e) => {
+      const btn = e.target.closest(".resume-dismiss");
+      if (!btn) return;
+      const id = btn.getAttribute("data-dismiss-id");
+      if (!id) return;
+      progressRemove(id);
+      const card = btn.closest(".card--resume");
+      if (card) {
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          card.remove();
+          // Hide the entire section if no cards remain.
+          if (!grid.querySelector(".card--resume")) section.hidden = true;
+        }, 200);
+      }
+    });
     section.hidden = false;
   }
 
@@ -637,9 +655,10 @@
   }
 
   /* ---------- movie detail ---------- */
-  /* Quality + server playback controls. The embed iframe is the default and no-JS path; a
-     non-embed choice swaps in a native <video> streaming archive.org's direct file (CSP
-     media-src already allows archive.org — no bytes are ever hosted or proxied). */
+  /* Quality + server playback controls. The native <video> is the default for tracking
+     and quality control; the embed iframe remains the no-JS fallback and the embed option
+     in the server selector. A visitor can always switch back to the embed if they prefer. */
+  const SERVER_PREF_KEY = "347movies.serverPref";
   function initPlaybackTools() {
     const tools = $(".player-tools");
     if (!tools) return;
@@ -662,9 +681,9 @@
       return `${base}/${path}`;
     }
 
-    // Continue-watching tracking: only the native <video> path is observable (the embed
-    // iframe is cross-origin and keeps its own time). Saved positions drive both the
-    // resume seek below and the home-page "Continue watching" row.
+    // Continue-watching tracking: the native <video> path is observable (the embed iframe
+    // is cross-origin and keeps its own time). Saved positions drive both the resume seek
+    // below and the home-page "Continue watching" row.
     let activeVideo = null;
     const savedEntry = progressGet(identifier);
 
@@ -731,7 +750,20 @@
       track(el);
     }
 
-    server.addEventListener("change", apply);
+    // Restore the visitor's preferred server, then default to native for new visitors.
+    let pref = "cdn";
+    try {
+      const stored = localStorage.getItem(SERVER_PREF_KEY);
+      if (stored === "embed" || stored === "cdn" || stored === "mirror") pref = stored;
+    } catch { /* storage unavailable */ }
+    // Only apply if mirror is actually available; fall back to cdn otherwise.
+    if (pref === "mirror" && !mirrorBase) pref = "cdn";
+    server.value = pref;
+
+    server.addEventListener("change", () => {
+      try { localStorage.setItem(SERVER_PREF_KEY, server.value); } catch { /* ignore */ }
+      apply();
+    });
     if (quality) {
       quality.addEventListener("change", () => {
         // A quality choice only matters in direct mode; from embed, flip to direct so it
@@ -740,10 +772,36 @@
         apply();
       });
     }
+
+    // Apply the saved preference on load so tracking and quality control work immediately.
+    apply();
+  }
+
+  function formatPosition(seconds) {
+    if (!seconds || seconds <= 0) return "0:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const pad = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
   }
 
   function initMovie() {
     initPlaybackTools();
+    // Resume chip: show when there's a saved position for this identifier.
+    const resumeChip = $("#resume-chip");
+    if (resumeChip) {
+      const identifier = resumeChip.closest(".player-wrap")?.querySelector(".player-tools")?.getAttribute("data-identifier") || "";
+      const entry = identifier ? progressGet(identifier) : null;
+      if (entry && entry.pos > 30 && (entry.dur === 0 || entry.pos < entry.dur - 30)) {
+        resumeChip.textContent = `Resume at ${formatPosition(entry.pos)}`;
+        resumeChip.hidden = false;
+        resumeChip.addEventListener("click", () => {
+          // The native player auto-seeks on loadedmetadata; this click just scrolls to it.
+          resumeChip.closest(".player-wrap")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      }
+    }
     const poster = $(".movie-poster");
     if (poster && poster.parentElement) bindPosterFallbacks(poster.parentElement);
     // More like this: fetch /api/browse?subject=<first usable subject tag> and render a
@@ -1111,6 +1169,38 @@
     else if (mq && typeof mq.addListener === "function") mq.addListener(onSystemChange);
   }
 
+  /* ---------- advertise (static landing page) ----------
+     The contact form is a mailto composer: submit builds a prefilled email to the
+     advertised business contact and opens the visitor's mail client. Nothing is sent to
+     this site (vow 5 — the only thing that leaves the browser is the email the visitor
+     chooses to send). Navigating location.href to mailto: is a top-level navigation, not
+     a form submission, so it is unaffected by the CSP form-action 'self' directive. */
+  function initAdvertise() {
+    const form = $("#advertise-form");
+    if (!form) return;
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const val = (sel) => {
+        const el = $(sel);
+        return el && typeof el.value === "string" ? el.value.trim() : "";
+      };
+      const name = val("#ad-name");
+      const company = val("#ad-company");
+      const email = val("#ad-email");
+      const placement = val("#ad-placement");
+      const message = val("#ad-message");
+      const parts = [];
+      if (name) parts.push(`Name: ${name}`);
+      if (company) parts.push(`Company: ${company}`);
+      if (email) parts.push(`Email: ${email}`);
+      if (placement) parts.push(`Placement: ${placement}`);
+      const body = (parts.length > 0 ? `${parts.join("\n")}\n\n` : "") + (message || "");
+      const subject = placement ? `Advertising inquiry — ${placement}` : "Advertising inquiry";
+      window.location.href =
+        `mailto:contactae2000@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    });
+  }
+
   /* ---------- boot ---------- */
   initTheme();
   const page = document.body ? document.body.dataset.page : "";
@@ -1125,6 +1215,7 @@
   else if (page === "music") initMusic();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
+  else if (page === "advertise") initAdvertise();
 
   // PWA: register the service worker (shell cache only — video, API, and third-party
   // hosts are never touched by it). Failure is silent: the site is fully functional

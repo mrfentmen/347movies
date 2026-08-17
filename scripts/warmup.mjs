@@ -40,6 +40,7 @@ const PAGES = [
   "/about",
   "/privacy",
   "/terms",
+  "/advertise",
   "/sitemap.xml",
   "/api/health",
   "/api/ad-config",
