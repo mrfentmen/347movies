@@ -1169,15 +1169,72 @@
     else if (mq && typeof mq.addListener === "function") mq.addListener(onSystemChange);
   }
 
+  /* ---------- privacy-respecting page-view reporting (vow 5 / constitution §5: an
+     aggregate number, never tied to a person) ----------
+     One fire-and-forget POST per page load to our own /api/view, carrying only the
+     pathname. No cookies (credentials: "omit"), no identifiers, no referrer, no retries,
+     no user-visible errors — a blocked or failed report changes nothing for the visitor.
+     The server counts the validated path into a daily bucket; the aggregate feeds the
+     advertise page's audience stats (public/advertise.html #view-stats). */
+  function reportPageView() {
+    try {
+      const path = window.location.pathname || "/";
+      fetch(`/api/view?path=${encodeURIComponent(path)}`, {
+        method: "POST",
+        credentials: "omit",
+        keepalive: true,
+      }).catch(() => {
+        /* never surface: the site works identically without the report */
+      });
+    } catch {
+      /* never surface */
+    }
+  }
+
   /* ---------- advertise (static landing page) ----------
      The contact form is a mailto composer: submit builds a prefilled email to the
      advertised business contact and opens the visitor's mail client. Nothing is sent to
      this site (vow 5 — the only thing that leaves the browser is the email the visitor
      chooses to send). Navigating location.href to mailto: is a top-level navigation, not
-     a form submission, so it is unaffected by the CSP form-action 'self' directive. */
+     a form submission, so it is unaffected by the CSP form-action 'self' directive. The
+     audience-stats line (#view-stats) is filled from our own /api/views aggregate counter
+     — approximate, cookie-free, never tied to a person. */
   function initAdvertise() {
     const form = $("#advertise-form");
     if (!form) return;
+
+    // Audience stats: render the aggregate counter's last-7-days into the placeholder.
+    const statsEl = $("#view-stats");
+    if (statsEl) {
+      fetch("/api/views?days=7", { headers: { Accept: "application/json" } })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data || typeof data.total !== "number" || !Array.isArray(data.days)) return;
+          if (data.total <= 0) {
+            statsEl.textContent =
+              "View counting started with this deploy — the first numbers appear after a few days of traffic.";
+            return;
+          }
+          const today = data.days.length > 0 ? data.days[data.days.length - 1].views : 0;
+          let text = `≈${data.total.toLocaleString()} page views in the last 7 days`;
+          if (today > 0) text += ` · ${today.toLocaleString()} today`;
+          text += " — approximate, cookie-free, never tied to a person";
+          const top = Object.entries(data.byPath || {})
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+          if (top.length > 0) {
+            const topText = top
+              .map(([path, count]) => `${path === "/movie" ? "/movie/*" : path} ${Number(count).toLocaleString()}`)
+              .join(" · ");
+            statsEl.textContent = `${text}. Most-watched: ${topText}.`;
+          } else {
+            statsEl.textContent = `${text}.`;
+          }
+        })
+        .catch(() => {
+          /* keep the static placeholder — stats are a progressive enhancement */
+        });
+    }
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const val = (sel) => {
@@ -1203,6 +1260,7 @@
 
   /* ---------- boot ---------- */
   initTheme();
+  reportPageView();
   const page = document.body ? document.body.dataset.page : "";
   if (page === "home") initHome();
   else if (page === "search") initSearch();

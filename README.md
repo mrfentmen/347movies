@@ -52,8 +52,11 @@ This project is governed by non-negotiable rules:
    - `metadata/<identifier>` — the full record.
 3. Results are normalized into the typed movie record (specs.md §4), cached in KV (24h),
    and returned as JSON (or rendered into HTML for the film page).
-4. No user data is stored, ever. The only write path is KV cache population keyed by
-   validated inputs.
+4. No user data is stored, ever. The only write paths are KV cache population keyed by
+   validated inputs and the privacy-respecting page-view counter — one aggregate daily
+   number per validated page bucket, no IPs/identifiers/cookies, disclosed on the privacy
+   page, consumed by the advertise page's audience stats (`POST /api/view`, `GET
+   /api/views`).
 
 ### Legality policy
 

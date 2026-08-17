@@ -41,6 +41,9 @@ const CASES = [
   ["GET", "/sitemap.xml", 200],
   ["GET", "/api/health", 200],
   ["GET", "/api/ad-config", 200],
+  ["GET", "/api/views?days=7", 200],
+  ["POST", "/api/view?path=%2F", 204],
+  ["POST", "/api/view", 204],
   ["GET", "/api/rss.xml", 200],
   ["GET", "/sw.js", 200],
   ["GET", "/manifest.webmanifest", 200],
@@ -862,6 +865,27 @@ try {
   failures += 1;
   checks += 1;
   console.error(`FAIL  ad loader dormant — ${err.message}`);
+}
+
+console.log("\n— page-view counter (vow 5: aggregate, cookie-free) —");
+try {
+  const stats = await (await request("GET", "/api/views?days=7")).json();
+  ok(stats && stats.enabled === true && Array.isArray(stats.days) && typeof stats.total === "number",
+    `views API returns the aggregate shape (days=${Array.isArray(stats.days) ? stats.days.length : "?"}, total=${typeof stats.total === "number" ? stats.total : "?"})`);
+  ok(stats && typeof stats.byPath === "object" && stats.byPath !== null, "views API returns the per-path breakdown");
+  const clamped = await (await request("GET", "/api/views?days=999")).json();
+  ok(clamped && clamped.windowDays === 30, `days is clamped (999 → ${clamped && clamped.windowDays})`);
+  const advertise = await (await request("GET", `/advertise?smoke=${Date.now()}`)).text();
+  ok(advertise.includes('id="view-stats"'), "advertise page carries the view-stats placeholder");
+  const privacy = await (await request("GET", `/privacy?smoke=${Date.now()}`)).text();
+  ok(privacy.includes("The page-view counter"), "privacy page discloses the counter (constitution §5)");
+  const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
+  ok(appJs.includes("reportPageView") && appJs.includes("/api/view"), "app.js wires the one-fire-and-forget report");
+  ok(appJs.includes('credentials: "omit"'), "app.js reports without cookies");
+} catch (err) {
+  failures += 1;
+  checks += 1;
+  console.error(`FAIL  page-view counter — ${err.message}`);
 }
 
 console.log("\n— sitemap —");

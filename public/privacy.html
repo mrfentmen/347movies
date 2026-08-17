@@ -59,10 +59,10 @@
   <h2>What we do not do</h2>
   <ul>
     <li>We do not create accounts, ask for emails, or require sign-in to watch anything.</li>
-    <li>We do not set our own cookies, run analytics, or embed tracking scripts.</li>
+    <li>We do not set our own cookies, run third-party analytics, or embed tracking scripts. The only numbers this site keeps are the aggregate page-view counts described below — never tied to you.</li>
     <li>We do not fingerprint browsers or devices.</li>
     <li>We do not sell, rent, or share personal data — we have none to share.</li>
-    <li>We do not store viewing history. Our only server-side storage is a cache of <em>public catalog metadata</em> (titles, descriptions, thumbnails) in Cloudflare KV, keyed by validated search terms and archive.org identifiers — never by you.</li>
+    <li>We do not store viewing history. Our only server-side storage is a cache of <em>public catalog metadata</em> (titles, descriptions, thumbnails) in Cloudflare KV, keyed by validated search terms and archive.org identifiers — never by you — plus the aggregate page-view counts described below.</li>
   </ul>
 
   <h2>What happens when you use the site</h2>
@@ -70,6 +70,10 @@
   <p>The <a href="/watchlist">watchlist</a> is an optional convenience: films you save are stored only in your browser's local storage on your own device. It is never sent to us, never stored on any server, and you can clear it at any time with the “Clear watchlist” button or by clearing your browser's site data. An <em>Export</em> button downloads your list as a file you own; an <em>Import</em> button restores a previously exported file. Both run entirely in your browser — no data leaves your device either way.</p>
   <p>Films play through the Internet Archive's embedded player. When you press play, archive.org's player, cookies, and privacy practices apply — the same as visiting archive.org directly.</p>
   <p>Affiliate links go to third-party retailers (such as Amazon); the retailer's privacy policy applies after you click.</p>
+
+  <h2>The page-view counter</h2>
+  <p>The <a href="/advertise">advertise page</a> shows approximate traffic numbers, and they come from a deliberately minimal first-party counter. Each page load reports its path to our own <code>/api/view</code>; the server adds one to an aggregate daily bucket — nothing more. We store no IP address, no browser or device details, no account, and no identifier; we set no cookie for it and read none; and the count can never be traced back to you.</p>
+  <p>Counts are approximate by design: a view is a JavaScript-enabled page load (no-JS visitors and bots that don't run the page's script aren't counted), the numbers live in memory with an optional edge cache and reset whenever we redeploy, and the client report is a single fire-and-forget request with no retries. The aggregate totals — never any individual's activity — are what the advertise page displays. We never sell or share the numbers, and we can't use them to identify anyone.</p>
 
   <h2>Advertising — the standing disclosure</h2>
   <p>This site may carry ads. They appear <strong>only</strong> in clearly marked sidebar and
@@ -92,7 +96,7 @@
 
   <h2>Changes</h2>
   <p>If this policy ever changes, this page will change first, with a dated entry. We will never start collecting data silently.</p>
-  <p>Last updated: August 15, 2026.</p>
+  <p>Last updated: August 17, 2026.</p>
 </main>
 <footer class="site-footer">
   <div class="container footer-inner">

@@ -52,7 +52,7 @@ The movie player is an iframe to the Internet Archive embed (`https://archive.or
    normalized into a typed record and rendered as SSR HTML with the archive.org player embed.
 6. Results are normalized into a typed movie record, edge-cached, and returned.
 
-No user data is stored. No accounts exist. The only write paths are cache population, keyed by safe, validated inputs.
+No user data is stored. No accounts exist. The only write paths are cache population, keyed by safe, validated inputs, and aggregate daily page-view counts (validated path buckets only — no IPs, identifiers, cookies, or user agents; disclosed on the privacy page and consumed by the advertise page).
 
 ## 4. Movie record
 
