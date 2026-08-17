@@ -96,6 +96,7 @@ test("searchArchive selects the legality gate per variant (films / tv / anime / 
     animeQ.includes("licenseurl:https://creativecommons.org*") && animeQ.includes("mediatype:movies"),
     "anime gate keeps the license gate and mediatype:movies",
   );
+  assert.ok(animeQ.includes("year:[* TO 1974]"), "anime gate restricts to pre-1975 titles (modern fan uploads excluded)");
   assert.ok(!animeQ.includes("feature_films"), "anime gate does not include the films collections");
   assert.ok(cartoonsQ.includes("collection:animationandcartoons"), "cartoons variant selects the animation pool");
   assert.ok(
