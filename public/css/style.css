@@ -1084,6 +1084,64 @@ body[data-page="tv"] .hero {
   background: #000;
 }
 
+/* Resume chip: sits above the player, shows saved position. */
+.resume-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, transform 0.2s;
+}
+.resume-chip:hover {
+  background: rgba(0, 0, 0, 0.95);
+  transform: scale(1.03);
+}
+.resume-chip:active {
+  transform: scale(0.98);
+}
+
+/* Dismiss button on continue-watching cards. */
+.resume-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 5;
+}
+.card--resume:hover .resume-dismiss,
+.resume-dismiss:focus-visible {
+  opacity: 1;
+}
+.resume-dismiss:hover {
+  background: rgba(220, 50, 50, 0.9);
+}
+.card--resume {
+  position: relative;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
 /* Playback controls (quality + server) — the projector's controls under the screen. */
 .player-tools {
   display: flex;
@@ -1441,6 +1499,112 @@ body[data-page="tv"] .hero {
 
 .prose ul {
   padding-left: 20px;
+}
+
+/* ---------- advertise page (rate card + inquiry form) ----------
+   The rate card reads as film-slate data (Plex Mono headers, hairline borders, muted
+   zebra rows) with the price in the amber accent; the inquiry form mirrors the site's
+   other controls (surface fills, 8px radius, accent focus ring, pill submit). */
+.rate-card {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 8px;
+  font-size: 0.9rem;
+}
+
+.rate-card th,
+.rate-card td {
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rate-card thead th {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.rate-card tbody tr:nth-child(even) {
+  background: var(--surface);
+}
+
+.rate-card td:last-child {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.rate-card-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 8px 0 0;
+}
+
+.advertise-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.advertise-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.advertise-form label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.advertise-form input,
+.advertise-form select,
+.advertise-form textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.advertise-form input:focus,
+.advertise-form select:focus,
+.advertise-form textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.advertise-form__submit {
+  align-self: flex-start;
+  background: var(--accent);
+  border: 0;
+  color: var(--accent-ink);
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-height: 24px;
+}
+
+.advertise-form__note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0;
 }
 
 /* ---------- 404 ---------- */

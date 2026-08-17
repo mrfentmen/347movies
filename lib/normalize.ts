@@ -17,9 +17,13 @@ export interface Thumbnails {
 export interface VideoFile {
   name: string;
   format: string;
-  /** Human label for the quality selector, e.g. "HD · h.264 · 447 MB". */
+  /** Human label for the quality selector, e.g. "720p · HD · h.264 · 877 MB". */
   label: string;
   size: number | null;
+  /** Video height in pixels (from archive.org file metadata) — drives the resolution part of the label. */
+  height: number | null;
+  /** Video width in pixels (from archive.org file metadata). */
+  width: number | null;
   /** URL-encoded path segment for the direct download URL (name, exactly encoded). */
   path: string;
 }
@@ -242,6 +246,39 @@ function formatBytes(bytes: number): string {
   return `${bytes} B`;
 }
 
+/** Height tiers for the standard resolution shorthand ("1080p", "720p", …). */
+const RESOLUTION_TIERS: Array<[number, string]> = [
+  [2160, "4K"],
+  [1440, "1440p"],
+  [1080, "1080p"],
+  [720, "720p"],
+  [576, "576p"],
+  [480, "480p"],
+  [360, "360p"],
+  [240, "240p"],
+];
+
+/**
+ * Human resolution for the quality selector: a standard shorthand when the height matches a
+ * common tier ("720p"), otherwise the exact frame size ("928×720"). Null when unknown.
+ */
+function resolutionLabel(width: number | null, height: number | null): string | null {
+  if (!width || !height) return null;
+  for (const [tier, name] of RESOLUTION_TIERS) {
+    if (height >= tier) return name;
+  }
+  return `${width}×${height}`;
+}
+
+/** Parse a number or numeric string to a positive int (archive.org file metadata). */
+function toPositiveInt(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }
+  if (typeof value === "string" && /^\d+$/.test(value)) return parseInt(value, 10);
+  return null;
+}
+
 /**
  * Extract the playable video derivatives from an item's file list, for the movie page's
  * quality selector. Sorted h.264 first (best browser compatibility — it is archive.org's
@@ -265,8 +302,13 @@ export function videoFilesFrom(files: unknown): VideoFile[] {
         : typeof sizeRaw === "string" && /^\d+$/.test(sizeRaw)
           ? parseInt(sizeRaw, 10)
           : null;
-    const label = size != null ? `${videoFormatLabel(format)} · ${formatBytes(size)}` : videoFormatLabel(format);
-    out.push({ name, format, label, size, path: encodeURIComponent(name) });
+    const width = toPositiveInt(rec["width"]);
+    const height = toPositiveInt(rec["height"]);
+    const res = resolutionLabel(width, height);
+    const base = videoFormatLabel(format);
+    const sizePart = size != null ? ` · ${formatBytes(size)}` : "";
+    const label = res ? `${res} · ${base}${sizePart}` : `${base}${sizePart}`;
+    out.push({ name, format, label, size, width, height, path: encodeURIComponent(name) });
   }
   out.sort((a, b) => {
     const ah = a.format.toLowerCase().includes("h.264") ? 0 : 1;

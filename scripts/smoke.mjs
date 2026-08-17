@@ -36,6 +36,7 @@ const CASES = [
   ["GET", "/about", 200],
   ["GET", "/privacy", 200],
   ["GET", "/terms", 200],
+  ["GET", "/advertise", 200],
   ["GET", "/robots.txt", 200],
   ["GET", "/sitemap.xml", 200],
   ["GET", "/api/health", 200],
@@ -199,6 +200,11 @@ try {
   ok(freshHtml.includes("contactae2000@gmail.com"), "Organization carries the advertised contact email");
   const privacy = await (await request("GET", `/privacy?smoke=${Date.now()}`)).text();
   ok(privacy.includes("Advertising — the standing disclosure"), "privacy page carries the ad-network disclosure (constitution §5)");
+  const advertise = await (await request("GET", `/advertise?smoke=${Date.now()}`)).text();
+  ok(advertise.includes('id="advertise-form"'), "advertise page carries the inquiry form");
+  ok(advertise.includes("rate-card") && advertise.includes("Starting rate"), "advertise page carries the rate card");
+  ok(advertise.includes("contactae2000@gmail.com"), "advertise page carries the business contact email");
+  ok(!advertise.includes('href="/about#advertise"'), "advertise page footer links to /advertise itself (no stale anchor)");
   const canonical = await request("GET", "/about");
   const canonicalHtml = await canonical.text();
   checks += 1;
@@ -217,7 +223,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -412,7 +418,7 @@ try {
   const queriedIds = [
     ...new Set([...js.matchAll(/(?:\$\("#|getElementById\("|querySelector(?:All)?\("#)([A-Za-z0-9_-]+)"\)/g)].map((m) => m[1])),
   ];
-  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/genre", "/tv", "/movie/it-1927"];
+  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/movie/it-1927"];
   const presentIds = new Set();
   const dupReports = [];
   for (const path of idScanPages) {
@@ -514,7 +520,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/genre", "/tv", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -868,9 +874,9 @@ try {
   const freshLocs = (freshXml.match(/<loc>/g) || []).length;
   const freshLastmods = (freshXml.match(/<lastmod>/g) || []).length;
   ok(freshLocs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS})`);
-  // Static paths (/, /about, /privacy, /terms, /browse, /search, /genre, /tv, /anime,
-  // /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
-  ok(freshLastmods >= freshLocs - 12, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
+  // /anime, /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
+  ok(freshLastmods >= freshLocs - 13, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await request("GET", "/sitemap.xml");
