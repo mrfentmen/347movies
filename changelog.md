@@ -4,6 +4,42 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-17 — Privacy-respecting page-view counter (vow 5 / constitution §5)
+
+- **What it is:** the advertise page's audience stats now include a real traffic number — an
+  aggregate page-view counter that stores one thing per day per page bucket: a count.
+  `POST /api/view` (one fire-and-forget report per page load, pathname only) increments a
+  bounded daily bucket; `GET /api/views?days=N` (1–30, default 7) serves the totals to the
+  advertise page's `#view-stats` line ("≈N page views in the last 7 days · M today —
+  approximate, cookie-free, never tied to a person", plus a most-watched top-3).
+- **Privacy posture (the point of the feature):** no cookies (`credentials: "omit"`), no
+  identifiers, no IPs, no user agents, no raw paths stored — a view is a validated pathname
+  mapped onto a fixed 12-bucket set (`/movie/*` collapses to one bucket, so the store can
+  never grow with the catalog); privacy pages (/about /privacy /terms) are deliberately not
+  counted; the client report is fire-and-forget with zero retries and no user-visible errors.
+  Constitution §5 explicitly permits privacy-respecting analytics when disclosed — the
+  privacy page now carries a "The page-view counter" disclosure naming every one of these
+  guarantees, and the "no analytics" bullet was amended to "no third-party analytics".
+- **Storage:** in-isolate memory Map (exact per-isolate, resets on redeploy) + optional
+  `MOVIES_KV` persistence (read-modify-write; a lost race is an acceptable approximate
+  error) — reads reconcile by taking the larger of the two, so a KV-only isolate's count is
+  never lost and a double-write is never counted twice. Counts are honestly framed as
+  approximate (JS-enabled page loads only; bots without the bundle aren't counted).
+- **Security:** the report path is whitelist-bucketed and length-capped before any write
+  (traversal/junk input is silently dropped, still 204); the endpoint returns an empty 204
+  (leaks nothing, amplifies nothing); the per-IP middleware rate limiter bounds flooding to
+  the same 60/min window as every API route; `no-store` on both endpoints.
+- **Wiring:** `functions/api/view.ts` + `functions/api/views.ts`, `lib/views.ts`, client
+  `reportPageView()` at boot + `initAdvertise` stats fill, advertise page bullet, privacy
+  page disclosure, specs.md/README write-path claims amended, `tests/views.test.ts`
+  (10 unit tests: bucket validation incl. traversal/junk, daily window math, 1–30 clamp,
+  KV persistence, memory/KV reconciliation both directions), smoke +10 guards (POST 204s,
+  views shape, clamp, `#view-stats`, privacy disclosure, app.js wiring + cookie-omit).
+- **Verified:** typecheck clean, **170/170 tests**, dev smoke **296/296**, browser
+  verification (report fires once per load with pathname only; a reported view lands in the
+  aggregate 3→4; advertise page renders the live line + top pages; zero console errors;
+  /privacy reports but is never counted). Deploy #79 = the PR merge.
+
 ## 2026-08-16 — Operational hardening: git-bound deploys, rollback runbook, token hygiene, single-flight index build, browser battery in CI (PR #3)
 
 - **Deploy gates (`scripts/deploy.ts`).** The deploy is now git-bound: it REFUSES a dirty
