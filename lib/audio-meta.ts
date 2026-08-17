@@ -21,7 +21,15 @@ const CACHE_BASE = "https://347movies.internal/audio-meta/v1/";
 /** 24h per-identifier cache TTL. */
 const CACHE_TTL_SECONDS = 24 * 60 * 60;
 /** Parallel metadata fetches per enrichment batch — bounded so a cold page stays quick. */
-const MAX_CONCURRENT = 6;
+const MAX_CONCURRENT = 12;
+/**
+ * Wall-clock deadline for one enrichment pass. archive.org metadata can be slow (observed
+ * 7.5s+ per item when the fleet is degraded), so 24 cold fetches would hold a page for
+ * 45s+. The deadline stops launching new fetches once it passes — whatever completed gets
+ * attached (and cached per identifier), the rest stay null and self-heal on a later load
+ * as the per-identifier cache warms. Never turns a page load into a hang.
+ */
+const ENRICH_DEADLINE_MS = 20000;
 
 export interface AudioCardMeta {
   /** Number of playable episodes/tracks (.mp3 derivatives), or null when unknown. */
@@ -115,9 +123,11 @@ export async function enrichAudioCardMeta(
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
   if (records.length === 0) return;
+  const deadline = Date.now() + ENRICH_DEADLINE_MS;
   let index = 0;
   const workers = Array.from({ length: Math.min(MAX_CONCURRENT, records.length) }, async () => {
     while (true) {
+      if (Date.now() > deadline) return; // bound the total pass; leftover cards stay null
       const i = index;
       index += 1;
       const record = records[i];
