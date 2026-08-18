@@ -43,6 +43,10 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   cartoons: "https://347movies.internal/cartoons-index-v1",
   otr: "https://347movies.internal/otr-index-v1",
   music: "https://347movies.internal/music-index-v1",
+  documentaries: "https://347movies.internal/documentaries-index-v1",
+  sports: "https://347movies.internal/sports-index-v1",
+  shorts: "https://347movies.internal/shorts-index-v1",
+  silents: "https://347movies.internal/silents-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */

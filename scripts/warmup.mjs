@@ -49,6 +49,17 @@ const PAGES = [
   "/api/browse?q=dubbed+subtitled+kung+shaolin+wong&films=1&sort=recent&page=1",
   "/api/browse?tv=1&sort=recent&page=1",
   "/api/browse?tv=1&decade=1960&sort=newest&page=1",
+  "/documentaries",
+  "/sports",
+  "/shorts",
+  "/silents",
+  // Warming page 1 of each new video pool pre-builds its catalog index (one archive.org
+  // fetch per pool) so the first real visitor to the home sections or pool pages never
+  // pays the cold-index build on the request path.
+  "/api/browse?documentaries=1&sort=recent&page=1",
+  "/api/browse?sports=1&sort=recent&page=1",
+  "/api/browse?shorts=1&sort=recent&page=1",
+  "/api/browse?silents=1&sort=recent&page=1",
 ];
 
 // OTR/music browse warms the audio-card enrichment (per-identifier metadata): without it,

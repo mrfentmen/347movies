@@ -24,27 +24,46 @@
     });
   }
 
+  /* Transient-failure resilience: the home page (and other grids) fire several /api
+     requests at once; on a cold colocation they share a handful of heavy index builds
+     that can outlive Cloudflare's per-request budget, aborting the connection (fetch
+     throws → status 0). A short backoff lets the in-flight build finish (it is
+     single-flighted in lib/catalog-index.ts) so the retry lands on the now-warm response
+     instead of surfacing an error. Only status 0 (network) and upstream 5xx retry; 4xx —
+     including 429 — are deterministic or rate-limited and must not be hammered. */
   async function apiFetch(path) {
-    let res;
-    try {
-      res = await fetch(path, { headers: { Accept: "application/json" } });
-    } catch {
-      throw Object.assign(new Error("We couldn't reach the film catalog. Check your connection and try again."), { status: 0 });
-    }
-    if (!res.ok) {
-      let message = "Something went wrong loading films. Please try again.";
+    for (let attempt = 0; ; attempt++) {
+      let res;
       try {
-        const body = await res.json();
-        if (body && typeof body.message === "string") message = body.message;
+        res = await fetch(path, { headers: { Accept: "application/json" } });
       } catch {
-        /* keep the default message */
+        const err = Object.assign(new Error("We couldn't reach the film catalog. Check your connection and try again."), { status: 0 });
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw err;
       }
-      if (res.status === 429) {
-        message = "Too many requests — please wait a moment and try again.";
+      if (!res.ok) {
+        let message = "Something went wrong loading films. Please try again.";
+        try {
+          const body = await res.json();
+          if (body && typeof body.message === "string") message = body.message;
+        } catch {
+          /* keep the default message */
+        }
+        if (res.status === 429) {
+          message = "Too many requests — please wait a moment and try again.";
+        }
+        const err = Object.assign(new Error(message), { status: res.status });
+        if (attempt < 2 && res.status >= 500 && res.status < 600) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw err;
       }
-      throw Object.assign(new Error(message), { status: res.status });
+      return res.json();
     }
-    return res.json();
   }
 
   /* ---------- ad loader (Decision 001, T4.3, enabled per T4.5: fail-closed, dormant
@@ -582,6 +601,12 @@
     loadHomeSection("recent", "/api/browse?sort=recent&films=1&page=1");
     loadHomeSection("noir", "/api/browse?genre=film-noir&sort=recent&page=1");
     loadHomeSection("silents", "/api/browse?decade=1920&sort=recent&page=1");
+    // The four 2026-08-18 pools: documentaries/learning, sports, shorts, and the
+    // dedicated silent_films collection (newest uploads first, like the other pools).
+    loadHomeSection("documentaries", "/api/browse?documentaries=1&sort=recent&page=1");
+    loadHomeSection("sports", "/api/browse?sports=1&sort=recent&page=1");
+    loadHomeSection("shorts", "/api/browse?shorts=1&sort=recent&page=1");
+    loadHomeSection("silentfilms", "/api/browse?silents=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -593,7 +618,11 @@
     const cartoons = params.get("cartoons") === "1";
     const otr = params.get("otr") === "1";
     const music = params.get("music") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : null;
+    const documentaries = params.get("documentaries") === "1";
+    const sports = params.get("sports") === "1";
+    const shorts = params.get("shorts") === "1";
+    const silents = params.get("silents") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -601,6 +630,10 @@
       cartoons: { label: "Cartoons", noun: "title" },
       otr: { label: "Old Time Radio", noun: "series" },
       music: { label: "Music & Concerts", noun: "recording" },
+      documentaries: { label: "Documentaries", noun: "film" },
+      sports: { label: "Sports", noun: "film" },
+      shorts: { label: "Shorts", noun: "short" },
+      silents: { label: "Silent films", noun: "film" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -1015,6 +1048,10 @@
   function initCartoons() { initDestination("cartoons", "/cartoons"); }
   function initOTR() { initDestination("otr", "/otr"); }
   function initMusic() { initDestination("music", "/music"); }
+  function initDocumentaries() { initDestination("documentaries", "/documentaries"); }
+  function initSports() { initDestination("sports", "/sports"); }
+  function initShorts() { initDestination("shorts", "/shorts"); }
+  function initSilents() { initDestination("silents", "/silents"); }
 
   /* ---------- browse ---------- */
   const GENRE_LABELS = {
@@ -1039,8 +1076,12 @@
     const cartoons = params.get("cartoons") === "1";
     const otr = params.get("otr") === "1";
     const music = params.get("music") === "1";
-    // Which serialized pool this browse view serves (TV / anime / cartoons / OTR / music).
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : null;
+    const documentaries = params.get("documentaries") === "1";
+    const sports = params.get("sports") === "1";
+    const shorts = params.get("shorts") === "1";
+    const silents = params.get("silents") === "1";
+    // Which serialized pool this browse view serves.
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1095,7 +1136,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1285,6 +1326,10 @@
   else if (page === "cartoons") initCartoons();
   else if (page === "otr") initOTR();
   else if (page === "music") initMusic();
+  else if (page === "documentaries") initDocumentaries();
+  else if (page === "sports") initSports();
+  else if (page === "shorts") initShorts();
+  else if (page === "silents") initSilents();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
   else if (page === "advertise") initAdvertise();

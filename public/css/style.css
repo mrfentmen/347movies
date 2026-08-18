@@ -289,6 +289,68 @@ button {
   color: var(--text);
 }
 
+/* "Collections" groups the ten catalog pools so the header stays a three-item nav
+   (Collections · Watchlist · About) as the catalog grows. A native <details> provides the
+   disclosure for free — click/tap to open, Enter/Space on the summary toggles it, and the
+   summary is focusable — with no inline JS, so the strict CSP (script-src 'self') holds. */
+.nav-collections {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-collections summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px; /* WCAG 2.5.8 target size */
+}
+
+.nav-collections summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-collections summary::after {
+  content: "▾";
+  font-size: 0.72em;
+  color: var(--muted);
+}
+
+.nav-collections summary:hover,
+.nav-collections[open] summary {
+  color: var(--text);
+}
+
+.nav-collections__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  z-index: 30;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.nav-collections__menu a {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 6px;
+  min-height: 24px; /* WCAG 2.5.8 target size */
+}
+
+.nav-collections__menu a:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
 .header-search {
   margin-left: auto;
   display: flex;

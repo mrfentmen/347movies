@@ -156,7 +156,7 @@ async function cacheWrite(identifier: string, meta: AudioCardMeta): Promise<void
  * Enrich a list of card records for the audio pools: attach `episodeCount` and `seriesTag`
  * to each record, fetched per identifier (edge-cached 24h) with a bounded concurrency cap
  * and a wall-clock deadline. Best-effort: a failure leaves the fields null and never rejects.
- * Any non-audio variant (films/tv/anime/cartoons) is a no-op.
+ * Any non-audio variant (films, tv, anime, cartoons, documentaries, sports, shorts, silents) is a no-op.
  */
 export async function enrichAudioCardMeta(
   records: Array<Pick<MovieRecord, "identifier" | "title"> & Partial<Pick<MovieRecord, "episodeCount" | "seriesTag">>>,
