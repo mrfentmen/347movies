@@ -70,11 +70,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         sort: serialized && !q ? "recent" : undefined,
       });
       const results = docs.map(normalizeSearchDoc);
-      // Audio pools: cards show an episode count + series tag from per-item metadata
-      // (edge-cached 24h — lib/audio-meta.ts), matching the browse path.
-      if (variant === "otr" || variant === "music") {
-        await enrichAudioCardMeta(results, variant);
-      }
+      // Audio pools (otr/music) get an episode count + series tag from per-item metadata
+      // (edge-cached 24h); non-audio variants are a no-op inside. lib/audio-meta.ts.
+      await enrichAudioCardMeta(results, variant);
       const body = {
         query: q,
         page,

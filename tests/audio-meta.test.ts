@@ -1,12 +1,16 @@
 /**
  * UNIT tests for the audio-card enrichment (lib/audio-meta.ts): episode/track counting
- * from the metadata files array and series-tag derivation. Mocked fetch — fast and
- * deterministic; the edge cache is a no-op under Node (edgeCacheMatch returns null), so
- * these tests exercise the pure derivation paths plus the fetch-through enrichment loop.
+ * from the metadata files array, series-tag derivation, and the fetch-through enrichment
+ * loop (including the non-audio no-op). Mocked fetch — fast and deterministic; the edge
+ * cache is a no-op under Node (edgeCacheMatch returns null), so these tests exercise the
+ * pure derivation paths plus the fetch-through enrichment loop.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { enrichAudioCardMeta, episodeCountFromFiles, seriesTagFromMeta } from "../lib/audio-meta.ts";
+
+/** The minimal record shape the enrichment accepts (identifier + title). */
+type CardRecord = { identifier: string; title: string; episodeCount?: number | null; seriesTag?: string | null };
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -37,6 +41,17 @@ test("episodeCountFromFiles counts VBR MP3s and skips _64kb duplicates + non-aud
 
 test("episodeCountFromFiles counts a single-episode item as 1", () => {
   assert.equal(episodeCountFromFiles([{ name: "TheThirdMan13-06-07.mp3", format: "VBR MP3" }, { name: "TheThirdMan13-06-07.ogg", format: "Ogg Vorbis" }]), 1);
+});
+
+test("episodeCountFromFiles falls back to ogg derivatives when an item has no mp3s", () => {
+  const oggOnly = [
+    { name: "show_ep01.ogg", format: "Ogg Vorbis" },
+    { name: "show_ep01.png", format: "PNG" },
+    { name: "show_ep02.ogg", format: "Ogg Vorbis" },
+    { name: "show_archive.torrent", format: "Archive BitTorrent" },
+  ];
+  assert.equal(episodeCountFromFiles(oggOnly), 2);
+  assert.equal(episodeCountFromFiles([{ name: "video_only.mp4", format: "h.264" }]), null, "video-only item: no chip");
 });
 
 test("seriesTagFromMeta: OTR prefers the series field", () => {
@@ -76,7 +91,7 @@ test("enrichAudioCardMeta fetches per item and attaches episodeCount + seriesTag
     return jsonResponse({ metadata: {}, files: [] });
   };
 
-  const otrRecords: Array<{ identifier: string; title: string; episodeCount?: number | null; seriesTag?: string | null }> = [
+  const otrRecords: CardRecord[] = [
     { identifier: "suspense-series", title: "Suspense - Single Episodes" },
     { identifier: "third-man", title: "The Third Man" },
   ];
@@ -87,7 +102,7 @@ test("enrichAudioCardMeta fetches per item and attaches episodeCount + seriesTag
   assert.equal(otrRecords[1]?.episodeCount, 1);
   assert.equal(otrRecords[1]?.seriesTag, null, "no separator -> no series tag");
 
-  const musicRecords: Array<{ identifier: string; title: string; episodeCount?: number | null; seriesTag?: string | null }> = [
+  const musicRecords: CardRecord[] = [
     { identifier: "david-gans", title: "Live Show" },
   ];
   await enrichAudioCardMeta(musicRecords, "music", fetchImpl);
@@ -97,14 +112,58 @@ test("enrichAudioCardMeta fetches per item and attaches episodeCount + seriesTag
   assert.equal(calls.length, 3, "one metadata fetch per identifier");
 });
 
+test("enrichAudioCardMeta is a no-op for non-audio variants (no fetches, fields stay null)", async () => {
+  const calls: string[] = [];
+  const fetchImpl = async (input: Parameters<typeof fetch>[0]): Promise<Response> => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    calls.push(url);
+    return jsonResponse({ metadata: { title: "A Film" }, files: [] });
+  };
+  const records: CardRecord[] = [
+    { identifier: "some-film", title: "A Film" },
+    { identifier: "some-tv-show", title: "A TV Show" },
+  ];
+  for (const variant of ["films", "tv", "anime", "cartoons"] as const) {
+    await enrichAudioCardMeta(records, variant, fetchImpl);
+  }
+  assert.equal(calls.length, 0, "non-audio variants never touch archive.org");
+  assert.equal(records[0]?.episodeCount, undefined, "fields untouched for non-audio variants");
+  assert.equal(records[1]?.seriesTag, undefined);
+});
+
 test("enrichAudioCardMeta survives an upstream failure (best-effort, never rejects)", async () => {
   const fetchImpl = async (): Promise<Response> => {
     throw new Error("upstream down");
   };
-  const records: Array<{ identifier: string; title: string; episodeCount?: number | null; seriesTag?: string | null }> = [
+  const records: CardRecord[] = [
     { identifier: "whatever", title: "Whatever" },
   ];
   await enrichAudioCardMeta(records, "otr", fetchImpl);
   assert.equal(records[0]?.episodeCount, null);
   assert.equal(records[0]?.seriesTag, null);
+});
+
+test("enrichAudioCardMeta is bounded by the deadline even when fetches run past it (the pass races the deadline)", async () => {
+  // A straggler that settles at ~400ms. A 404 (never retried, per fetchWithRetry) keeps it
+  // fast: without the pass-level race, Promise.all would hold the caller for the full
+  // 400ms; the race must return at ~deadlineMs (100ms) instead. The straggler settles
+  // quickly enough that its internal timers are cleared — no leaked handles slow the suite.
+  const fetchImpl = async (): Promise<Response> => {
+    await new Promise((r) => setTimeout(r, 400));
+    return jsonResponse({}, 404);
+  };
+  const records: CardRecord[] = [
+    { identifier: "slow-1", title: "Slow 1" },
+    { identifier: "slow-2", title: "Slow 2" },
+  ];
+  const started = Date.now();
+  await enrichAudioCardMeta(records, "otr", fetchImpl, 100);
+  const elapsed = Date.now() - started;
+  // 100ms deadline, 400ms stragglers: a bounded pass returns <300ms; an unbounded one
+  // (waiting for the straggler + retry) would take ~1s.
+  assert.ok(elapsed < 300, `enrichment returned after ${elapsed}ms — the deadline did not bound the pass`);
+  // In-flight fetches were abandoned, so nothing was attached; fields stay explicitly null.
+  assert.equal(records[0]?.episodeCount, null);
+  assert.equal(records[0]?.seriesTag, null);
+  assert.equal(records[1]?.episodeCount, null);
 });

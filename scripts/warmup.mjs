@@ -49,10 +49,26 @@ const PAGES = [
   "/api/browse?q=dubbed+subtitled+kung+shaolin+wong&films=1&sort=recent&page=1",
   "/api/browse?tv=1&sort=recent&page=1",
   "/api/browse?tv=1&decade=1960&sort=newest&page=1",
+];
+
+// OTR/music browse warms the audio-card enrichment (per-identifier metadata): without it,
+// the first visitor to a cold page pays the per-item fetch cost (measured 14.2s on a
+// degraded archive.org day). Pre-fill the first AUDIO_DEPTH pages of each pool — the home
+// sections, /otr and /music, and the realistic first few screens of browsing. Fail-soft
+// like everything else here: a slow pool just warms fewer pages.
+const AUDIO_DEPTH = 5;
+const AUDIO_PAGES = [];
+for (let page = 1; page <= AUDIO_DEPTH; page++) {
+  AUDIO_PAGES.push(`/api/browse?otr=1&sort=recent&page=${page}`, `/api/browse?music=1&sort=recent&page=${page}`);
+}
+
+const SEARCH_PAGES = [
   "/api/search?q=twilight+zone&tv=1&page=1",
   "/api/search?q=noir&films=1&page=1",
   "/api/search?q=caligari&films=1&page=1",
 ];
+
+PAGES.push(...AUDIO_PAGES, ...SEARCH_PAGES);
 
 async function warm(path) {
   const controller = new AbortController();
