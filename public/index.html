@@ -31,12 +31,21 @@
   <div class="container header-inner">
     <a class="brand" href="/" aria-current="page"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
     <nav class="site-nav" aria-label="Main">
-      <a href="/browse">Browse</a>
-      <a href="/tv">TV</a>
-      <a href="/anime">Anime</a>
-      <a href="/cartoons">Cartoons</a>
-      <a href="/otr">Radio</a>
-      <a href="/music">Music</a>
+      <details class="nav-collections">
+        <summary>Collections</summary>
+        <div class="nav-collections__menu">
+          <a href="/browse">Browse</a>
+          <a href="/tv">TV</a>
+          <a href="/anime">Anime</a>
+          <a href="/cartoons">Cartoons</a>
+          <a href="/otr">Radio</a>
+          <a href="/music">Music</a>
+          <a href="/documentaries">Documentaries</a>
+          <a href="/sports">Sports</a>
+          <a href="/shorts">Shorts</a>
+          <a href="/silents">Silents</a>
+        </div>
+      </details>
       <a href="/watchlist">Watchlist</a>
       <a href="/about">About</a>
     </nav>
@@ -243,6 +252,38 @@
       </div>
       <div class="grid" id="silents"><p class="empty">Loading films&hellip;</p></div>
     </section>
+    <section class="section">
+      <p class="section-eyebrow">Learning &amp; local history</p>
+      <div class="section-head">
+        <h2>Documentaries, free</h2>
+        <a class="see-all" href="/documentaries">See all &rarr;</a>
+      </div>
+      <div class="grid" id="documentaries"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">From the archive</p>
+      <div class="section-head">
+        <h2>Sports, free</h2>
+        <a class="see-all" href="/sports">See all &rarr;</a>
+      </div>
+      <div class="grid" id="sports"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">One reel, no filler</p>
+      <div class="section-head">
+        <h2>Shorts, free</h2>
+        <a class="see-all" href="/shorts">See all &rarr;</a>
+      </div>
+      <div class="grid" id="shorts"><p class="empty">Loading films&hellip;</p></div>
+    </section>
+    <section class="section">
+      <p class="section-eyebrow">The silent film library</p>
+      <div class="section-head">
+        <h2>Silent films, free</h2>
+        <a class="see-all" href="/silents">See all &rarr;</a>
+      </div>
+      <div class="grid" id="silentfilms"><p class="empty">Loading films&hellip;</p></div>
+    </section>
     <noscript><p class="empty">This page loads films with JavaScript. Enable JavaScript to browse the catalog — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
   </div>
 </main>
@@ -256,6 +297,10 @@
       <a href="/cartoons">Cartoons</a>
       <a href="/otr">Radio</a>
       <a href="/music">Music</a>
+      <a href="/documentaries">Documentaries</a>
+      <a href="/sports">Sports</a>
+      <a href="/shorts">Shorts</a>
+      <a href="/silents">Silents</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/advertise">Advertise</a>
       <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>

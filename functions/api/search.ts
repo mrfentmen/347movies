@@ -27,10 +27,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const cartoons = validateFlag(url.searchParams.get("cartoons"));
     const otr = validateFlag(url.searchParams.get("otr"));
     const music = validateFlag(url.searchParams.get("music"));
-    if ([tv, anime, cartoons, otr, music].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music.");
+    const documentaries = validateFlag(url.searchParams.get("documentaries"));
+    const sports = validateFlag(url.searchParams.get("sports"));
+    const shorts = validateFlag(url.searchParams.get("shorts"));
+    const silents = validateFlag(url.searchParams.get("silents"));
+    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : "films";
     const serialized = variant !== "films";
     const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));

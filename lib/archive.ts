@@ -100,8 +100,36 @@ export const MUSIC_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:(GratefulDead O
  */
 export const OTR_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:oldtimeradio AND mediatype:audio`;
 
-/** Which curated catalog an index/query serves: films, TV, anime, cartoons, OTR, or music. */
-export type IndexVariant = "films" | "tv" | "anime" | "cartoons" | "otr" | "music";
+/**
+ * Documentaries & learning catalog gate: the same license gate over `culturalandacademicfilms`
+ * (measured live 2026-08-18: 8,417 license-marked of 71,763). Mostly 1980+ local-history and
+ * community uploads (historical-society interviews, choral concerts) — the honest label is
+ * "learning & local history", not the classic documentary canon (which, like classic_films,
+ * mostly carries no licenseurl mark). Episodes/items ARE the content, so no films-only exclusion.
+ */
+export const DOCUMENTARIES_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:culturalandacademicfilms AND mediatype:movies`;
+
+/** Sports catalog gate (measured live 2026-08-18: 3,625 license-marked of 9,953). */
+export const SPORTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:sports AND mediatype:movies`;
+
+/** Short films catalog gate (measured live 2026-08-18: 1,858 license-marked of 3,139). */
+export const SHORTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:short_films AND mediatype:movies`;
+
+/** Silent films catalog gate (measured live 2026-08-18: 729 license-marked of 3,525). */
+export const SILENTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:silent_films AND mediatype:movies`;
+
+/** Which curated catalog an index/query serves. */
+export type IndexVariant =
+  | "films"
+  | "tv"
+  | "anime"
+  | "cartoons"
+  | "otr"
+  | "music"
+  | "documentaries"
+  | "sports"
+  | "shorts"
+  | "silents";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -120,6 +148,14 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return OTR_BASE_CLAUSE;
     case "music":
       return MUSIC_BASE_CLAUSE;
+    case "documentaries":
+      return DOCUMENTARIES_BASE_CLAUSE;
+    case "sports":
+      return SPORTS_BASE_CLAUSE;
+    case "shorts":
+      return SHORTS_BASE_CLAUSE;
+    case "silents":
+      return SILENTS_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }
