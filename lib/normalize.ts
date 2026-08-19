@@ -425,6 +425,7 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   // pins `collection:avgeeks`; avgeeks items also sit in `ephemera`, so the specific mapping
   // must come BEFORE the films union (an avgeeks item in a films collection stays ephemera).
   [["avgeeks"], "ephemera"],
+  [["nasa"], "space"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

@@ -63,6 +63,7 @@ export const COUNTED_PATHS = [
   "/audiobooks",
   "/records",
   "/ephemera",
+  "/space",
   "/collections",
   "/advertise",
   "/movie",

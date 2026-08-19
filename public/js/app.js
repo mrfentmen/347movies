@@ -617,6 +617,8 @@
     loadHomeSection("records", "/api/browse?records=1&sort=recent&page=1");
     // 2026-08-19: ephemeral films (AV Geeks archive of sponsored/educational shorts).
     loadHomeSection("ephemera", "/api/browse?ephemera=1&sort=recent&page=1");
+    // 2026-08-19: space & NASA (NASA's own public-domain space footage).
+    loadHomeSection("space", "/api/browse?space=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -638,7 +640,8 @@
     const audiobooks = params.get("audiobooks") === "1";
     const records = params.get("records") === "1";
     const ephemera = params.get("ephemera") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : null;
+    const space = params.get("space") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -656,6 +659,7 @@
       audiobooks: { label: "Audiobooks", noun: "book" },
       records: { label: "Vintage Records", noun: "record" },
       ephemera: { label: "Ephemeral Films", noun: "film" },
+      space: { label: "Space & NASA", noun: "film" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -1105,6 +1109,7 @@
   function initAudiobooks() { initDestination("audiobooks", "/audiobooks"); }
   function initRecords() { initDestination("records", "/records"); }
   function initEphemera() { initDestination("ephemera", "/ephemera"); }
+  function initSpace() { initDestination("space", "/space"); }
 
   /* ---------- collections hub ----------
      The /collections page (public/collections.html, data-page="collections"): ten pool
@@ -1163,8 +1168,9 @@
     const audiobooks = params.get("audiobooks") === "1";
     const records = params.get("records") === "1";
     const ephemera = params.get("ephemera") === "1";
+    const space = params.get("space") === "1";
     // Which serialized pool this browse view serves.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1219,7 +1225,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1419,6 +1425,7 @@
   else if (page === "audiobooks") initAudiobooks();
   else if (page === "records") initRecords();
   else if (page === "ephemera") initEphemera();
+  else if (page === "space") initSpace();
   else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();

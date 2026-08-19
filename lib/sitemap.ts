@@ -36,6 +36,7 @@ export const SITEMAP_POOLS: IndexVariant[] = [
   "audiobooks",
   "records",
   "ephemera",
+  "space",
 ];
 
 /** Static pages that live in their own sub-sitemap (no lastmod — they're evergreen). */
@@ -63,6 +64,7 @@ export const STATIC_PATHS = [
   "/audiobooks",
   "/records",
   "/ephemera",
+  "/space",
   "/collections",
 ];
 

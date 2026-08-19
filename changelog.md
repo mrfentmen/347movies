@@ -4,6 +4,29 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-19 — Space & NASA pool — the second institutional-license research win
+
+- **New pool: Space & NASA (`/space`).** The institutional-probe round 2 found `nasa`, the
+  archive.org collection of NASA's own public-affairs video — Apollo 16mm onboard footage,
+  Gemini missions, ISS Earth-view reels, UHD resource footage, crew news conferences —
+  719 license-marked movies, all PD/CC marks applied by NASA staff (@nasa.gov uploaders,
+  NASA/JSC creators), zero overlap with the films union. Same trust model as FedFlix
+  (US government works, PD by law). The 188 Apollo mission-audio items stay excluded
+  (video pool only). Year metadata is unreliable (430 yearless) but content is uniformly
+  NASA's own — no year cutoff.
+- **Fixed a nav gap from the Ephemeral batch:** that batch's nav edit only touched the
+  home + Collections pages; the other 22 static pages never got the ephemeral link. Now
+  every static page carries ephemeral + space in the dropdown.
+- **Full register flow:** gate, index, browse/search/collections APIs, pool mapping
+  (nasa → space), landing page, home section, Collections hub card, nav on every page,
+  sitemap sub-sitemap, warmup, smoke, tests, view-counter bucket. `/api/random` now
+  draws from all seventeen pools.
+- Post-deploy warmup run against production: 70/70 URLs warmed, 0 failed — the new pool
+  indexes pre-built before first visitors.
+- Sitemap now **73,125 URLs across 18 sub-sitemaps**; smoke suite at **395/395**.
+
+---
+
 ## 2026-08-19 — Ephemeral Films pool (AV Geeks) — the institutional-license research win
 
 - **New pool: Ephemeral Films (`/ephemera`).** Probed every remaining archive.org collection

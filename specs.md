@@ -40,8 +40,8 @@ The movie player is an iframe to the Internet Archive embed (`https://archive.or
 1. Browser requests `GET /api/browse?...`, `GET /api/search?q=...&page=N`, `GET /api/movie/<identifier>`, `/sitemap.xml`, or `/api/random`.
 2. Worker validates inputs (query length ≤ 80 chars, identifier matches `^[A-Za-z0-9._-]{1,120}$`).
 3. **Catalog paths read the local catalog index** (`lib/catalog-index.ts`): one edge-cached
-   copy per pool — sixteen indexes (films, tv, anime, cartoons, otr, music, documentaries,
-   sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera), each built once per
+   copy per pool — seventeen indexes (films, tv, anime, cartoons, otr, music, documentaries,
+   sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space), each built once per
    24h per colocation from a single no-page `advancedsearch.php` request, in-isolate 30-min
    copy, stale-serve on refresh failure. `/api/browse` filters/sorts/pages it in-memory
    (whole catalog pageable — the old 100-page/2,400-film cap is gone); `/sitemap.xml` and
@@ -123,13 +123,13 @@ Phase status detail:
 | 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (18495 URLs — full catalog — rebuilt live 2026-08-15) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids |
 | 7 — Production launch | **DEPLOYED & verified live** | `wrangler pages deploy` succeeded; live walkthrough: all routes 200, player embed present, headers verified, 404 works |
 
-**Catalog size (live, verified 2026-08-19):** sixteen pools, all under the same license gate:
+**Catalog size (live, verified 2026-08-19):** seventeen pools, all under the same license gate:
 films (15,920) + TV (2,514) + anime (24) + cartoons (1,308) + radio (2,309) + music (1,455) +
 documentaries (8,417) + sports (3,625) + shorts (1,858) + silents (729) + public broadcasting
 (1,653) + science (257) + government films (5,947) + audiobooks (18,344) + vintage records
-(5,038) + ephemeral films (413) ≈ **72k items** across the sitemap. The `films=1` view
-(episodes + trailers + teasers + music videos + serial chapters/parts excluded — Solr-identical,
-verified 2026-08-16) serves **15,920 films**; 138 film-noir; 533 in the 1920s decade. The
-sitemap deliberately lists every pool's items, split into one sub-sitemap per pool under a
-sitemap index (72,406 URLs — every playable legal page, including trailers/episodes reachable
-by direct URL, and each file under the 50k protocol ceiling).
+(5,038) + ephemeral films (413) + space & NASA (719) ≈ **73k items** across the sitemap. The
+`films=1` view (episodes + trailers + teasers + music videos + serial chapters/parts excluded
+— Solr-identical, verified 2026-08-16) serves **15,920 films**; 138 film-noir; 533 in the
+1920s decade. The sitemap deliberately lists every pool's items, split into one sub-sitemap per
+pool under a sitemap index (73,125 URLs — every playable legal page, including
+trailers/episodes reachable by direct URL, and each file under the 50k protocol ceiling).
