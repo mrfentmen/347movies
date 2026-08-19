@@ -4,6 +4,27 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-19 — Vintage Records pool + sitemap index split (PR #28, deploy 99e6591b)
+
+- **Sitemap index (production fix):** the single-file sitemap hit 63,419 URLs — over the
+  protocol's hard 50,000-URL ceiling, beyond which search engines silently truncate (so
+  audiobooks ~18k and government films ~6k were being dropped from indexing). `/sitemap.xml`
+  is now a sitemap INDEX pointing at one sub-sitemap per pool (`/sitemap/static.xml`,
+  `/sitemap/films.xml`, … `/sitemap/records.xml` — 16 files, each far under the limit and
+  able to grow independently). `/api/random`'s outage fallback follows the index (fetch each
+  sub-sitemap, collect `/movie/` URLs); the smoke suite follows it too, with the floor
+  raised to 50k so a regression back to one file fails the gate. Unknown slugs 404.
+- **Vintage Records pool (`/records`):** the Great 78 Project's shellac-record digitizations
+  (operettas, early jazz, classical), gated to recordings published 1926 and earlier — 5,038
+  license-marked items, genuinely public domain by age under the Music Modernization Act
+  (1926+100=2026), the same age-bound pattern as the anime pool. The yearless band (41k) is
+  excluded (missing year ≈ modern re-uploads there). Performers/composers show as card tags
+  via the audio-card enrichment. Registered through the full flow; `/api/random` now draws
+  from all fifteen pools.
+- **Validation:** typecheck clean; 192/192 unit tests; 383/383 smoke (dev + production);
+  live — index serves 16 sub-sitemaps (static=23, films=18,491, records=5,039), `/records`
+  renders the 🎧 audio player + pool chip, collections returns 15 pools.
+
 ## 2026-08-19 — View counter buckets cover all fourteen pools (production-readiness pass)
 
 - **Gap:** the page-view counter's `COUNTED_PATHS` still held the original twelve buckets —
