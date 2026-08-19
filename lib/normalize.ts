@@ -419,6 +419,7 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["wellcomefilm"], "science"],
   [["fedflix"], "govfilms"],
   [["librivoxaudio"], "audiobooks"],
+  [["78rpm"], "records"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

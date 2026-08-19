@@ -156,6 +156,19 @@ export const GOV_FILMS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:FedFlix AND
  */
 export const AUDIOBOOKS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:librivoxaudio AND mediatype:audio`;
 
+/**
+ * Vintage records catalog gate: the same license gate over the Great 78 Project's `78rpm`
+ * collection (shellac-record digitizations — operettas, early jazz, classical), plus a
+ * pre-1927 year cutoff. Measured live 2026-08-19: 50,698 license-marked items in the
+ * collection; the pre-1927 band is 5,038. The year bound is the honest one: under the
+ * Music Modernization Act, US sound recordings published 1923–1946 get 100-year terms
+ * (1926 + 100 = 2026), so recordings from 1926 and earlier are genuinely public domain by
+ * age in 2026 — same pattern as the anime pool's pre-1975 cutoff, and the yearless band
+ * (41k) is NOT included because in this collection missing year ≈ modern re-uploads of
+ * later pressings. Items ARE the content, so the films-only exclusion does not apply.
+ */
+export const RECORDS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:78rpm AND mediatype:audio AND year:[* TO 1926]`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -171,7 +184,8 @@ export type IndexVariant =
   | "publictv"
   | "science"
   | "govfilms"
-  | "audiobooks";
+  | "audiobooks"
+  | "records";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -206,6 +220,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return GOV_FILMS_BASE_CLAUSE;
     case "audiobooks":
       return AUDIOBOOKS_BASE_CLAUSE;
+    case "records":
+      return RECORDS_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

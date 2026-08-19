@@ -77,10 +77,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const science = validateFlag(url.searchParams.get("science"));
     const govfilms = validateFlag(url.searchParams.get("govfilms"));
     const audiobooks = validateFlag(url.searchParams.get("audiobooks"));
-    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks.");
+    const records = validateFlag(url.searchParams.get("records"));
+    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks, records].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks, records.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an

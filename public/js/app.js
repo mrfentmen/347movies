@@ -613,6 +613,8 @@
     // 2026-08-18 pools (round 3): government films (FedFlix) and audiobooks (LibriVox).
     loadHomeSection("govfilms", "/api/browse?govfilms=1&sort=recent&page=1");
     loadHomeSection("audiobooks", "/api/browse?audiobooks=1&sort=recent&page=1");
+    // 2026-08-19: vintage records (Great 78 Project, pre-1927 shellac).
+    loadHomeSection("records", "/api/browse?records=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -632,7 +634,8 @@
     const science = params.get("science") === "1";
     const govfilms = params.get("govfilms") === "1";
     const audiobooks = params.get("audiobooks") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : null;
+    const records = params.get("records") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -648,6 +651,7 @@
       science: { label: "Science & Medicine", noun: "film" },
       govfilms: { label: "Government Films", noun: "film" },
       audiobooks: { label: "Audiobooks", noun: "book" },
+      records: { label: "Vintage Records", noun: "record" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -1095,6 +1099,7 @@
   function initScience() { initDestination("science", "/science"); }
   function initGovFilms() { initDestination("govfilms", "/govfilms"); }
   function initAudiobooks() { initDestination("audiobooks", "/audiobooks"); }
+  function initRecords() { initDestination("records", "/records"); }
 
   /* ---------- collections hub ----------
      The /collections page (public/collections.html, data-page="collections"): ten pool
@@ -1151,8 +1156,9 @@
     const science = params.get("science") === "1";
     const govfilms = params.get("govfilms") === "1";
     const audiobooks = params.get("audiobooks") === "1";
+    const records = params.get("records") === "1";
     // Which serialized pool this browse view serves.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1207,7 +1213,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1405,6 +1411,7 @@
   else if (page === "science") initScience();
   else if (page === "govfilms") initGovFilms();
   else if (page === "audiobooks") initAudiobooks();
+  else if (page === "records") initRecords();
   else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
