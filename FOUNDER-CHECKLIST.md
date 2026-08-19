@@ -78,8 +78,8 @@ seen as duplicate content instead of the primary site.
 1. Go to https://search.google.com/search-console and add the property
    `https://347movies.pages.dev` (or your custom domain).
 2. Verify ownership (DNS TXT record from your Cloudflare zone, or HTML tag).
-3. Submit the sitemap: `https://347movies.pages.dev/sitemap.xml` (currently 18,495 URLs:
-   6 static pages + the full 18,489-film legal catalog).
+3. Submit the sitemap: `https://347movies.pages.dev/sitemap.xml` (currently 64,088 URLs:
+   22 static pages + every catalog item across all fourteen pools, deduped).
 
 ## 4. Real ad network rendering — needs a contract
 
@@ -150,7 +150,7 @@ then self-heal — see `changelog.md`). Point it at another deployment with
 |---|---|
 | Live site | ✅ https://347movies.pages.dev |
 | Deploy token | 🔴 leaked 2026-08-16 — purge from tip done, CI scan added; **rotate now (item 0)** |
-| Catalog | ✅ 18,489 legal-marked films (license-verified, fail-closed) |
+| Catalog | ✅ 14 pools, license-verified, fail-closed (films + TV/anime/cartoons/radio/music/documentaries/sports/shorts/silents/publictv/science/govfilms/audiobooks) |
 | Tests | ✅ 55/55, typecheck clean, `npm audit` 0 |
 | Edge caching | ✅ live (`cf-cache-status: HIT`) |
 | KV 24h cache | ⏳ item 1 above |

@@ -35,7 +35,12 @@ const MAX_PATH_LEN = 200;
  * The bounded set of counted page buckets. Anything not in this set (about, privacy, terms,
  * unknown routes, unroutable junk) is NOT counted — deliberately: privacy pages and the
  * advertise page's own stats stay out of the audience numbers, and an attacker can only
- * ever bump one of these twelve keys, never an arbitrary string.
+ * ever bump one of these twenty-one keys, never an arbitrary string.
+ *
+ * Every catalog destination is a bucket: the audience stats on the advertise page must
+ * reflect traffic to all fourteen pools, not just the original six. Added 2026-08-19:
+ * /documentaries, /sports, /shorts, /silents, /publictv, /science, /govfilms, /audiobooks,
+ * and /collections.
  */
 export const COUNTED_PATHS = [
   "/",
@@ -48,6 +53,15 @@ export const COUNTED_PATHS = [
   "/cartoons",
   "/otr",
   "/music",
+  "/documentaries",
+  "/sports",
+  "/shorts",
+  "/silents",
+  "/publictv",
+  "/science",
+  "/govfilms",
+  "/audiobooks",
+  "/collections",
   "/advertise",
   "/movie",
 ] as const;

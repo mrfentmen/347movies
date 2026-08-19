@@ -4,6 +4,94 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-19 — View counter buckets cover all fourteen pools (production-readiness pass)
+
+- **Gap:** the page-view counter's `COUNTED_PATHS` still held the original twelve buckets —
+  traffic to the eight pools added since (documentaries, sports, shorts, silents, publictv,
+  science, govfilms, audiobooks) plus /collections was silently NOT counted, so the advertise
+  page's audience stats understated real traffic to most of the catalog.
+- **Fix:** every catalog destination is now a bucket (21 total, still bounded — privacy
+  posture unchanged: no cookies, no identifiers, no raw paths; the store still can't grow
+  with the catalog). Tests updated. No schema change: the edge-cache day payload is a map of
+  bucket→count, so old days read fine with the new bucket set.
+
+## 2026-08-19 — Government Films (FedFlix) + Audiobooks (LibriVox) pools (PR #26, deploy a4cca0b8)
+
+- **Two genuinely-licensed catalog pools through the full register flow.** Probed the remaining
+  archive.org collections against the license gate first: opensource_movies (401k) and
+  opensource_audio (555k) are grab-bag community collections where self-declared marks sit on
+  still-copyrighted content (SpongeBob promos, GTA rips); the pre-1980 television subset (299)
+  is copyrighted children's shows (Clangers, Bagpuss, Tetsujin 28) with fake PD marks; netlabels
+  (61k) is redundant with the music pool. Two collections passed with real licensing:
+  - **Government Films** (`/govfilms`, gate `collection:FedFlix AND mediatype:movies`) — 5,947
+    US government public-domain films (Nixon addresses, Navy/Seabee films, 1917 agriculture
+    films). The earlier session note that "FedFlix = 0 under the gate" was wrong — verified live.
+  - **Audiobooks** (`/audiobooks`, gate `collection:librivoxaudio AND mediatype:audio`) —
+    18,344 LibriVox recordings, public domain by construction, played through the existing
+    audio player with chapter counts + author tags via the audio-card enrichment.
+- **Bug fix:** `episodeCountFromFiles` now skips `_128kb` derivatives too. LibriVox carries
+  THREE mp3s per chapter (VBR + 128kb + 64kb), so the old 64kb-only skip double-counted every
+  chapter (a 31-chapter book showed 62). OTR/music items never use the 128kb suffix (verified
+  live), so they're unaffected. Regression test added.
+- **Every surface wired:** gates + IndexVariants + cache keys; browse/search/collections APIs
+  (14 pools); sitemap now 64,088 URLs (was 38,140); `/api/random` draws from all fourteen;
+  pool mapping + More-from-this-pool landing; nav dropdown on all 24 pages; home sections;
+  Collections hub cards; landing pages; warmup; smoke; tests.
+- **Validation:** typecheck clean; 192/192 unit tests; 376/376 smoke (dev server, high rate
+  limit); live production — `/govfilms` + `/audiobooks` 200, `/api/collections` returns 14
+  pools, audiobook detail renders the 🎧 audio player.
+
+## 2026-08-18 — Sitemap across all pools + audio hero badge (part of PR #25, deploy 0363cebd)
+
+- **Sitemap now lists all twelve pools** (deduped identifiers, 38,140 URLs) instead of only the
+  films union, so `/api/random`'s degraded sitemap fallback can reach TV/anime/radio/music
+  during an outage. The fallback's films-only filter was dropped deliberately (it would have
+  stripped serial-pool episodes, defeating the purpose); every sitemap entry is a license-gated
+  item the detail page still verifies.
+- **Audio hero badge:** radio/music detail pages render a filled-accent "🎧 Audio" pill keyed
+  off `kind === "audio"` (the real no-video-file signal), so a Surprise-me landing on radio is
+  instantly recognizable as audio. Video items render nothing. Tests + smoke guards.
+
+## 2026-08-18 — Disclose shorts/silents as curated views of Films (PR #24, deploy 135bebfa)
+
+- **Measurement changed the design:** a live overlap query showed shorts (1,858) and silents
+  (729) are 100% subsets of the films union — 0 exclusive items — so "deduplicate against the
+  films pool" would have emptied both pools. The honest fix is labeling them as curated views.
+- **Every surface discloses the overlap:** home-page section badges, landing-page hero notes,
+  meta descriptions + og:description, sitemap XML comments (protocol has no description field),
+  and the Collections hub badges. Smoke guards for all surfaces.
+
+## 2026-08-18 — Label each film's pool + populate the More-from-this-pool row (PR #23, deploy 016ebb5f)
+
+- **Pool chip** leads the movie-page meta row (accent-colored, clickable to the pool landing);
+  the breadcrumb is now Home / Pool / Title, mirrored in the JSON-LD BreadcrumbList so the
+  pool relationship is machine-readable.
+- **More-from-this-pool strip** now renders an actual item row: the server emits `data-pool` +
+  `data-exclude`, and app.js fills `#pool-more` from `/api/browse?<pool>=1` (8 items, current
+  item excluded, fail-closed). Reuses the card grid, so watchlist/poster/audio-chip machinery
+  works unchanged. Headless-Chrome verified: 8 cards, zero console errors.
+
+## 2026-08-18 — Collections hub + pool cross-linking + multi-pool Surprise me (PR #22, deploy 190bee7a)
+
+- **`/collections` hub page** + `GET /api/collections` (live counts for every pool in one
+  request, edge-cached 300s) — the Collections dropdown and footer now point to one hub
+  instead of ten orphan entries. Counts are a progressive enhancement (failed fetch shows an
+  em dash, links keep working).
+- **Surprise me across all pools:** `/api/random` now draws uniformly over films, TV, anime,
+  cartoons, radio, music, documentaries, sports, shorts, silents, public broadcasting, and
+  science — selection stays uniform over items, so each pool is weighted by size. Pool pages'
+  copy now reads "jump to a random title".
+
+## 2026-08-18 — Four new catalog pools: documentaries, sports, shorts, silents (PR #21)
+
+- Measured live against the license gate: `culturalandacademicfilms` (8,417 license-marked),
+  `sports` (3,625), `short_films` (1,858), `silent_films` (729). All four registered through
+  the complete flow (gates, indexes, APIs, landing pages, home sections, nav, sitemap, warmup,
+  smoke, tests). The `documentary`/`educationalfilms` collections were probed and REJECTED
+  (10 license-marked items of 4,131 — a gate there would be dishonest or nearly empty).
+
+---
+
 ## 2026-08-17 — Privacy-respecting page-view counter (vow 5 / constitution §5)
 
 - **What it is:** the advertise page's audience stats now include a real traffic number — an
