@@ -420,6 +420,11 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["fedflix"], "govfilms"],
   [["librivoxaudio"], "audiobooks"],
   [["78rpm"], "records"],
+  // `avgeeks` maps to the ephemera pool; the broad `ephemera` collection is deliberately NOT
+  // mapped (modern community oral histories — rejected for this pool 2026-08-19). The gate
+  // pins `collection:avgeeks`; avgeeks items also sit in `ephemera`, so the specific mapping
+  // must come BEFORE the films union (an avgeeks item in a films collection stays ephemera).
+  [["avgeeks"], "ephemera"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 
