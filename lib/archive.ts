@@ -186,6 +186,20 @@ export const RECORDS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:78rpm AND med
  */
 export const EPHEMERA_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:avgeeks AND mediatype:movies`;
 
+/**
+ * Space & NASA catalog gate: the same license gate over archive.org's `nasa` collection
+ * (NASA's own public-affairs video — Apollo 16mm onboard footage, Gemini missions, ISS
+ * Earth-view reels, UHD resource footage, crew news conferences). Measured live
+ * 2026-08-19: 719 license-marked movies, all public-domain/CC marks applied by NASA staff
+ * (@nasa.gov uploaders, NASA/JSC creators — same trust model as FedFlix: US government
+ * works, PD by law). Year metadata is unreliable (430 yearless; many "2021" are upload
+ * dates), but the content is uniformly NASA's own footage — no year cutoff needed. Items
+ * ARE the content, so the films-only exclusion does not apply. The 188 audio items
+ * (Apollo mission audio) are deliberately excluded — this pool is video, and the audio
+ * player path is reserved for the otr/music/audiobooks/records pools.
+ */
+export const SPACE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nasa AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -203,7 +217,8 @@ export type IndexVariant =
   | "govfilms"
   | "audiobooks"
   | "records"
-  | "ephemera";
+  | "ephemera"
+  | "space";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -242,6 +257,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return RECORDS_BASE_CLAUSE;
     case "ephemera":
       return EPHEMERA_BASE_CLAUSE;
+    case "space":
+      return SPACE_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

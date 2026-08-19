@@ -52,7 +52,7 @@ The code uses KV automatically once the binding exists — no other changes.
 2. Verify ownership — easiest: **Domain** property + DNS TXT record from your Cloudflare
    zone (DNS → Records → Add record, TXT, paste the value, save; it validates in minutes).
 3. **Sitemaps** (left sidebar) → enter `https://347movies.pages.dev/sitemap.xml` → Submit.
-   Expect 72,406 URLs (24 static + every item across all sixteen pools, split into per-pool sub-sitemaps), no errors, after a few days.
+   Expect 73,125 URLs (25 static + every item across all seventeen pools, split into per-pool sub-sitemaps), no errors, after a few days.
 
 ## 4. `AMAZON_TAG` (affiliate mechanism, optional)
 
