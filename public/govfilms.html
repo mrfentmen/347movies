@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0c0d11">
-<title>Old Time Radio — 347movies</title>
-<meta name="description" content="Golden-age radio, free in the public domain — Suspense, The Shadow, Burns & Allen, and more, streamed as audio without interruption on 347movies.">
-<link rel="canonical" href="https://347movies.pages.dev/otr">
+<title>Government Films — 347movies</title>
+<meta name="description" content="US government public-domain films from FedFlix — Nixon addresses, Navy and Seabee films, agriculture and training films, free on 347movies.">
+<link rel="canonical" href="https://347movies.pages.dev/govfilms">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="347movies">
-<meta property="og:title" content="Old Time Radio — 347movies">
-<meta property="og:description" content="Free public domain radio: golden-age drama and comedy streamed without interruption.">
-<meta property="og:url" content="https://347movies.pages.dev/otr">
+<meta property="og:title" content="Government Films — 347movies">
+<meta property="og:description" content="Free public domain US government films from the FedFlix collection.">
+<meta property="og:url" content="https://347movies.pages.dev/govfilms">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="preconnect" href="https://archive.org">
@@ -21,7 +21,7 @@
 <link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
 </head>
-<body data-page="otr">
+<body data-page="govfilms">
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="container header-inner">
@@ -51,9 +51,9 @@
       <a href="/about">About</a>
     </nav>
     <form class="header-search" action="/search" method="get" role="search">
-      <label class="visually-hidden" for="search-input">Search radio shows</label>
-      <input id="search-input" name="q" type="search" placeholder="Search radio shows…" maxlength="80" autocomplete="off" required>
-      <input type="hidden" name="otr" value="1">
+      <label class="visually-hidden" for="search-input">Search government films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search government films…" maxlength="80" autocomplete="off" required>
+      <input type="hidden" name="govfilms" value="1">
       <button type="submit">Search</button>
     </form>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
@@ -68,25 +68,26 @@
   </div>
 </header>
 <main id="main" tabindex="-1">
-  <!-- The projection booth presents, on the air: the same display rhythm as the other
-       destination pages, tuned for audio. -->
   <section class="hero">
     <div class="container">
-      <p class="hero-eyebrow">The projection booth presents, on the air</p>
-      <h1>Old Time Radio</h1>
-      <p class="hero-sub">The golden age of the dial — Suspense, The Shadow, Burns &amp; Allen, Fibber McGee, and more, free in the public domain. Every series streams as audio embedded from the Internet Archive; no accounts, no paywall, and ads never interrupt the show.</p>
-      <nav class="genre-chips" aria-label="Genres">
-        <a class="genre-chip" href="/tv">Classic TV</a>
+      <p class="hero-eyebrow">The projection booth presents</p>
+      <h1>Government Films</h1>
+      <p class="hero-sub">US government films from the FedFlix collection — Nixon addresses, Navy and Seabee films, agriculture and training films, and more, all public domain. Streamed embedded from the Internet Archive; no accounts, no paywall, and ads never interrupt a film.</p>
+      <nav class="genre-chips" aria-label="Collections">
+        <a class="genre-chip" href="/browse">Films</a>
+        <a class="genre-chip" href="/tv">TV</a>
         <a class="genre-chip" href="/anime">Anime</a>
         <a class="genre-chip" href="/cartoons">Cartoons</a>
-        <a class="genre-chip is-active" href="/otr" aria-current="page">Old Time Radio</a>
-        <a class="genre-chip" href="/genre">Film Noir</a>
-        <a class="genre-chip" href="/browse?genre=western">Western</a>
-        <a class="genre-chip" href="/browse?genre=sci-fi">Sci-Fi</a>
-        <a class="genre-chip" href="/browse?genre=horror">Horror</a>
-        <a class="genre-chip" href="/browse?genre=silent">Silent</a>
-        <a class="genre-chip" href="/browse?genre=comedy">Comedy</a>
-        <a class="genre-chip" href="/browse?genre=drama">Drama</a>
+        <a class="genre-chip" href="/otr">Radio</a>
+        <a class="genre-chip" href="/music">Music</a>
+        <a class="genre-chip" href="/documentaries">Documentaries</a>
+        <a class="genre-chip" href="/sports">Sports</a>
+        <a class="genre-chip" href="/shorts">Shorts</a>
+        <a class="genre-chip" href="/silents">Silents</a>
+        <a class="genre-chip" href="/publictv">Public Broadcasting</a>
+        <a class="genre-chip" href="/science">Science</a>
+        <a class="genre-chip is-active" href="/govfilms" aria-current="page">Government Films</a>
+        <a class="genre-chip" href="/audiobooks">Audiobooks</a>
       </nav>
       <p><a class="hero-surprise" href="/api/random">Surprise me — jump to a random title</a></p>
     </div>
@@ -94,14 +95,12 @@
   <div class="container">
     <div class="genre">
       <div class="genre-main">
-        <p class="section-eyebrow">The golden age of the dial</p>
+        <p class="section-eyebrow">From the nation's archives</p>
         <div class="section-head">
-          <h2>Old Time Radio, free</h2>
-          <a class="see-all" href="/browse?otr=1">See all &rarr;</a>
+          <h2>Government films, free</h2>
+          <a class="see-all" href="/browse?govfilms=1">See all &rarr;</a>
         </div>
         <p class="count" id="count" role="status"></p>
-        <!-- Skeleton grid reserves the card space before the JS fetch completes (CLS) —
-             the same pattern as genre/browse/search. -->
         <div class="grid" id="results" aria-busy="true">
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
@@ -129,10 +128,9 @@
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
         </div>
         <div id="pagination"></div>
-        <noscript><p class="empty">This page loads shows with JavaScript. Enable JavaScript to browse the radio catalog — or listen to these series directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+        <noscript><p class="empty">This page loads government films with JavaScript. Enable JavaScript to browse the catalog — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
       </div>
       <aside class="genre-side">
-        <!-- Ad slot: sidebar, reserved for a compliant ad network. Never over or inside any player. -->
         <aside class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar" role="complementary" aria-label="Advertisement slot">
           <span class="ad-slot__label">Advertisement</span>
           <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
@@ -142,8 +140,8 @@
           <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
         </aside>
         <div class="affiliate-slot">
-          <p class="affiliate-note">The golden age ran long on the air — every series on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the show.</p>
-          <a class="affiliate-link" href="/browse?otr=1">Browse every radio series &rarr;</a>
+          <p class="affiliate-note">Every film on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts a film.</p>
+          <a class="affiliate-link" href="/browse?govfilms=1">Browse every government film &rarr;</a>
         </div>
       </aside>
     </div>
@@ -161,7 +159,7 @@
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
     </nav>
-    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video or audio. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
   </div>
 </footer>
 <script src="/js/app.js" defer></script>

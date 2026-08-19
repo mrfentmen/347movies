@@ -10,8 +10,8 @@
  * Everything here is best-effort and never fails the page: a fetch failure or a cache
  * hiccup leaves the card without a chip rather than breaking the grid (the same
  * optimization-not-source-of-truth philosophy as lib/views.ts). The non-audio pools
- * (films/tv/anime/cartoons) are a no-op by construction — callers pass their `IndexVariant`
- * and this module ignores anything that isn't otr/music.
+ * (films/tv/anime/cartoons/…) are a no-op by construction — callers pass their `IndexVariant`
+ * and this module ignores anything that isn't otr/music/audiobooks.
  */
 import { fetchMetadata } from "./archive.ts";
 import { edgeCacheMatch, edgeCachePut } from "./edge-cache.ts";
@@ -74,7 +74,11 @@ function countDerivatives(files: unknown[], extension: "mp3" | "ogg"): number {
     if (!f || typeof f !== "object") continue;
     const name = String((f as Record<string, unknown>)["name"] ?? "");
     if (!suffix.test(name)) continue;
-    if (/64kb/i.test(name)) continue; // "_64kb.mp3" is a low-bitrate copy of the same episode
+    // "_64kb.mp3"/"_128kb.mp3" are low-bitrate copies of the same episode/chapter. LibriVox
+    // audiobooks carry THREE mp3s per chapter (VBR + 128kb + 64kb), so skipping only 64kb
+    // would double-count every chapter; OTR/music items never use the 128kb suffix (verified
+    // live 2026-08-18), so the extra skip is safe for them.
+    if (/64kb/i.test(name) || /128kb/i.test(name)) continue;
     count += 1;
   }
   return count;
@@ -100,6 +104,7 @@ export function episodeCountFromFiles(files: unknown[] | undefined): number | nu
  *    first " - " separator ("Suspense - Single Episodes" -> "Suspense"); null when the
  *    title has no separator (the title IS the series — the card already shows it).
  *  - Music: the artist/band (`creator`), which is the series tag for a live recording.
+ *  - Audiobooks: the author (`creator`), the series tag for a LibriVox recording.
  */
 export function seriesTagFromMeta(
   meta: Record<string, unknown> | undefined,
@@ -109,7 +114,7 @@ export function seriesTagFromMeta(
   if (!meta) return null;
   const fromSeries = asString(meta["series"]);
   if (fromSeries) return fromSeries;
-  if (variant === "music") {
+  if (variant === "music" || variant === "audiobooks") {
     const creator = asString(meta["creator"]);
     return creator ?? null;
   }
@@ -164,7 +169,7 @@ export async function enrichAudioCardMeta(
   fetchImpl: typeof fetch = fetch,
   deadlineMs: number = ENRICH_DEADLINE_MS,
 ): Promise<void> {
-  if (variant !== "otr" && variant !== "music") return;
+  if (variant !== "otr" && variant !== "music" && variant !== "audiobooks") return;
   if (records.length === 0) return;
   const deadline = Date.now() + deadlineMs;
   let index = 0;
