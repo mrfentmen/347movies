@@ -1053,6 +1053,30 @@
   function initShorts() { initDestination("shorts", "/shorts"); }
   function initSilents() { initDestination("silents", "/silents"); }
 
+  /* ---------- collections hub ----------
+     The /collections page (public/collections.html, data-page="collections"): ten pool
+     cards, each a link. Live counts come from /api/collections — one request instead of
+     ten /api/browse calls (which is exactly the concurrent cold-start storm this client
+     now retries around). Counts are a progressive enhancement: a failed fetch keeps the
+     static links working and shows an em dash rather than an error. */
+  function initCollections() {
+    const countEls = document.querySelectorAll("[data-pool]");
+    if (countEls.length === 0) return;
+    apiFetch("/api/collections")
+      .then((data) => {
+        const pools = data && typeof data.pools === "object" ? data.pools : {};
+        for (const el of countEls) {
+          const n = pools[el.getAttribute("data-pool")];
+          el.textContent = typeof n === "number"
+            ? `${n.toLocaleString()} ${el.getAttribute("data-noun") || "titles"}`
+            : "—";
+        }
+      })
+      .catch(() => {
+        for (const el of countEls) el.textContent = "—";
+      });
+  }
+
   /* ---------- browse ---------- */
   const GENRE_LABELS = {
     "film-noir": "Film Noir",
@@ -1330,6 +1354,7 @@
   else if (page === "sports") initSports();
   else if (page === "shorts") initShorts();
   else if (page === "silents") initSilents();
+  else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();
   else if (page === "advertise") initAdvertise();

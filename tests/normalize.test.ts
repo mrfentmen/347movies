@@ -9,6 +9,7 @@ import {
   normalizeMetadata,
   normalizeSearchDoc,
   parseRuntimeSeconds,
+  poolFromCollections,
   stripHtml,
   toList,
   toYear,
@@ -201,4 +202,29 @@ test("normalizeMetadata leaves unknown license null (caller fails closed)", () =
   const record = normalizeMetadata({ identifier: "x", title: "X" }, []);
   assert.equal(record.license, null);
   assert.equal(record.hasVideo, false);
+});
+
+test("poolFromCollections maps archive.org collections to the specific pool, films last", () => {
+  assert.equal(poolFromCollections(["short_films", "moviesandfilms"]), "shorts");
+  assert.equal(poolFromCollections(["silent_films", "feature_films"]), "silents");
+  assert.equal(poolFromCollections("sports"), "sports");
+  assert.equal(poolFromCollections(["culturalandacademicfilms", "something-else"]), "documentaries");
+  assert.equal(poolFromCollections(["classic_tv"]), "tv");
+  assert.equal(poolFromCollections(["oldtimeradio"]), "otr");
+  assert.equal(poolFromCollections(["GratefulDead", "etree"]), "music");
+  assert.equal(poolFromCollections(["moviesandfilms"]), "films");
+  assert.equal(poolFromCollections(["feature_films"]), "films");
+  assert.equal(poolFromCollections("Anime"), "anime"); // case-insensitive
+  assert.equal(poolFromCollections([]), null);
+  assert.equal(poolFromCollections(null), null);
+  assert.equal(poolFromCollections(undefined), null);
+  assert.equal(poolFromCollections(["totally_unknown_collection"]), null);
+});
+
+test("normalizeMetadata derives pool from the collection field", () => {
+  const record = normalizeMetadata(
+    { identifier: "x", title: "X", collection: ["short_films", "moviesandfilms"] },
+    [],
+  );
+  assert.equal(record.pool, "shorts");
 });

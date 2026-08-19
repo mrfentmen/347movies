@@ -633,6 +633,19 @@ body[data-page="tv"] .hero {
   font-size: 0.98rem;
 }
 
+/* "Curated view" disclosure on the shorts/silents pools: a smaller sub-line under the
+   hero-sub making the overlap with the Films catalog explicit. */
+.hero-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: -10px auto 26px;
+  max-width: 560px;
+}
+
+.hero-note a {
+  color: var(--accent);
+}
+
 .hero-search {
   display: flex;
   justify-content: center;
@@ -1428,6 +1441,82 @@ body[data-page="tv"] .hero {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* ---------- collections hub ---------- */
+.collections {
+  display: grid;
+  gap: 16px;
+  padding: 28px 0 56px;
+}
+
+@media (min-width: 640px) {
+  .collections {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .collections {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.collection-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.collection-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(242, 169, 59, 0.25);
+}
+
+.collection-card h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.collection-card p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.collection-card__count {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+
+/* "Curated view" badge on hub cards whose pool overlaps the Films catalog (shorts/silents). */
+.collection-card__badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 /* ---------- search / browse ---------- */

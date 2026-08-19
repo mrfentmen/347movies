@@ -56,6 +56,8 @@ const CASES = [
   ["GET", "/sports", 200],
   ["GET", "/shorts", 200],
   ["GET", "/silents", 200],
+  ["GET", "/collections", 200],
+  ["GET", "/api/collections", 200],
   ["GET", "/api/browse?subject=film+noir&sort=newest&page=1", 200],
   ["GET", "/api/search?q=caligari", 200],
   ["GET", "/api/browse?sort=recent&films=1&page=1", 200],
@@ -234,7 +236,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -537,7 +539,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -749,6 +751,9 @@ try {
   const freshHtml = await fresh.text();
   ok(freshHtml.includes("archive.org/embed/it-1927"), "player iframe present (deployed code)");
   ok(freshHtml.includes('data-watch-id="it-1927"'), "save-to-watchlist button present (deployed code)");
+  // "More from this pool" strip: the item's pool landing page is linked back to its pool
+  // (it-1927 is a films-union item → /browse). Guards the internal-linking strip.
+  ok(freshHtml.includes('id="pool-section"') && freshHtml.includes('href="/browse">See all'), "movie page links its pool landing page (More-from-this-pool strip)");
   // Structured data: the page must carry a JSON-LD VideoObject data block with the real
   // embed URL (video indexing / rich results). Data blocks are exempt from script-src CSP.
   ok(freshHtml.includes('type="application/ld+json"') && freshHtml.includes('"@type":"VideoObject"'), "JSON-LD VideoObject present");
@@ -913,6 +918,41 @@ try {
   console.error(`FAIL  page-view counter — ${err.message}`);
 }
 
+console.log("\n— collections hub counts —");
+try {
+  const c = await (await request("GET", "/api/collections")).json();
+  const pools = c && typeof c.pools === "object" ? c.pools : {};
+  const expected = ["films", "tv", "anime", "cartoons", "otr", "music", "documentaries", "sports", "shorts", "silents"];
+  const allCounted = expected.every((k) => typeof pools[k] === "number" && pools[k] >= 0);
+  ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
+  ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
+  const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 10, "collections page carries ten pool cards with count targets");
+  const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
+  ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
+  // The hub is the single footer destination for the catalog: the footer links to
+  // /collections once, and never to the individual pools (they're reachable from the hub
+  // and the header dropdown — no orphans, but also no ten-entry footer sprawl). Scope the
+  // second check to the footer nav block, since the header/sections still link pools.
+  const homeFooterPage = await (await request("GET", `/?smoke=${Date.now()}`)).text();
+  const footerStart = homeFooterPage.indexOf('<nav aria-label="Footer">');
+  const footerNav = homeFooterPage.slice(footerStart, homeFooterPage.indexOf("</nav>", footerStart) + "</nav>".length);
+  ok(footerNav.includes('<a href="/collections">Collections</a>'), "footer: Collections hub link present");
+  ok(!/href="\/(tv|anime|cartoons|otr|music|documentaries|sports|shorts|silents)"/.test(footerNav), "footer: individual pool links consolidated into the hub");
+  // Curated-view disclosure: shorts and silents are 100% subsets of the films union (measured
+  // 2026-08-18: 0 exclusive items), so they must be labeled as curated views, never implied
+  // to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
+  ok((collectionsHtml.match(/Curated view/g) || []).length === 2, "collections page badges shorts + silents as curated views");
+  const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
+  const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
+  ok(shortsHtml.includes("A curated view") && shortsHtml.includes('href="/browse"'), "shorts page discloses it is a curated view of Films");
+  ok(silentsHtml.includes("A curated view") && silentsHtml.includes('href="/browse"'), "silents page discloses it is a curated view of Films");
+} catch (err) {
+  failures += 1;
+  checks += 1;
+  console.error(`FAIL  collections hub — ${err.message}`);
+}
+
 console.log("\n— sitemap —");
 try {
   // Hard check on a uniquely cache-busted URL: proves the deployed code builds the FULL
@@ -925,7 +965,7 @@ try {
   ok(freshLocs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
-  ok(freshLastmods >= freshLocs - 17, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  ok(freshLastmods >= freshLocs - 18, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await request("GET", "/sitemap.xml");
