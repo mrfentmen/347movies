@@ -1315,6 +1315,18 @@ body[data-page="tv"] .hero {
   border-color: var(--accent);
 }
 
+/* Pool label chip: the accent color + a link to the pool landing page. Distinct from the
+   license chip by its hover underline (it is the one clickable chip). */
+.chip--pool {
+  color: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.chip--pool:hover {
+  text-decoration: underline;
+}
+
 .movie-body {
   display: grid;
   gap: 20px;
