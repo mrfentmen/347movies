@@ -47,7 +47,18 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       const lastmod = addedDateOf(added);
       return `  <url><loc>${escapeHtml(site + `/movie/${encodeURIComponent(id)}`)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;
     });
-    const staticUrls = staticPaths.map((p) => `  <url><loc>${escapeHtml(site + p)}</loc></url>`);
+    // Shorts/silents are curated views of /browse (100% subsets of the films union — measured
+    // 0 exclusive items), so the sitemap annotates that relationship. The sitemap protocol has
+    // no description field, so this is an XML comment for readers; the search-engine-visible
+    // disclosure lives in each page's meta description.
+    const curatedViewNote: Record<string, string> = {
+      "/shorts": "curated view of /browse (Films): every title here also appears there",
+      "/silents": "curated view of /browse (Films): every title here also appears there",
+    };
+    const staticUrls = staticPaths.map((p) => {
+      const url = `  <url><loc>${escapeHtml(site + p)}</loc></url>`;
+      return curatedViewNote[p] ? `${url}\n  <!-- ${curatedViewNote[p]} -->` : url;
+    });
     const urls = [...staticUrls, ...movieUrls].join("\n");
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
 
