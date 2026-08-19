@@ -47,6 +47,8 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   sports: "https://347movies.internal/sports-index-v1",
   shorts: "https://347movies.internal/shorts-index-v1",
   silents: "https://347movies.internal/silents-index-v1",
+  publictv: "https://347movies.internal/publictv-index-v1",
+  science: "https://347movies.internal/science-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -432,6 +434,8 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "sports",
   "shorts",
   "silents",
+  "publictv",
+  "science",
 ];
 
 /**
