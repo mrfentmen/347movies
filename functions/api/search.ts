@@ -33,10 +33,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const silents = validateFlag(url.searchParams.get("silents"));
     const publictv = validateFlag(url.searchParams.get("publictv"));
     const science = validateFlag(url.searchParams.get("science"));
-    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science.");
+    const govfilms = validateFlag(url.searchParams.get("govfilms"));
+    const audiobooks = validateFlag(url.searchParams.get("audiobooks"));
+    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : "films";
     const serialized = variant !== "films";
     const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));

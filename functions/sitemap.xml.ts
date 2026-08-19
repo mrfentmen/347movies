@@ -9,8 +9,9 @@ import { resolveSiteUrl } from "../lib/site-url.ts";
 import { headHandler } from "./_head.ts";
 
 /**
- * GET /sitemap.xml — real sitemap: static pages plus every catalog item across all ten
- * pools (films + tv/anime/cartoons/otr/music/documentaries/sports/shorts/silents), built
+ * GET /sitemap.xml — real sitemap: static pages plus every catalog item across all twelve
+ * pools (films + tv/anime/cartoons/otr/music/documentaries/sports/shorts/silents/publictv/
+ * science/govfilms/audiobooks), built
  * from the shared local catalog indexes (lib/catalog-index.ts) — the same edge-cached copies
  * /api/browse and /api/random read, so no archive.org call happens per sitemap build (each
  * index refreshes at most once per 24h). Identifiers dedupe across pools, so every URL is
@@ -28,8 +29,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   return await withEdgeCachedResponse(urlString, 3600, async () => {
     let entries: Array<[string, string]> = [];
     try {
-      // List all ten pools, not just the films union: the serial/audio pools (tv/anime/cartoons/
-      // otr/music) are disjoint from films, so /api/random's sitemap fallback can reach them
+      // List all twelve pools, not just the films union: the serial/audio pools (tv/anime/cartoons/
+      // otr/music/audiobooks) are disjoint from films, so /api/random's sitemap fallback can reach them
       // during an outage too. Loads run in parallel (each pool is edge-cached 24h and
       // single-flighted), so a cold edge pays max(build), not the sum. Identifiers dedupe
       // across pools (shorts/silents are 100% subsets of films; docs/sports overlap), keeping
@@ -57,7 +58,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       }
     }
 
-    const staticPaths = ["/", "/about", "/privacy", "/terms", "/advertise", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/collections"];
+    const staticPaths = ["/", "/about", "/privacy", "/terms", "/advertise", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/collections"];
     const movieUrls = entries.map(([id, added]) => {
       const lastmod = addedDateOf(added);
       return `  <url><loc>${escapeHtml(site + `/movie/${encodeURIComponent(id)}`)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;

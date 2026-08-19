@@ -55,6 +55,8 @@ const PAGES = [
   "/silents",
   "/publictv",
   "/science",
+  "/govfilms",
+  "/audiobooks",
   // Warming page 1 of each new video pool pre-builds its catalog index (one archive.org
   // fetch per pool) so the first real visitor to the home sections or pool pages never
   // pays the cold-index build on the request path.
@@ -64,6 +66,8 @@ const PAGES = [
   "/api/browse?silents=1&sort=recent&page=1",
   "/api/browse?publictv=1&sort=recent&page=1",
   "/api/browse?science=1&sort=recent&page=1",
+  "/api/browse?govfilms=1&sort=recent&page=1",
+  "/api/browse?audiobooks=1&sort=recent&page=1",
 ];
 
 // OTR/music browse warms the audio-card enrichment (per-identifier metadata): without it,
@@ -74,7 +78,7 @@ const PAGES = [
 const AUDIO_DEPTH = 5;
 const AUDIO_PAGES = [];
 for (let page = 1; page <= AUDIO_DEPTH; page++) {
-  AUDIO_PAGES.push(`/api/browse?otr=1&sort=recent&page=${page}`, `/api/browse?music=1&sort=recent&page=${page}`);
+  AUDIO_PAGES.push(`/api/browse?otr=1&sort=recent&page=${page}`, `/api/browse?music=1&sort=recent&page=${page}`, `/api/browse?audiobooks=1&sort=recent&page=${page}`);
 }
 
 const SEARCH_PAGES = [

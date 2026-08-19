@@ -39,6 +39,21 @@ test("episodeCountFromFiles counts VBR MP3s and skips _64kb duplicates + non-aud
   assert.equal(episodeCountFromFiles([]), null);
 });
 
+test("episodeCountFromFiles skips _128kb duplicates too (LibriVox carries VBR+128kb+64kb per chapter)", () => {
+  // LibriVox: one chapter = VBR + 128kb + 64kb mp3s. Counting only VBR gives the real chapter count.
+  const LIBRIVOX_CHAPTERS = [
+    { name: "book_00_preface.mp3", format: "VBR MP3" },
+    { name: "book_00_preface_128kb.mp3", format: "128Kbps MP3" },
+    { name: "book_00_preface_64kb.mp3", format: "64Kbps MP3" },
+    { name: "book_01_chapter.mp3", format: "VBR MP3" },
+    { name: "book_01_chapter_128kb.mp3", format: "128Kbps MP3" },
+    { name: "book_01_chapter_64kb.mp3", format: "64Kbps MP3" },
+  ];
+  assert.equal(episodeCountFromFiles(LIBRIVOX_CHAPTERS), 2, "three derivatives per chapter count as one");
+  // OTR/music items never carry the 128kb suffix, so the extra skip is a no-op for them.
+  assert.equal(episodeCountFromFiles(OTR_FILES), 2, "OTR VBR+64kb pattern still counts correctly");
+});
+
 test("episodeCountFromFiles counts a single-episode item as 1", () => {
   assert.equal(episodeCountFromFiles([{ name: "TheThirdMan13-06-07.mp3", format: "VBR MP3" }, { name: "TheThirdMan13-06-07.ogg", format: "Ogg Vorbis" }]), 1);
 });

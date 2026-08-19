@@ -137,6 +137,25 @@ export const PUBLICTV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:television A
  */
 export const SCIENCE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wellcomefilm AND mediatype:movies`;
 
+/**
+ * Government films catalog gate: the same license gate over `FedFlix`, the US government's
+ * public-domain film collection (NTIS-hosted on archive.org — Nixon addresses, Navy/Seabee
+ * films, 1917 agriculture films, Audubon, counterguerrilla training films…). Measured live
+ * 2026-08-18: 5,947 license-marked movies, all genuinely public domain (US government works).
+ * Items ARE the content, so the films-only exclusion does not apply.
+ */
+export const GOV_FILMS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:FedFlix AND mediatype:movies`;
+
+/**
+ * Audiobooks catalog gate: the same license gate over `librivoxaudio`, the LibriVox
+ * audiobook collection (volunteer recordings of public-domain books — every LibriVox
+ * recording is public domain by construction). Measured live 2026-08-18: 18,344
+ * license-marked items, all mediatype:audio (chapters are the content, like OTR episodes,
+ * so the audio player + episode-count enrichment apply and the films-only exclusion does
+ * not). The mediatype is pinned to `audio` — the collection is pure audiobooks.
+ */
+export const AUDIOBOOKS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:librivoxaudio AND mediatype:audio`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -150,7 +169,9 @@ export type IndexVariant =
   | "shorts"
   | "silents"
   | "publictv"
-  | "science";
+  | "science"
+  | "govfilms"
+  | "audiobooks";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -181,6 +202,10 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return PUBLICTV_BASE_CLAUSE;
     case "science":
       return SCIENCE_BASE_CLAUSE;
+    case "govfilms":
+      return GOV_FILMS_BASE_CLAUSE;
+    case "audiobooks":
+      return AUDIOBOOKS_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

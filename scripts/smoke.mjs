@@ -54,12 +54,16 @@ const CASES = [
   ["GET", "/api/browse?silents=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?publictv=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?science=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?govfilms=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?audiobooks=1&sort=recent&page=1", 200],
   ["GET", "/documentaries", 200],
   ["GET", "/sports", 200],
   ["GET", "/shorts", 200],
   ["GET", "/silents", 200],
   ["GET", "/publictv", 200],
   ["GET", "/science", 200],
+  ["GET", "/govfilms", 200],
+  ["GET", "/audiobooks", 200],
   ["GET", "/collections", 200],
   ["GET", "/api/collections", 200],
   ["GET", "/api/browse?subject=film+noir&sort=newest&page=1", 200],
@@ -240,7 +244,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -316,6 +320,8 @@ try {
   ok(js.includes("/api/browse?silents=1&sort=recent&page=1"), "JS: Silent films home feed wired");
   ok(js.includes("/api/browse?publictv=1&sort=recent&page=1"), "JS: Public broadcasting home feed wired");
   ok(js.includes("/api/browse?science=1&sort=recent&page=1"), "JS: Science & medicine home feed wired");
+  ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
+  ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
@@ -546,7 +552,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -875,7 +881,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;
@@ -939,7 +945,7 @@ try {
   ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 12, "collections page carries twelve pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 14, "collections page carries fourteen pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -986,7 +992,7 @@ try {
   ok(freshLocs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
-  ok(freshLastmods >= freshLocs - 20, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  ok(freshLastmods >= freshLocs - 22, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
   // Curated-view annotation: the sitemap documents that /shorts and /silents are views of
   // /browse (protocol has no description field, so this is an XML comment — the SERP-visible
   // disclosure is the page meta description).
