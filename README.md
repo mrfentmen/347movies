@@ -62,8 +62,11 @@ This project is governed by non-negotiable rules:
 
 Every search/browse result must carry a declared license in archive.org's own metadata
 (`licenseurl` PD mark / CC license) and sit in one of archive.org's curated film collections
-(`feature_films`, `prelinger`, `moviesandfilms` — union ≈ 18,489 legal-marked films, measured
-live). The detail path re-verifies the license from full metadata (with a search-index
+(`feature_films`, `prelinger`, `moviesandfilms` — union ≈ 15,920 legal-marked films, measured
+live). The catalog is **fourteen pools**: films, classic TV, anime, cartoons, old time radio,
+music & concerts, documentaries, sports, shorts, silent films, public broadcasting, science &
+medicine, government films (FedFlix), and audiobooks (LibriVox) — every pool under the same
+license gate (`lib/archive.ts`). The detail path re-verifies the license from full metadata (with a search-index
 fallback) and **fails closed**: unverifiable films return 404 and never appear. Dark/removed
 items are excluded. The home showcase additionally passes `films=1` to exclude non-film
 uploads (serial-episode installments + trailers — Solr-identical, verified 2026-08-15;
@@ -120,14 +123,14 @@ npx wrangler kv namespace create MOVIES_KV
 | `GET /api/ad-config` | Ad loader config gate (Decision 001): `{ "enabled": false }` until a real network is allowlisted + configured — then the client bootstrap injects its async script; fail-closed, edge-cached 300s |
 | `GET /movie/<identifier>` | Server-rendered film page: archive.org embed, OG tags, JSON-LD VideoObject, save-to-watchlist button |
 | `GET /watchlist` | Your saved films — rendered from your browser's local storage (no server) |
-| `GET /sitemap.xml` | Sitemap: 6 static pages + the full ~18,489-film legal catalog (built from the local catalog index) |
+| `GET /sitemap.xml` | Sitemap: 22 static pages + every catalog item across all fourteen pools, deduped (~64k URLs, built from the local catalog indexes) |
 
 ### Surprise me (`/api/random`)
 
 The home and browse pages offer a "Surprise me" link that redirects to a random film. The
 endpoint fetches our own edge-cached sitemap (never archive.org when warm), parses the movie
-URLs, picks one at random, and 302-redirects — uniform over the full legal catalog
-(~18,489 films; the sitemap lists every catalog film). One random per request; rate-limited
+URLs, picks one at random, and 302-redirects — uniform over every item in all fourteen pools
+(the sitemap lists every catalog item). One random per request; rate-limited
 like every `/api/*` route; `noindex` via middleware. See `changelog.md` for the
 verification record (6/6 random landings playable in the stress test).
 
@@ -156,12 +159,12 @@ against the live site: home/about 100×4, movie 99-100/100/96-100/100, browse 98
 search 100/100/100 — accessibility 100 everywhere, CLS 0 everywhere (see changelog,
 deploys #35–#36). End-to-end verification was
 performed against the live archive.org APIs and the production URL (raw output in
-`changelog.md`): real searches return real legal films (catalog expanded to ~18,489
-legal-marked films across `feature_films`/`prelinger`/`moviesandfilms`), edge cache hits cut
+`changelog.md`): real searches return real legal films (catalog expanded to fourteen
+pools across the archive's curated collections), edge cache hits cut
 response time from ~0.63 s to ~0.13 s (local: 0.65 s → 0.004 s; `cf-cache-status: HIT`),
 edge cases (empty/huge queries, traversal, invalid identifiers, out-of-bounds pagination,
 rate-limit bursts) behave per spec, security headers verified on every page and API response,
-the sitemap covers 18,495 URLs (the full legal catalog, with `<lastmod>`),
+the sitemap covers 64,088 URLs (all fourteen pools, deduped, with `<lastmod>`),
 ad slots carry the advertiser contact (contactae2000@gmail.com), and the archive.org embed
 plays a real public domain film (It, 1927) ad-free. Browser-level rendering was verified
 locally against the identical code (screenshots + clean console).

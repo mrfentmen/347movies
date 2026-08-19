@@ -9,10 +9,10 @@ docs: `FOUNDER-CHECKLIST.md` (account/zone items) and `README.md` (commands).
 ## Daily (2 minutes)
 
 ```bash
-npm run smoke        # full live health check — 72 checks, exits 0/1
+npm run smoke        # full live health check — 376 checks, exits 0/1
 ```
 
-Expected: **98/98 passed, no warnings**. If a check fails:
+Expected: **376/376 passed, no warnings**. If a check fails:
 
 | Check | Likely cause | Action |
 |---|---|---|
@@ -30,7 +30,7 @@ for console errors (View → Developer → Console). The expected console state 
    the Pages API that the created deployment's `environment` is `production`, failing loudly
    on a preview (the lesson of 2026-08-15: `--branch=production` silently creates a preview
    here). The final line must read `ok deployment <id> verified: environment = production`.
-2. `npm run smoke` — all green (98/98).
+2. `npm run smoke` — all green (376/376).
 3. `npm run warmup` — hits the popular pages + a bounded set of real movie pages so the
    edge cache and metadata records are warm before viewers arrive (fail-soft: warnings are
    fine; 0 failures expected on a healthy deploy).
@@ -70,7 +70,7 @@ What to check:
 
 ## Crawl pressure (Google indexing the full catalog)
 
-When Search Console is live, Google will crawl the 18,495 sitemap URLs. What to expect and
+When Search Console is live, Google will crawl the 64,088 sitemap URLs (all fourteen pools). What to expect and
 what protects the site:
 
 - **First-wave cost:** the crawl hits `/sitemap.xml` (served from the local catalog index —
@@ -222,7 +222,7 @@ run `npm audit fix --force`, and re-run `npm audit signatures` after any depende
 
 - [ ] `FOUNDER-CHECKLIST.md` items 1–3: KV token + namespace, zone WAF/TLS, Search Console.
 - [ ] Submit `https://347movies.pages.dev/sitemap.xml` in Search Console and check the
-      sitemap report after a few days (expected: 18,495 URLs, no errors).
+      sitemap report after a few days (expected: 64,088 URLs, no errors).
 - [ ] Decide on an ad network (item 4) — slots + advertiser contact are live already.
 - [ ] Optional: `AMAZON_TAG` env var (item 5) for the affiliate mechanism.
 - [ ] After a week: review `changelog.md`'s "unverified" list; nothing should remain except

@@ -40,11 +40,12 @@ The movie player is an iframe to the Internet Archive embed (`https://archive.or
 1. Browser requests `GET /api/browse?...`, `GET /api/search?q=...&page=N`, `GET /api/movie/<identifier>`, `/sitemap.xml`, or `/api/random`.
 2. Worker validates inputs (query length ≤ 80 chars, identifier matches `^[A-Za-z0-9._-]{1,120}$`).
 3. **Catalog paths read the local catalog index** (`lib/catalog-index.ts`): one edge-cached
-   copy of the FULL legal catalog (~18,488 films, built once per 24h per colocation from a
-   single no-page `advancedsearch.php` request, in-isolate 30-min copy, stale-serve on
-   refresh failure). `/api/browse` filters/sorts/pages it in-memory (whole catalog
-   pageable — the old 100-page/2,400-film cap is gone); `/sitemap.xml` and `/api/random`
-   read it too. Zero archive.org calls per request on these paths.
+   copy per pool — fourteen indexes (films, tv, anime, cartoons, otr, music, documentaries,
+   sports, shorts, silents, publictv, science, govfilms, audiobooks), each built once per
+   24h per colocation from a single no-page `advancedsearch.php` request, in-isolate 30-min
+   copy, stale-serve on refresh failure. `/api/browse` filters/sorts/pages it in-memory
+   (whole catalog pageable — the old 100-page/2,400-film cap is gone); `/sitemap.xml` and
+   `/api/random` read them too. Zero archive.org calls per request on these paths.
 4. **Search stays live on archive.org** (`advancedsearch.php`, license-gated): relevance/
    stemming/full-text beats a local substring match, so quality is preserved.
 5. **Movie detail** calls `metadata/<identifier>` (full record: title, description, creators,
@@ -122,8 +123,11 @@ Phase status detail:
 | 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (18495 URLs — full catalog — rebuilt live 2026-08-15) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids |
 | 7 — Production launch | **DEPLOYED & verified live** | `wrangler pages deploy` succeeded; live walkthrough: all routes 200, player embed present, headers verified, 404 works |
 
-**Catalog size (live, verified):** 18,489 items across `feature_films` + `prelinger` +
-`moviesandfilms` with a declared CC/public-domain `licenseurl`; the `films=1` view
-(episodes + trailers + teasers + music videos + serial chapters/parts excluded — Solr-identical, verified 2026-08-16) serves **15,917 films**;
-138 film-noir; 533 in the 1920s decade. The sitemap deliberately lists the full legal union
-(18,488 URLs — every playable legal page, including trailers/episodes reachable by direct URL).
+**Catalog size (live, verified 2026-08-19):** fourteen pools, all under the same license gate:
+films (15,920) + TV (2,514) + anime (24) + cartoons (1,308) + radio (2,309) + music (1,455) +
+documentaries (8,417) + sports (3,625) + shorts (1,858) + silents (729) + public broadcasting
+(1,653) + science (257) + government films (5,947) + audiobooks (18,344) ≈ **64k items**
+deduped in the sitemap. The `films=1` view (episodes + trailers + teasers + music videos +
+serial chapters/parts excluded — Solr-identical, verified 2026-08-16) serves **15,920 films**;
+138 film-noir; 533 in the 1920s decade. The sitemap deliberately lists every pool's items
+(64,088 URLs — every playable legal page, including trailers/episodes reachable by direct URL).
