@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c0d11">
+<title>Collections — 347movies</title>
+<meta name="description" content="Every free catalog on 347movies — films, classic TV, anime, cartoons, old time radio, concerts, documentaries, sports, shorts, and silent films — streamed from the Internet Archive.">
+<link rel="canonical" href="https://347movies.pages.dev/collections">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="347movies">
+<meta property="og:title" content="Collections — 347movies">
+<meta property="og:description" content="Ten free catalogs streamed from the Internet Archive: films, TV, anime, cartoons, radio, concerts, documentaries, sports, shorts, and silent films.">
+<meta property="og:url" content="https://347movies.pages.dev/collections">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://archive.org">
+<link rel="preload" as="image" href="/images/02-nyc-skyline-90s-dusk.webp" fetchpriority="high">
+<link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="collections">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/"><span class="brand-347">347</span><span class="brand-movies">movies</span></a>
+    <nav class="site-nav" aria-label="Main">
+      <details class="nav-collections">
+        <summary>Collections</summary>
+        <div class="nav-collections__menu">
+          <a href="/collections">All collections</a>
+          <a href="/browse">Browse</a>
+          <a href="/tv">TV</a>
+          <a href="/anime">Anime</a>
+          <a href="/cartoons">Cartoons</a>
+          <a href="/otr">Radio</a>
+          <a href="/music">Music</a>
+          <a href="/documentaries">Documentaries</a>
+          <a href="/sports">Sports</a>
+          <a href="/shorts">Shorts</a>
+          <a href="/silents">Silents</a>
+        </div>
+      </details>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/about">About</a>
+    </nav>
+    <form class="header-search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="search-input">Search films</label>
+      <input id="search-input" name="q" type="search" placeholder="Search free films…" maxlength="80" autocomplete="off" required>
+      <button type="submit">Search</button>
+    </form>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
+      <svg class="theme-toggle__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+        <path class="theme-toggle__moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+        <g class="theme-toggle__sun" fill="currentColor">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.7 4.7l1.7 1.7M17.6 17.6l1.7 1.7M19.3 4.7l-1.7 1.7M6.4 17.6l-1.7 1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+</header>
+<main id="main" tabindex="-1">
+  <section class="hero">
+    <div class="container">
+      <p class="hero-eyebrow">The projection booth presents</p>
+      <h1>Collections</h1>
+      <p class="hero-sub">Ten free catalogs streamed from the Internet Archive — every title in the public domain or Creative Commons, with no accounts, no paywall, and ads that never interrupt the show.</p>
+      <p><a class="hero-surprise" href="/api/random">Surprise me — jump to a random title</a></p>
+    </div>
+  </section>
+  <div class="container">
+    <div class="collections">
+      <a class="collection-card" href="/browse">
+        <h2>Films</h2>
+        <p>Feature films from the silent era to today — noir, westerns, sci-fi, horror, comedy, and drama.</p>
+        <span class="collection-card__count" data-pool="films" data-noun="films">Loading…</span>
+      </a>
+      <a class="collection-card" href="/tv">
+        <h2>Classic TV</h2>
+        <p>The golden age of the tube — Twilight Zone, Bonanza, The Lone Ranger, and more.</p>
+        <span class="collection-card__count" data-pool="tv" data-noun="episodes">Loading…</span>
+      </a>
+      <a class="collection-card" href="/anime">
+        <h2>Anime</h2>
+        <p>Golden-age Japanese animation — the classics and the deep cuts.</p>
+        <span class="collection-card__count" data-pool="anime" data-noun="episodes">Loading…</span>
+      </a>
+      <a class="collection-card" href="/cartoons">
+        <h2>Cartoons</h2>
+        <p>Golden-age animation — Looney Tunes, Merrie Melodies, and the rest of the classics.</p>
+        <span class="collection-card__count" data-pool="cartoons" data-noun="cartoons">Loading…</span>
+      </a>
+      <a class="collection-card" href="/otr">
+        <h2>Old Time Radio</h2>
+        <p>The golden age of the dial — Suspense, The Shadow, Burns &amp; Allen, and more.</p>
+        <span class="collection-card__count" data-pool="otr" data-noun="episodes">Loading…</span>
+      </a>
+      <a class="collection-card" href="/music">
+        <h2>Music &amp; Concerts</h2>
+        <p>Live music — Grateful Dead soundboards, etree audience recordings, and more.</p>
+        <span class="collection-card__count" data-pool="music" data-noun="recordings">Loading…</span>
+      </a>
+      <a class="collection-card" href="/documentaries">
+        <h2>Documentaries &amp; Learning</h2>
+        <p>Local history, academic films, and community recordings from the archive.</p>
+        <span class="collection-card__count" data-pool="documentaries" data-noun="titles">Loading…</span>
+      </a>
+      <a class="collection-card" href="/sports">
+        <h2>Sports</h2>
+        <p>Classic games, matches, and sports recordings from the archive.</p>
+        <span class="collection-card__count" data-pool="sports" data-noun="titles">Loading…</span>
+      </a>
+      <a class="collection-card" href="/shorts">
+        <h2>Shorts <span class="collection-card__badge" title="These titles also appear in the Films catalog">Curated view</span></h2>
+        <p>Short films and one-reelers — Movietone revues, comedy, animation, and more.</p>
+        <span class="collection-card__count" data-pool="shorts" data-noun="shorts">Loading…</span>
+      </a>
+      <a class="collection-card" href="/silents">
+        <h2>Silent Films <span class="collection-card__badge" title="These titles also appear in the Films catalog">Curated view</span></h2>
+        <p>The silent era — The Golem, The Lodger, The Hands of Orlac, and more.</p>
+        <span class="collection-card__count" data-pool="silents" data-noun="films">Loading…</span>
+      </a>
+    </div>
+    <noscript><p class="empty">Live counts load with JavaScript. Browse every catalog from the header Collections menu, or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-tag">Free movies. No interruptions. Ever.</p>
+    <nav aria-label="Footer">
+      <a href="/about">About</a>
+      <a href="/collections">Collections</a>
+      <a href="/watchlist">Watchlist</a>
+      <a href="/advertise">Advertise</a>
+      <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+    <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
+  </div>
+</footer>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

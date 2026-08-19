@@ -9,7 +9,8 @@ import {
   keywordMatchesTitle,
   paginateIndex,
   queryCatalog,
-  randomFilmIdentifier,
+  RANDOM_VARIANTS,
+  randomCatalogIdentifier,
   sortIndex,
   type IndexedDoc,
 } from "../lib/catalog-index.ts";
@@ -138,11 +139,11 @@ test("queryCatalog honors genre, decade, and sort", async () => {
   assert.deepEqual(twenties.results.map((r) => r.identifier), ["film-a"]);
 });
 
-test("randomFilmIdentifier only ever returns films-only identifiers", async () => {
+test("randomCatalogIdentifier(films) only ever returns films-only identifiers", async () => {
   _resetCatalogIndexCacheForTests();
   const seen = new Set<string>();
   for (let i = 0; i < 20; i++) {
-    const id = await randomFilmIdentifier(fakeFetch(fixtureDocs));
+    const id = await randomCatalogIdentifier(["films"], fakeFetch(fixtureDocs));
     assert.ok(id !== null);
     seen.add(id);
   }
@@ -151,6 +152,44 @@ test("randomFilmIdentifier only ever returns films-only identifiers", async () =
   assert.ok(!seen.has("film-e"));
   assert.ok(seen.size >= 1);
   assert.ok(["film-a", "film-b", "film-c"].every((id) => seen.has(id)) === (seen.size === 3));
+});
+
+test("randomCatalogIdentifier draws from a non-film pool without the films-only filter", async () => {
+  _resetCatalogIndexCacheForTests();
+  // A per-variant fetch: the documentaries clause returns a marker doc, everything else the
+  // films fixture — proving the non-film pools are reachable and NOT films-only-filtered.
+  const perVariantFetch = (async (input: unknown) => {
+    const url = String(input);
+    const docs = url.includes("culturalandacademicfilms")
+      ? [{ identifier: "doc-1", title: "A Documentary", year: 1995, addeddate: "2020-01-01T00:00:00Z", subject: [] }]
+      : fixtureDocs;
+    return new Response(JSON.stringify({ response: { docs } }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as typeof fetch;
+  const seen = new Set<string>();
+  for (let i = 0; i < 20; i++) {
+    const id = await randomCatalogIdentifier(["documentaries"], perVariantFetch);
+    assert.ok(id !== null);
+    seen.add(id);
+  }
+  assert.deepEqual(seen, new Set(["doc-1"]));
+});
+
+test("randomCatalogIdentifier returns null when every pool is empty", async () => {
+  _resetCatalogIndexCacheForTests();
+  const emptyFetch = (async () =>
+    new Response(JSON.stringify({ response: { docs: [] } }), {
+      headers: { "Content-Type": "application/json" },
+    })) as typeof fetch;
+  assert.equal(await randomCatalogIdentifier(["films", "silents"], emptyFetch), null);
+});
+
+test("RANDOM_VARIANTS spans all ten pools so Surprise me can land on any catalog item", () => {
+  assert.deepEqual(RANDOM_VARIANTS, [
+    "films", "tv", "anime", "cartoons", "otr", "music",
+    "documentaries", "sports", "shorts", "silents",
+  ]);
 });
 
 test("keywordMatchesTitle: ANY token >=3 chars, case-insensitive substring", () => {

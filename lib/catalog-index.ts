@@ -419,18 +419,52 @@ export async function queryCatalog(
   return { results: indexDocsToRecords(results), total, pages };
 }
 
+/** The film-like pools "Surprise me" draws from, uniformly over items. */
+/** The ten pools "Surprise me" draws from, uniformly over items. */
+export const RANDOM_VARIANTS: IndexVariant[] = [
+  "films",
+  "tv",
+  "anime",
+  "cartoons",
+  "otr",
+  "music",
+  "documentaries",
+  "sports",
+  "shorts",
+  "silents",
+];
+
 /**
- * A random film identifier from the films-only catalog ("Surprise me"), or null when the
- * catalog is empty. Reads the same edge-cached index as queryCatalog; no upstream call.
+ * A random identifier drawn uniformly across the given catalogs ("Surprise me"), or null
+ * when they are all empty. Reads the same edge-cached indexes as queryCatalog; no upstream
+ * call. Selection is uniform over items, so each pool is weighted by its size — a silents
+ * item is no more likely than a films item, and the documented "Surprise me is uniform"
+ * promise holds across the whole watchable catalog.
+ *
+ * The films pool keeps its films-only policy (never "Episode 18" or a trailer); every other
+ * pool is drawn as-is, matching how /api/browse presents it — episodes ARE the content in
+ * tv/anime/cartoons, and tracks ARE the content in otr/music. Variant loads are parallel so
+ * a cold edge never pays the sum of sequential upstream builds (each is single-flighted and
+ * edge-cached anyway).
  */
-export async function randomFilmIdentifier(
+export async function randomCatalogIdentifier(
+  variants: IndexVariant[] = RANDOM_VARIANTS,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string | null> {
-  const docs = await getCatalogIndex(fetchImpl, "films");
-  const films = filterIndex(docs, { filmsOnly: true });
-  if (films.length === 0) return null;
-  const chosen = films[Math.floor(Math.random() * films.length)] as IndexedDoc;
-  return chosen.identifier;
+  const pools = await Promise.all(
+    variants.map(async (variant) => {
+      const docs = await getCatalogIndex(fetchImpl, variant);
+      return variant === "films" ? filterIndex(docs, { filmsOnly: true }) : docs;
+    }),
+  );
+  const total = pools.reduce((n, docs) => n + docs.length, 0);
+  if (total === 0) return null;
+  let pick = Math.floor(Math.random() * total);
+  for (const docs of pools) {
+    if (pick < docs.length) return docs[pick]?.identifier ?? null;
+    pick -= docs.length;
+  }
+  return null;
 }
 
 /**

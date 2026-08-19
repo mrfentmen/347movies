@@ -3,6 +3,7 @@
  * All interpolated values are HTML-escaped (constitution §6). No inline scripts or styles are
  * emitted, so the strict CSP (script-src/style-src 'self') holds on this page too.
  */
+import type { IndexVariant } from "./archive.ts";
 import { affiliateLink } from "./affiliate.ts";
 import { escapeHtml } from "./html.ts";
 import type { MovieRecord } from "./normalize.ts";
@@ -14,6 +15,7 @@ const HEADER = `<header class="site-header">
       <details class="nav-collections">
         <summary>Collections</summary>
         <div class="nav-collections__menu">
+          <a href="/collections">All collections</a>
           <a href="/browse">Browse</a>
           <a href="/tv">TV</a>
           <a href="/anime">Anime</a>
@@ -51,15 +53,7 @@ const FOOTER = `<footer class="site-footer">
     <p class="footer-tag">Free movies. No interruptions. Ever.</p>
     <nav aria-label="Footer">
       <a href="/about">About</a>
-      <a href="/tv">TV</a>
-      <a href="/anime">Anime</a>
-      <a href="/cartoons">Cartoons</a>
-      <a href="/otr">Radio</a>
-      <a href="/music">Music</a>
-      <a href="/documentaries">Documentaries</a>
-      <a href="/sports">Sports</a>
-      <a href="/shorts">Shorts</a>
-      <a href="/silents">Silents</a>
+      <a href="/collections">Collections</a>
       <a href="/watchlist">Watchlist</a>
       <a href="/advertise">Advertise</a>
       <a class="footer-coffee" href="https://buymeacoffee.com/347movies" target="_blank" rel="noopener">Buy me a coffee</a>
@@ -69,6 +63,20 @@ const FOOTER = `<footer class="site-footer">
     <p class="footer-note">347movies streams public domain and Creative Commons films embedded from the Internet Archive — we never host or store video. Ads appear only in marked sidebar and leaderboard slots and never interrupt a film. Affiliate links, when shown, are always disclosed.</p>
   </div>
 </footer>`;
+
+/** Pool landing pages for the "More from this pool" strip on movie detail pages. */
+const POOL_LANDING: Record<IndexVariant, { path: string; label: string }> = {
+  films: { path: "/browse", label: "Films" },
+  tv: { path: "/tv", label: "Classic TV" },
+  anime: { path: "/anime", label: "Anime" },
+  cartoons: { path: "/cartoons", label: "Cartoons" },
+  otr: { path: "/otr", label: "Old Time Radio" },
+  music: { path: "/music", label: "Music & Concerts" },
+  documentaries: { path: "/documentaries", label: "Documentaries & Learning" },
+  sports: { path: "/sports", label: "Sports" },
+  shorts: { path: "/shorts", label: "Shorts" },
+  silents: { path: "/silents", label: "Silent Films" },
+};
 
 export interface PageMeta {
   title: string;
@@ -199,6 +207,20 @@ export function renderMoviePage(
   const relatedSubject =
     record.subjects.find((s) => s.length > 2 && s.length <= 40 && !/\b(feature|silent|short|documentary) films?\b/i.test(s)) ?? "";
 
+  // "More from this pool": link the item's curated pool landing page, derived from
+  // archive.org's `collection` field (normalizeMetadata). Absent for old cached records
+  // (pre-pool) or items outside any curated pool — then no strip renders.
+  const poolLanding = record.pool ? POOL_LANDING[record.pool] : undefined;
+  const poolStrip = poolLanding
+    ? `<section class="section" id="pool-section">
+  <p class="section-eyebrow">More from this pool</p>
+  <div class="section-head">
+    <h2>${escapeHtml(poolLanding.label)}</h2>
+    <a class="see-all" href="${escapeHtml(poolLanding.path)}">See all &rarr;</a>
+  </div>
+</section>`
+    : "";
+
   // Archive titles often already contain the year ("It (1927)"); avoid doubling it.
   const yearSuffix = record.year && !title.includes(String(record.year)) ? ` (${escapeHtml(String(record.year))})` : "";
   const pageTitle = `${title}${yearSuffix}`;
@@ -251,6 +273,7 @@ export function renderMoviePage(
       ${patreonHtml}
     </aside>
   </div>
+  ${poolStrip}
   <!-- More like this: filled client-side from the first usable subject tag (app.js fetches
        /api/browse?subject=…). Ships hidden until a related row actually renders. -->
   <section class="section" id="related-section" data-subject="${escapeHtml(relatedSubject)}" hidden>

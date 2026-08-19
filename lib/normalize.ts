@@ -3,8 +3,10 @@
  *
  * The record shape is:
  * { identifier, title, year, addeddate, description, genres[], creators[], subjects[],
- *   thumbnails{}, runtime, runtimeSeconds, license, source_url, hasVideo }
+ *   thumbnails{}, runtime, runtimeSeconds, license, source_url, hasVideo, pool }
  */
+import type { IndexVariant } from "./archive.ts";
+
 export type License = "publicdomain" | "creativecommons";
 
 export interface Thumbnails {
@@ -69,6 +71,8 @@ export interface MovieRecord {
   episodeCount: number | null;
   /** Series/artist tag (audio pools only, populated by the card enrichment). */
   seriesTag: string | null;
+  /** Which curated pool the item belongs to (archive.org `collection` → pool key). */
+  pool: IndexVariant | null;
 }
 
 export function asString(value: unknown): string | null {
@@ -390,6 +394,40 @@ function descriptionOf(value: unknown, maxLength: number): string | null {
 }
 
 /** Normalize an advancedsearch result doc into the typed record. */
+/**
+ * Map an archive.org `collection` field (a bare string or an array — both appear) to the
+ * curated pool it belongs to, or null when it matches none. The specific pools (tv, anime,
+ * … silents) are checked BEFORE the films union because shorts/silents items also sit in the
+ * films collections (`short_films` + `moviesandfilms`): the more specific pool landing page
+ * should win. Collection identifiers are matched case-insensitively (Solr is too). The
+ * collection names mirror the gate clauses in lib/archive.ts.
+ */
+const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
+  [["classic_tv"], "tv"],
+  [["anime"], "anime"],
+  [["animationandcartoons"], "cartoons"],
+  [["oldtimeradio"], "otr"],
+  [["gratefuldead", "etree"], "music"],
+  [["culturalandacademicfilms"], "documentaries"],
+  [["sports"], "sports"],
+  [["short_films"], "shorts"],
+  [["silent_films"], "silents"],
+  [["feature_films", "prelinger", "moviesandfilms"], "films"],
+];
+
+export function poolFromCollections(collections: unknown): IndexVariant | null {
+  const values = Array.isArray(collections)
+    ? collections.map(String)
+    : collections === null || collections === undefined
+      ? []
+      : [String(collections)];
+  const set = new Set(values.map((v) => v.toLowerCase()));
+  for (const [names, pool] of COLLECTION_TO_POOL) {
+    if (names.some((n) => set.has(n))) return pool;
+  }
+  return null;
+}
+
 export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
   const identifier = asString(doc["identifier"]) ?? "";
   const title = asString(doc["title"]) ?? (identifier || "Untitled");
@@ -421,6 +459,9 @@ export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
     // Search-index docs carry no file data — the audio card enrichment fills these in.
     episodeCount: null,
     seriesTag: null,
+    // Index/live-search docs don't fetch `collection`, so pool is null on this path; the
+    // detail page (normalizeMetadata) derives it from full metadata.
+    pool: poolFromCollections(doc["collection"]),
   };
 }
 
@@ -457,5 +498,6 @@ export function normalizeMetadata(
     dir,
     episodeCount: null,
     seriesTag: null,
+    pool: poolFromCollections(meta["collection"]),
   };
 }

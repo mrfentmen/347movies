@@ -1,28 +1,29 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
-import { randomFilmIdentifier } from "../../lib/catalog-index.ts";
+import { randomCatalogIdentifier } from "../../lib/catalog-index.ts";
 import type { Env } from "../../lib/env.ts";
 import { isNonFilmTitle } from "../../lib/film-policy.ts";
 import { resolveSiteUrl } from "../../lib/site-url.ts";
 import { headHandler } from "../_head.ts";
 
 /**
- * GET /api/random — 302 redirect to a random catalog film page ("Surprise me").
+ * GET /api/random — 302 redirect to a random catalog page ("Surprise me").
  *
- * Uniform over the films-only catalog (15,917 films, verified live 2026-08-16)
- * via the shared deep query seam (lib/catalog-index.ts `randomFilmIdentifier`): the same
- * edge-cached index /api/browse reads, no upstream call. The films-only policy is catalog
- * policy: "Surprise me" lands on a feature film, never "Episode 18" or a trailer. If the
- * index is unavailable (fully cold + upstream down), falls back to parsing our own
- * edge-cached sitemap for the movie URLs — still applying the same films-only matcher, so
- * even the degraded path honors the policy. Rate-limited like every /api/* route; noindex
- * via middleware.
+ * Uniform over all ten pools (films, tv, anime, cartoons, otr, music, documentaries,
+ * sports, shorts, silents) via lib/catalog-index.ts `randomCatalogIdentifier`, which reads
+ * the same edge-cached indexes /api/browse reads — no upstream call when warm. The films
+ * pool keeps its films-only policy (never "Episode 18" or a trailer); the other pools are
+ * drawn as browse presents them (episodes/tracks ARE the content). If the index is
+ * unavailable (fully cold + upstream down), falls back to parsing our own edge-cached
+ * sitemap — which lists only the films union, so the degraded path is a films-only subset
+ * (still legal, never guessed). Rate-limited like every /api/* route; noindex via
+ * middleware.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   // Request-host resolution so a custom domain redirects to itself, not pages.dev.
   const site = resolveSiteUrl(request, env);
 
   try {
-    const chosen = await randomFilmIdentifier();
+    const chosen = await randomCatalogIdentifier();
     if (chosen === null) {
       return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
@@ -44,8 +45,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
         .map((m) => m[1] as string)
         .filter((u) => u.includes("/movie/"));
-      // Same films-only policy as the primary path: drop trailer/episode titles even on the
-      // degraded path (the sitemap lists the full legal union, which includes them).
+      // The sitemap lists only the films union (not the newer pools), so the degraded path
+      // is a films-only subset — still legal, still never "Episode 18" or a trailer.
       const films = locs.filter((u) => !isNonFilmTitle(decodeURIComponent(u.split("/").pop() ?? "")));
       if (films.length === 0) {
         return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });

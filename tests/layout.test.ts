@@ -29,6 +29,7 @@ const RECORD: MovieRecord = {
   dir: null,
   episodeCount: null,
   seriesTag: null,
+  pool: null,
 };
 
 test("renderMoviePage embeds the archive.org player for playable items", () => {
@@ -54,6 +55,20 @@ test("renderMoviePage renders quality + server playback controls when derivative
   assert.ok(html.includes('value="mirror"'), "mirror option present");
   assert.ok(html.includes('data-mirror="https://dn600208.us.archive.org/0/items/it-1927"'), "mirror base present");
   assert.ok(html.includes('data-path="It%20%20%281927%29.mp4"'), "default path present");
+});
+
+test("renderMoviePage renders a More-from-this-pool strip for a pooled item", () => {
+  const silents = { ...RECORD, pool: "silents" as const };
+  const html = renderMoviePage(silents, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes('id="pool-section"'), "pool strip present");
+  assert.ok(html.includes("More from this pool"), "pool strip eyebrow present");
+  assert.ok(html.includes("Silent Films"), "pool label present");
+  assert.ok(html.includes('href="/silents"'), "pool landing page linked");
+});
+
+test("renderMoviePage omits the pool strip when the pool is unknown", () => {
+  const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
+  assert.ok(!html.includes('id="pool-section"'), "no pool strip for pool:null");
 });
 
 test("renderMoviePage omits quality select for a single derivative and mirror without server info", () => {
