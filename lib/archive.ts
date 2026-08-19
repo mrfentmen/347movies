@@ -169,6 +169,23 @@ export const AUDIOBOOKS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:librivoxau
  */
 export const RECORDS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:78rpm AND mediatype:audio AND year:[* TO 1926]`;
 
+/**
+ * Ephemeral films catalog gate: the same license gate over AV Geeks' `avgeeks` collection
+ * (Skip Elsheimer's digitization of classic American sponsored/educational/industrial films
+ * — Private SNAFU, FDA quackery PSAs, chocolate-factory films, Army/AT&T/NASA/Erpi
+ * productions). Measured live 2026-08-19: 413 license-marked movies, all public-domain
+ * marks applied by the archivist (same trust model as AAPB/Wellcome/FedFlix — the marks
+ * are the curator's, not fan uploads). Year metadata is unreliable (re-upload dates like
+ * "2026" on 1950s films; ~95 items yearless) but the content is uniformly the classic
+ * canon, so no year cutoff is needed — the films-pool trust model applies unchanged.
+ * Items ARE the content, so the films-only exclusion does not apply. The avgeeks items
+ * also sit in archive.org's broad `ephemera` collection, which is deliberately NOT gated
+ * here (modern community oral histories — probed and rejected 2026-08-19); the gate pins
+ * `collection:avgeeks` precisely, and the pool mapping in lib/normalize.ts maps only
+ * `avgeeks` → ephemera for the same reason.
+ */
+export const EPHEMERA_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:avgeeks AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -185,7 +202,8 @@ export type IndexVariant =
   | "science"
   | "govfilms"
   | "audiobooks"
-  | "records";
+  | "records"
+  | "ephemera";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -222,6 +240,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return AUDIOBOOKS_BASE_CLAUSE;
     case "records":
       return RECORDS_BASE_CLAUSE;
+    case "ephemera":
+      return EPHEMERA_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

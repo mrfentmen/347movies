@@ -31,6 +31,7 @@ const HEADER = `<header class="site-header">
           <a href="/govfilms">Government Films</a>
           <a href="/audiobooks">Audiobooks</a>
           <a href="/records">Vintage Records</a>
+          <a href="/ephemera">Ephemeral Films</a>
         </div>
       </details>
       <a href="/watchlist">Watchlist</a>
@@ -86,6 +87,7 @@ const POOL_LANDING: Record<IndexVariant, { path: string; label: string }> = {
   govfilms: { path: "/govfilms", label: "Government Films" },
   audiobooks: { path: "/audiobooks", label: "Audiobooks" },
   records: { path: "/records", label: "Vintage Records" },
+  ephemera: { path: "/ephemera", label: "Ephemeral Films" },
 };
 
 export interface PageMeta {

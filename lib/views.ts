@@ -61,6 +61,8 @@ export const COUNTED_PATHS = [
   "/science",
   "/govfilms",
   "/audiobooks",
+  "/records",
+  "/ephemera",
   "/collections",
   "/advertise",
   "/movie",

@@ -4,6 +4,32 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-19 — Ephemeral Films pool (AV Geeks) — the institutional-license research win
+
+- **New pool: Ephemeral Films (`/ephemera`).** Probed every remaining archive.org collection
+  for institutionally-licensed content (research note: `docs/institutional-collections-research.md`)
+  and found exactly one honest win: `avgeeks`, Skip Elsheimer's AV Geeks archive — 413
+  license-marked classic sponsored/educational/industrial films (Private SNAFU, FDA quackery
+  PSAs, chocolate-factory films, Army/AT&T/NASA/Erpi productions), all public-domain marks
+  applied by the archivist himself (same trust model as AAPB/Wellcome/FedFlix). Every other
+  candidate failed honestly: `europeanlibraries` (328k gated) is 99% books with its movie
+  slice being Wellcome films already in `science`; `smithsonian` is books; `audio_music`
+  (73k gated) is a self-declared-mark junk drawer; `georgeblood` (187k) carries zero license
+  marks. The broad `ephemera` collection (modern oral histories) is deliberately NOT gated.
+- **Full register flow:** gate (`collection:avgeeks` + license + mediatype:movies — no year
+  cutoff, the content is uniformly old even where the year field says 2026), index, browse/
+  search/collections APIs, pool mapping (avgeeks → ephemera; the `ephemera` collection alone
+  stays unmapped), landing page, home section, Collections hub card, nav on every page,
+  sitemap sub-sitemap, warmup, smoke, tests. `/api/random` now draws from all sixteen pools.
+- **Fixed a nav regression:** the Records batch's bulk nav edit duplicated the last three
+  dropdown links (govfilms/audiobooks/records) on the home and Collections pages — deduped
+  while adding the ephemera link.
+- **View-counter bucket gap closed:** `/records` (added last batch) and `/ephemera` now have
+  COUNTED_PATHS buckets — the advertise audience stats were undercounting the newest pools.
+- Sitemap now **72,406 URLs across 17 sub-sitemaps**; smoke suite at **389/389**.
+
+---
+
 ## 2026-08-19 — Vintage Records pool + sitemap index split (PR #28, deploy 99e6591b)
 
 - **Sitemap index (production fix):** the single-file sitemap hit 63,419 URLs — over the

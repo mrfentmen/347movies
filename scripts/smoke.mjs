@@ -59,6 +59,7 @@ const CASES = [
   ["GET", "/api/browse?govfilms=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?audiobooks=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?records=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?ephemera=1&sort=recent&page=1", 200],
   ["GET", "/documentaries", 200],
   ["GET", "/sports", 200],
   ["GET", "/shorts", 200],
@@ -68,6 +69,7 @@ const CASES = [
   ["GET", "/govfilms", 200],
   ["GET", "/audiobooks", 200],
   ["GET", "/records", 200],
+  ["GET", "/ephemera", 200],
   ["GET", "/collections", 200],
   ["GET", "/api/collections", 200],
   ["GET", "/api/browse?subject=film+noir&sort=newest&page=1", 200],
@@ -248,7 +250,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -327,6 +329,7 @@ try {
   ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
   ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
   ok(js.includes("/api/browse?records=1&sort=recent&page=1"), "JS: Vintage records home feed wired");
+  ok(js.includes("/api/browse?ephemera=1&sort=recent&page=1"), "JS: Ephemeral films home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
@@ -557,7 +560,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -886,7 +889,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;
@@ -950,7 +953,7 @@ try {
   ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 15, "collections page carries fifteen pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 16, "collections page carries sixteen pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -1021,10 +1024,10 @@ try {
   ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
-  ok(fresh.subs >= 16, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
+  ok(fresh.subs >= 17, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, …) carry no lastmod; every catalog URL does.
-  ok(fresh.lastmods >= fresh.locs - 23, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries)`);
+  ok(fresh.lastmods >= fresh.locs - 24, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries)`);
   // Curated-view annotation: the static sub-sitemap documents that /shorts and /silents are
   // views of /browse (protocol has no description field, so this is an XML comment — the
   // SERP-visible disclosure is the page meta description).

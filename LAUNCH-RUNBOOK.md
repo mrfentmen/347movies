@@ -70,7 +70,7 @@ What to check:
 
 ## Crawl pressure (Google indexing the full catalog)
 
-When Search Console is live, Google will crawl the sitemap index (71,992 URLs across 16 sub-sitemaps, all fifteen pools). What to expect and
+When Search Console is live, Google will crawl the sitemap index (72,406 URLs across 17 sub-sitemaps, all sixteen pools). What to expect and
 what protects the site:
 
 - **First-wave cost:** the crawl hits `/sitemap.xml` (served from the local catalog index —
@@ -222,7 +222,7 @@ run `npm audit fix --force`, and re-run `npm audit signatures` after any depende
 
 - [ ] `FOUNDER-CHECKLIST.md` items 1–3: KV token + namespace, zone WAF/TLS, Search Console.
 - [ ] Submit `https://347movies.pages.dev/sitemap.xml` in Search Console and check the
-      sitemap report after a few days (expected: 71,992 URLs across the index's sub-sitemaps, no errors).
+      sitemap report after a few days (expected: 72,406 URLs across the index's sub-sitemaps, no errors).
 - [ ] Decide on an ad network (item 4) — slots + advertiser contact are live already.
 - [ ] Optional: `AMAZON_TAG` env var (item 5) for the affiliate mechanism.
 - [ ] After a week: review `changelog.md`'s "unverified" list; nothing should remain except

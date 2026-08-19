@@ -58,6 +58,7 @@ const PAGES = [
   "/govfilms",
   "/audiobooks",
   "/records",
+  "/ephemera",
   // Warming page 1 of each new video pool pre-builds its catalog index (one archive.org
   // fetch per pool) so the first real visitor to the home sections or pool pages never
   // pays the cold-index build on the request path.
@@ -70,6 +71,7 @@ const PAGES = [
   "/api/browse?govfilms=1&sort=recent&page=1",
   "/api/browse?audiobooks=1&sort=recent&page=1",
   "/api/browse?records=1&sort=recent&page=1",
+  "/api/browse?ephemera=1&sort=recent&page=1",
 ];
 
 // OTR/music browse warms the audio-card enrichment (per-identifier metadata): without it,
