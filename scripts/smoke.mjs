@@ -948,10 +948,15 @@ try {
   // 2026-08-18: 0 exclusive items), so they must be labeled as curated views, never implied
   // to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
   ok((collectionsHtml.match(/Curated view/g) || []).length === 2, "collections page badges shorts + silents as curated views");
+  ok((homeFooterPage.match(/Curated view/g) || []).length === 2, "home page badges the shorts + silents sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
   ok(shortsHtml.includes("A curated view") && shortsHtml.includes('href="/browse"'), "shorts page discloses it is a curated view of Films");
   ok(silentsHtml.includes("A curated view") && silentsHtml.includes('href="/browse"'), "silents page discloses it is a curated view of Films");
+  // The overlap must also be visible to search engines: the page meta description (what a
+  // SERP shows) discloses the curated-view relationship, not just the visible hero note.
+  ok(/<meta name="description"[^>]*curated view/i.test(shortsHtml), "shorts meta description discloses the curated-view overlap");
+  ok(/<meta name="description"[^>]*curated view/i.test(silentsHtml), "silents meta description discloses the curated-view overlap");
 } catch (err) {
   failures += 1;
   checks += 1;
@@ -971,6 +976,10 @@ try {
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
   ok(freshLastmods >= freshLocs - 18, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
+  // Curated-view annotation: the sitemap documents that /shorts and /silents are views of
+  // /browse (protocol has no description field, so this is an XML comment — the SERP-visible
+  // disclosure is the page meta description).
+  ok(freshXml.includes("curated view of /browse"), "sitemap annotates /shorts and /silents as curated views of /browse");
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await request("GET", "/sitemap.xml");
