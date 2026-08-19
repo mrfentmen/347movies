@@ -752,8 +752,13 @@ try {
   ok(freshHtml.includes("archive.org/embed/it-1927"), "player iframe present (deployed code)");
   ok(freshHtml.includes('data-watch-id="it-1927"'), "save-to-watchlist button present (deployed code)");
   // "More from this pool" strip: the item's pool landing page is linked back to its pool
-  // (it-1927 is a films-union item → /browse). Guards the internal-linking strip.
+  // (it-1927 is a films-union item → /browse). Guards the internal-linking strip and the
+  // client-side item row (data-pool/data-exclude feed app.js's /api/browse?<pool>=1 fetch).
   ok(freshHtml.includes('id="pool-section"') && freshHtml.includes('href="/browse">See all'), "movie page links its pool landing page (More-from-this-pool strip)");
+  ok(freshHtml.includes('data-pool="films"') && freshHtml.includes('data-exclude="it-1927"') && freshHtml.includes('id="pool-more"'), "pool strip carries the variant + grid target for the item row");
+  // Pool label: the item's collection is announced at the top (chip + breadcrumb) so a
+  // random/direct landing knows which pool it arrived in.
+  ok(freshHtml.includes('class="chip chip--pool"') && freshHtml.includes('>Films</a>'), "movie page labels its pool (chip + breadcrumb)");
   // Structured data: the page must carry a JSON-LD VideoObject data block with the real
   // embed URL (video indexing / rich results). Data blocks are exempt from script-src CSP.
   ok(freshHtml.includes('type="application/ld+json"') && freshHtml.includes('"@type":"VideoObject"'), "JSON-LD VideoObject present");

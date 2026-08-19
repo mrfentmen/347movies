@@ -869,6 +869,31 @@
           });
       }
     }
+    // More from this pool: fill the grid client-side from /api/browse?<pool>=1 (the item's
+    // curated pool), excluding the item the visitor is already on. The heading + See-all link
+    // are server-rendered; the grid ships hidden and only shows when it has items (fail closed).
+    const poolSection = $("#pool-section");
+    const poolGrid = $("#pool-more");
+    if (poolSection && poolGrid) {
+      const pool = (poolSection.getAttribute("data-pool") || "").trim();
+      const exclude = (poolSection.getAttribute("data-exclude") || "").trim();
+      if (pool) {
+        const params = new URLSearchParams({ page: "1", sort: "recent" });
+        if (pool !== "films") params.set(pool, "1");
+        apiFetch(`/api/browse?${params.toString()}`)
+          .then((data) => {
+            const items = (data.results || [])
+              .filter((r) => r && r.identifier !== exclude)
+              .slice(0, 8);
+            if (items.length === 0) return;
+            renderGrid(poolGrid, items);
+            poolGrid.hidden = false;
+          })
+          .catch(() => {
+            /* fail closed: the row stays hidden */
+          });
+      }
+    }
     // The player is a cross-origin iframe: focus inside the archive.org embed does NOT
     // propagate :focus-visible/:focus-within to the parent in every engine (verified
     // headless: activeElement is the iframe yet matches(':focus') is false), so a keyboard

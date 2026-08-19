@@ -172,7 +172,17 @@ export function renderMoviePage(
   const runtimeChip = record.runtime ? `<span class="chip">${escapeHtml(record.runtime)}</span>` : "";
   const genreChips = record.genres.map((g) => `<span class="chip">${escapeHtml(g)}</span>`).join("");
   const licenseChip = licenseLabel ? `<span class="chip chip--license">${licenseLabel}</span>` : "";
-  const metaChips = yearChip + runtimeChip + genreChips + licenseChip;
+  // Pool label: tells a random/direct landing which collection it arrived in. Derived from
+  // the archive.org `collection` field (normalizeMetadata); absent for old cached records or
+  // items outside any curated pool — then no chip/breadcrumb/strip render.
+  const poolLanding = record.pool ? POOL_LANDING[record.pool] : undefined;
+  const poolChip = poolLanding
+    ? `<a class="chip chip--pool" href="${escapeHtml(poolLanding.path)}">${escapeHtml(poolLanding.label)}</a>`
+    : "";
+  const poolCrumb = poolLanding
+    ? `<a href="${escapeHtml(poolLanding.path)}">${escapeHtml(poolLanding.label)}</a> <span aria-hidden="true">/</span> `
+    : "";
+  const metaChips = poolChip + yearChip + runtimeChip + genreChips + licenseChip;
 
   const creators = record.creators.length > 0
     ? `<h2>Directors &amp; creators</h2><p>${record.creators.map(escapeHtml).join(", ")}</p>`
@@ -207,17 +217,19 @@ export function renderMoviePage(
   const relatedSubject =
     record.subjects.find((s) => s.length > 2 && s.length <= 40 && !/\b(feature|silent|short|documentary) films?\b/i.test(s)) ?? "";
 
-  // "More from this pool": link the item's curated pool landing page, derived from
-  // archive.org's `collection` field (normalizeMetadata). Absent for old cached records
-  // (pre-pool) or items outside any curated pool — then no strip renders.
-  const poolLanding = record.pool ? POOL_LANDING[record.pool] : undefined;
+  // "More from this pool" row (bottom): the heading + See-all link are server-rendered and
+  // always present (the internal-linking strip), while the item grid is filled client-side
+  // from /api/browse?<pool>=1 by app.js (same pattern as "More like this"). data-pool carries
+  // the variant key; data-exclude drops the item the visitor is already on. The grid ships
+  // hidden and only unhides when it has items (fail closed).
   const poolStrip = poolLanding
-    ? `<section class="section" id="pool-section">
+    ? `<section class="section" id="pool-section" data-pool="${escapeHtml(record.pool ?? "")}" data-exclude="${escapeHtml(id)}">
   <p class="section-eyebrow">More from this pool</p>
   <div class="section-head">
     <h2>${escapeHtml(poolLanding.label)}</h2>
     <a class="see-all" href="${escapeHtml(poolLanding.path)}">See all &rarr;</a>
   </div>
+  <div class="grid" id="pool-more" hidden></div>
 </section>`
     : "";
 
@@ -239,7 +251,7 @@ export function renderMoviePage(
   const body = `<div class="container">
   <div class="movie">
     <div class="movie-main">
-      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> <span aria-hidden="true">/</span> <span aria-current="page">${escapeHtml(title)}</span></nav>
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> <span aria-hidden="true">/</span> ${poolCrumb}<span aria-current="page">${escapeHtml(title)}</span></nav>
       ${player}
       ${playbackTools(record, kind)}
       <div class="movie-head">
@@ -291,21 +303,30 @@ export function renderMoviePage(
 
   const siteBase = siteUrl.replace(/\/$/, "");
 
-  // schema.org structured data in a JSON-LD data block: a BreadcrumbList (Home → film) plus
+  // schema.org structured data in a JSON-LD data block: a BreadcrumbList (Home → Pool → Title) plus
   // the VideoObject shape Google uses for video indexing and rich results — or AudioObject
   // for Old Time Radio items. uploadDate is the real archive.org added date; duration is
   // derived from the real runtime. Both are omitted when unavailable — never fabricated.
+  const breadcrumbItems: Array<Record<string, unknown>> = [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteBase}/` },
+  ];
+  if (poolLanding) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      position: 2,
+      name: poolLanding.label,
+      item: `${siteBase}${poolLanding.path}`,
+    });
+  }
+  breadcrumbItems.push({
+    "@type": "ListItem",
+    position: breadcrumbItems.length + 1,
+    name: pageTitle,
+    item: `${siteBase}/movie/${encodeURIComponent(id)}`,
+  });
   const breadcrumb: Record<string, unknown> = {
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${siteBase}/` },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: pageTitle,
-        item: `${siteBase}/movie/${encodeURIComponent(id)}`,
-      },
-    ],
+    itemListElement: breadcrumbItems,
   };
   const media: Record<string, unknown> = {
     "@type": kind === "audio" ? "AudioObject" : "VideoObject",

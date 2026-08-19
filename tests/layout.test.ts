@@ -61,14 +61,26 @@ test("renderMoviePage renders a More-from-this-pool strip for a pooled item", ()
   const silents = { ...RECORD, pool: "silents" as const };
   const html = renderMoviePage(silents, "https://347movies.pages.dev", undefined);
   assert.ok(html.includes('id="pool-section"'), "pool strip present");
+  assert.ok(html.includes('data-pool="silents"'), "strip carries the pool variant for the client fetch");
+  assert.ok(html.includes('data-exclude="it-1927"'), "strip excludes the current item");
+  assert.ok(html.includes('id="pool-more"'), "strip carries a grid target for the item row");
   assert.ok(html.includes("More from this pool"), "pool strip eyebrow present");
   assert.ok(html.includes("Silent Films"), "pool label present");
   assert.ok(html.includes('href="/silents"'), "pool landing page linked");
 });
 
+test("renderMoviePage labels the pool in the chip, breadcrumb, and JSON-LD", () => {
+  const silents = { ...RECORD, pool: "silents" as const };
+  const html = renderMoviePage(silents, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes('class="chip chip--pool"'), "pool chip present in the meta row");
+  assert.ok(html.includes('>Silent Films</a>'), "pool label links to its landing page (chip + breadcrumb)");
+  assert.ok(html.includes('"name":"Silent Films"'), "JSON-LD breadcrumb includes the pool");
+});
+
 test("renderMoviePage omits the pool strip when the pool is unknown", () => {
   const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
   assert.ok(!html.includes('id="pool-section"'), "no pool strip for pool:null");
+  assert.ok(!html.includes("chip--pool"), "no pool chip for pool:null");
 });
 
 test("renderMoviePage omits quality select for a single derivative and mirror without server info", () => {
