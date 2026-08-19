@@ -105,6 +105,7 @@ export function episodeCountFromFiles(files: unknown[] | undefined): number | nu
  *    title has no separator (the title IS the series — the card already shows it).
  *  - Music: the artist/band (`creator`), which is the series tag for a live recording.
  *  - Audiobooks: the author (`creator`), the series tag for a LibriVox recording.
+ *  - Vintage records: the performer/composer (`creator`), the series tag for a 78rpm item.
  */
 export function seriesTagFromMeta(
   meta: Record<string, unknown> | undefined,
@@ -114,7 +115,7 @@ export function seriesTagFromMeta(
   if (!meta) return null;
   const fromSeries = asString(meta["series"]);
   if (fromSeries) return fromSeries;
-  if (variant === "music" || variant === "audiobooks") {
+  if (variant === "music" || variant === "audiobooks" || variant === "records") {
     const creator = asString(meta["creator"]);
     return creator ?? null;
   }
@@ -169,7 +170,7 @@ export async function enrichAudioCardMeta(
   fetchImpl: typeof fetch = fetch,
   deadlineMs: number = ENRICH_DEADLINE_MS,
 ): Promise<void> {
-  if (variant !== "otr" && variant !== "music" && variant !== "audiobooks") return;
+  if (variant !== "otr" && variant !== "music" && variant !== "audiobooks" && variant !== "records") return;
   if (records.length === 0) return;
   const deadline = Date.now() + deadlineMs;
   let index = 0;

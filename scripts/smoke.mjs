@@ -9,14 +9,16 @@ import { readFileSync } from "node:fs";
  *
  *   npm run smoke                      # against https://347movies.pages.dev
  *   SMOKE_BASE_URL=https://dev.example npm run smoke   # against another deployment
- *   SMOKE_MIN_SITEMAP_URLS=18000 npm run smoke         # tighten the sitemap floor
+ *   SMOKE_MIN_SITEMAP_URLS=50000 npm run smoke        # tighten the sitemap floor
  *
  * Exits 0 when everything passes, 1 otherwise. Every check is a real network request.
  */
 const BASE = (process.env.SMOKE_BASE_URL || "https://347movies.pages.dev").replace(/\/$/, "");
-// Full legal catalog floor: the sitemap builds ~18,489 films; 18,000 catches a truncated
-// build while leaving headroom for the catalog to grow.
-const MIN_SITEMAP_URLS = Number(process.env.SMOKE_MIN_SITEMAP_URLS || 18000);
+// Full catalog floor: the sitemap index's sub-sitemaps total ~70k URLs across all fifteen
+// pools (films union + every curated pool). 50,000 also catches a single-file regression —
+// the protocol caps one sitemap at 50k URLs, so a broken build that collapses back to one
+// file can never reach this floor.
+const MIN_SITEMAP_URLS = Number(process.env.SMOKE_MIN_SITEMAP_URLS || 50000);
 const TIMEOUT_MS = 90_000;
 
 // The pinned primary origin for canonicals/og:url — read from the SITE_URL var in
@@ -56,6 +58,7 @@ const CASES = [
   ["GET", "/api/browse?science=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?govfilms=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?audiobooks=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?records=1&sort=recent&page=1", 200],
   ["GET", "/documentaries", 200],
   ["GET", "/sports", 200],
   ["GET", "/shorts", 200],
@@ -64,6 +67,7 @@ const CASES = [
   ["GET", "/science", 200],
   ["GET", "/govfilms", 200],
   ["GET", "/audiobooks", 200],
+  ["GET", "/records", 200],
   ["GET", "/collections", 200],
   ["GET", "/api/collections", 200],
   ["GET", "/api/browse?subject=film+noir&sort=newest&page=1", 200],
@@ -244,7 +248,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -322,6 +326,7 @@ try {
   ok(js.includes("/api/browse?science=1&sort=recent&page=1"), "JS: Science & medicine home feed wired");
   ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
   ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
+  ok(js.includes("/api/browse?records=1&sort=recent&page=1"), "JS: Vintage records home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
@@ -552,7 +557,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -881,7 +886,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;
@@ -945,7 +950,7 @@ try {
   ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 14, "collections page carries fourteen pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 15, "collections page carries fifteen pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -978,35 +983,60 @@ try {
 
 console.log("\n— sitemap —");
 try {
+  // The catalog outgrew the 50,000-URL single-file sitemap limit, so /sitemap.xml is now
+  // an INDEX pointing at one sub-sitemap per pool. This helper follows the index and sums
+  // every sub-sitemap's URLs/lastmods — the total is the real catalog size.
+  async function fetchSitemapTotals(indexPath) {
+    const indexRes = await request("GET", indexPath);
+    const indexXml = await indexRes.text();
+    // The index's sub-sitemap locs are absolute (production origin); rewrite the host to the
+    // smoke BASE so a dev/localhost run fetches the same deployment, not production.
+    const subs = [...indexXml.matchAll(/<loc>([^<]+\.xml)<\/loc>/g)].map((m) => {
+      const u = m[1];
+      return u.startsWith("http") ? u.replace(/^https?:\/\/[^/]+/, "") : u;
+    });
+    let locs = 0;
+    let lastmods = 0;
+    let curatedAnnotated = false;
+    for (const sub of subs) {
+      const res = await request("GET", sub);
+      const xml = await res.text();
+      locs += (xml.match(/<loc>/g) || []).length;
+      lastmods += (xml.match(/<lastmod>/g) || []).length;
+      if (xml.includes("curated view of /browse")) curatedAnnotated = true;
+    }
+    return { locs, lastmods, curatedAnnotated, subs: subs.length };
+  }
+
   // Hard check on a uniquely cache-busted URL: proves the deployed code builds the FULL
-  // catalog (~18,489 films), not a stale pre-deploy copy. (When KV is unbound this triggers
-  // one upstream catalog fetch — a deliberate, bounded cost for a real verification.)
-  const fresh = await request("GET", `/sitemap.xml?smoke=${Date.now()}`);
-  const freshXml = await fresh.text();
-  const freshLocs = (freshXml.match(/<loc>/g) || []).length;
-  const freshLastmods = (freshXml.match(/<lastmod>/g) || []).length;
-  ok(freshLocs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS})`);
-  // Serial/audio pools (tv, anime, cartoons, otr, music) are disjoint from the films union,
-  // so the sitemap must list them too (~7,600 net-new beyond the films floor). This pins
-  // that /api/random's sitemap fallback can reach non-film pools during an outage.
-  ok(freshLocs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${freshLocs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
+  // catalog (~64k items across all pools), not a stale pre-deploy copy. (When KV is unbound
+  // this triggers one upstream catalog fetch per pool — a deliberate, bounded cost for a
+  // real verification.)
+  const fresh = await fetchSitemapTotals(`/sitemap.xml?smoke=${Date.now()}`);
+  ok(fresh.locs >= MIN_SITEMAP_URLS, `sitemap builds the full catalog (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS})`);
+  // Serial/audio pools (tv, anime, cartoons, otr, music, audiobooks, records) are disjoint
+  // from the films union, so the sitemap must list them too (tens of thousands beyond the
+  // films floor). This pins that /api/random's sitemap fallback can reach non-film pools
+  // during an outage.
+  ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
+  // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
+  // would have been silently truncated by the 50k protocol limit, so the split is the fix.
+  ok(fresh.subs >= 16, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
-  // /anime, /cartoons, /otr, /music) carry no lastmod; every catalog URL does.
-  ok(freshLastmods >= freshLocs - 22, `movie URLs carry <lastmod> (${freshLastmods} of ${freshLocs} entries)`);
-  // Curated-view annotation: the sitemap documents that /shorts and /silents are views of
-  // /browse (protocol has no description field, so this is an XML comment — the SERP-visible
-  // disclosure is the page meta description).
-  ok(freshXml.includes("curated view of /browse"), "sitemap annotates /shorts and /silents as curated views of /browse");
+  // /anime, /cartoons, /otr, /music, …) carry no lastmod; every catalog URL does.
+  ok(fresh.lastmods >= fresh.locs - 23, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries)`);
+  // Curated-view annotation: the static sub-sitemap documents that /shorts and /silents are
+  // views of /browse (protocol has no description field, so this is an XML comment — the
+  // SERP-visible disclosure is the page meta description).
+  ok(fresh.curatedAnnotated, "sitemap annotates /shorts and /silents as curated views of /browse");
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
-  const canonical = await request("GET", "/sitemap.xml");
-  const canonicalXml = await canonical.text();
-  const canonicalLocs = (canonicalXml.match(/<loc>/g) || []).length;
+  const canonical = await fetchSitemapTotals("/sitemap.xml");
   checks += 1;
-  if (canonicalLocs >= MIN_SITEMAP_URLS) {
-    console.log(`  ok  canonical /sitemap.xml serves the full catalog (${canonicalLocs} URLs)`);
+  if (canonical.locs >= MIN_SITEMAP_URLS) {
+    console.log(`  ok  canonical /sitemap.xml serves the full catalog (${canonical.locs} URLs)`);
   } else {
-    console.warn(`WARN  canonical /sitemap.xml still serves a pre-rebuild edge-cache copy (${canonicalLocs} URLs) — it self-heals at TTL expiry`);
+    console.warn(`WARN  canonical /sitemap.xml still serves a pre-rebuild edge-cache copy (${canonical.locs} URLs) — it self-heals at TTL expiry`);
   }
 } catch (err) {
   failures += 1;

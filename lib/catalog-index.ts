@@ -51,6 +51,7 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   science: "https://347movies.internal/science-index-v1",
   govfilms: "https://347movies.internal/govfilms-index-v1",
   audiobooks: "https://347movies.internal/audiobooks-index-v1",
+  records: "https://347movies.internal/records-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -421,7 +422,7 @@ export async function queryCatalog(
   const sorted = sortIndex(filtered, sort);
   const { results, total, pages } = paginateIndex(sorted, page, rows);
   return { results: indexDocsToRecords(results), total, pages };
-}/** The pools "Surprise me" draws from, uniformly over items. */
+}/** The fifteen pools "Surprise me" draws from, uniformly over items. */
 export const RANDOM_VARIANTS: IndexVariant[] = [
   "films",
   "tv",
@@ -437,6 +438,7 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "science",
   "govfilms",
   "audiobooks",
+  "records",
 ];
 
 /**

@@ -220,6 +220,7 @@ test("poolFromCollections maps archive.org collections to the specific pool, fil
   assert.equal(poolFromCollections(["wellcomefilm"]), "science");
   assert.equal(poolFromCollections(["FedFlix", "usgovfilms"]), "govfilms");
   assert.equal(poolFromCollections(["librivoxaudio"]), "audiobooks");
+  assert.equal(poolFromCollections(["78rpm"]), "records");
   assert.equal(poolFromCollections([]), null);
   assert.equal(poolFromCollections(null), null);
   assert.equal(poolFromCollections(undefined), null);

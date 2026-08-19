@@ -34,19 +34,36 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       },
     });
   } catch {
-    // Fallback: parse our own edge-cached sitemap (never hits archive.org when warm).
+    // Fallback: parse our own edge-cached sitemap INDEX, then each sub-sitemap it points at
+    // (never hits archive.org when warm). The index lists /sitemap/<pool>.xml per pool, so
+    // the degraded path draws uniformly over every legal catalog item — including episodes
+    // and tracks, which ARE the content outside the films pool. Every URL is a license-gated
+    // item the detail page still verifies.
     try {
       const sitemapRes = await fetch(`${site}/sitemap.xml`, { signal: AbortSignal.timeout(15000) });
       if (!sitemapRes.ok) {
         return new Response(null, { status: 502, headers: { "Cache-Control": "no-store" } });
       }
-      const xml = await sitemapRes.text();
-      const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
-        .map((m) => m[1] as string)
-        .filter((u) => u.includes("/movie/"));
-      // The sitemap lists all ten pools, so the degraded path draws uniformly over every
-      // legal catalog item — including episodes and tracks, which ARE the content outside
-      // the films pool. Every URL is a license-gated item the detail page still verifies.
+      const indexXml = await sitemapRes.text();
+      const subSitemaps = [...indexXml.matchAll(/<loc>([^<]+\.xml)<\/loc>/g)].map((m) => m[1] as string);
+      if (subSitemaps.length === 0) {
+        return new Response(null, { status: 502, headers: { "Cache-Control": "no-store" } });
+      }
+      const locs: string[] = [];
+      // Fetch each sub-sitemap (parallel, bounded). A sub-sitemap that fails is skipped —
+      // the degraded path only needs SOME valid catalog URLs to pick from.
+      const results = await Promise.allSettled(
+        subSitemaps.map((sub) =>
+          fetch(sub, { signal: AbortSignal.timeout(15000) }).then((r) => r.text()),
+        ),
+      );
+      for (const result of results) {
+        if (result.status !== "fulfilled") continue;
+        for (const m of result.value.matchAll(/<loc>([^<]+)<\/loc>/g)) {
+          const u = m[1] as string;
+          if (u.includes("/movie/")) locs.push(u);
+        }
+      }
       if (locs.length === 0) {
         return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
       }
