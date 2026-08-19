@@ -1283,6 +1283,24 @@ body[data-page="tv"] .hero {
   margin: 0 0 6px;
 }
 
+/* Audio badge in the movie hero: a filled accent pill so a Surprise-me landing on radio or
+   music reads as audio at a glance (the "Now playing" eyebrow is subtle; the 🎧 + fill are not). */
+.hero-badge--audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin: 0 0 8px;
+}
+
 .movie-head h1 {
   font-size: clamp(1.5rem, 3.5vw, 2.2rem);
   font-weight: 600;

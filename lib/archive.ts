@@ -118,6 +118,25 @@ export const SHORTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:short_films AN
 /** Silent films catalog gate (measured live 2026-08-18: 729 license-marked of 3,525). */
 export const SILENTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:silent_films AND mediatype:movies`;
 
+/**
+ * Public broadcasting catalog gate: the same license gate over the American Archive of
+ * Public Broadcasting (AAPB) — PBS/NPR-affiliate programs, news, and public-affairs
+ * recordings hosted in archive.org's `television` collection under the `aapb-*` identifier
+ * prefix. Measured live 2026-08-18: 1,653 license-marked movies, all CC BY-NC 4.0 from the
+ * AAPB institution (not self-declared marks). The identifier bound scopes to AAPB precisely,
+ * keeping out the modern community rips that dominate the broad `television` collection.
+ * Programs/episodes ARE the content, so the films-only exclusion does not apply.
+ */
+export const PUBLICTV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:television AND mediatype:movies AND identifier:aapb*`;
+
+/**
+ * Science & medicine catalog gate: the same license gate over the Wellcome Library's film
+ * collection (`wellcomefilm`) — medical/scientific history films (surgery, public health,
+ * biology), CC-licensed by the Wellcome Collection. Measured live 2026-08-18: 257
+ * license-marked movies. Items ARE the content, so the films-only exclusion does not apply.
+ */
+export const SCIENCE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wellcomefilm AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -129,7 +148,9 @@ export type IndexVariant =
   | "documentaries"
   | "sports"
   | "shorts"
-  | "silents";
+  | "silents"
+  | "publictv"
+  | "science";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -156,6 +177,10 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return SHORTS_BASE_CLAUSE;
     case "silents":
       return SILENTS_BASE_CLAUSE;
+    case "publictv":
+      return PUBLICTV_BASE_CLAUSE;
+    case "science":
+      return SCIENCE_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

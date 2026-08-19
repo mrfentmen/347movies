@@ -83,6 +83,18 @@ test("renderMoviePage omits the pool strip when the pool is unknown", () => {
   assert.ok(!html.includes("chip--pool"), "no pool chip for pool:null");
 });
 
+test("renderMoviePage marks an audio item with a hero audio badge", () => {
+  const audio = { ...RECORD, hasVideo: false, hasAudio: true, pool: "otr" as const };
+  const html = renderMoviePage(audio, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes('<span class="hero-badge hero-badge--audio">'), "audio badge present in the hero");
+  assert.ok(html.includes("Audio</span>"), "badge reads Audio");
+});
+
+test("renderMoviePage omits the audio badge for a video item", () => {
+  const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
+  assert.ok(!html.includes("hero-badge--audio"), "no audio badge for video");
+});
+
 test("renderMoviePage omits quality select for a single derivative and mirror without server info", () => {
   const single = {
     ...RECORD,

@@ -215,6 +215,9 @@ test("poolFromCollections maps archive.org collections to the specific pool, fil
   assert.equal(poolFromCollections(["moviesandfilms"]), "films");
   assert.equal(poolFromCollections(["feature_films"]), "films");
   assert.equal(poolFromCollections("Anime"), "anime"); // case-insensitive
+  assert.equal(poolFromCollections(["television", "news_and_journalism"]), "publictv");
+  assert.equal(poolFromCollections(["classic_tv", "television"]), "tv"); // classic_tv wins over the broad television collection
+  assert.equal(poolFromCollections(["wellcomefilm"]), "science");
   assert.equal(poolFromCollections([]), null);
   assert.equal(poolFromCollections(null), null);
   assert.equal(poolFromCollections(undefined), null);

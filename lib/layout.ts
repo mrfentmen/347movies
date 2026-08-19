@@ -26,6 +26,8 @@ const HEADER = `<header class="site-header">
           <a href="/sports">Sports</a>
           <a href="/shorts">Shorts</a>
           <a href="/silents">Silents</a>
+          <a href="/publictv">Public Broadcasting</a>
+          <a href="/science">Science</a>
         </div>
       </details>
       <a href="/watchlist">Watchlist</a>
@@ -76,6 +78,8 @@ const POOL_LANDING: Record<IndexVariant, { path: string; label: string }> = {
   sports: { path: "/sports", label: "Sports" },
   shorts: { path: "/shorts", label: "Shorts" },
   silents: { path: "/silents", label: "Silent Films" },
+  publictv: { path: "/publictv", label: "Public Broadcasting" },
+  science: { path: "/science", label: "Science & Medicine" },
 };
 
 export interface PageMeta {
@@ -243,6 +247,14 @@ export function renderMoviePage(
   // player, and the native swap becomes an <audio> element (data-kind drives app.js).
   const kind = record.hasVideo ? "video" : "audio";
   const verb = kind === "audio" ? "Listen to" : "Watch";
+  // Audio badge in the hero: a Surprise-me landing on radio/music must be instantly
+  // recognizable as audio. The 🎧 + filled accent pill make the media type explicit at the
+  // hero level (the "Now playing" eyebrow is subtle); the .chip--pool below still names the
+  // specific pool and links it. Video items get no badge (poster + player already say so).
+  const audioBadge =
+    kind === "audio"
+      ? `<span class="hero-badge hero-badge--audio"><span aria-hidden="true">🎧</span> Audio</span>`
+      : "";
   const player = `<div class="player-wrap">
   <div id="resume-chip" class="resume-chip" hidden></div>
   <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="${verb} ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
@@ -256,6 +268,7 @@ export function renderMoviePage(
       ${playbackTools(record, kind)}
       <div class="movie-head">
         <p class="now-showing">${kind === "audio" ? "Now playing" : "Now showing"}</p>
+        ${audioBadge}
         <h1>${escapeHtml(title)}</h1>
         <div class="movie-meta">${metaChips}</div>
         <button type="button" class="watch-btn watch-btn--hero" data-watch-id="${escapeHtml(id)}" data-watch-title="${escapeHtml(title)}" data-watch-year="${escapeHtml(String(record.year ?? ""))}" data-watch-thumb="${escapeHtml(record.thumbnails.small)}" aria-pressed="false">Save</button>

@@ -1,6 +1,6 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
 import { fetchSitemapCatalog } from "../lib/archive.ts";
-import { getCatalogIndex } from "../lib/catalog-index.ts";
+import { getCatalogIndex, RANDOM_VARIANTS } from "../lib/catalog-index.ts";
 import { withEdgeCachedResponse } from "../lib/edge-cache.ts";
 import type { Env } from "../lib/env.ts";
 import { escapeHtml } from "../lib/html.ts";
@@ -9,12 +9,13 @@ import { resolveSiteUrl } from "../lib/site-url.ts";
 import { headHandler } from "./_head.ts";
 
 /**
- * GET /sitemap.xml — real sitemap: static pages plus the FULL legal catalog film pages
- * (~18,489 films), built from the shared local catalog index (lib/catalog-index.ts) — the
- * same edge-cached copy /api/browse and /api/random read, so no archive.org call happens
- * per sitemap build (the index refreshes at most once per 24h). Every catalog film is a
- * movie page in the sitemap, so Google indexes the whole library and Surprise me is uniform
- * over all of it.
+ * GET /sitemap.xml — real sitemap: static pages plus every catalog item across all ten
+ * pools (films + tv/anime/cartoons/otr/music/documentaries/sports/shorts/silents), built
+ * from the shared local catalog indexes (lib/catalog-index.ts) — the same edge-cached copies
+ * /api/browse and /api/random read, so no archive.org call happens per sitemap build (each
+ * index refreshes at most once per 24h). Identifiers dedupe across pools, so every URL is
+ * unique and the union stays under the 50k sitemap ceiling. /api/random's degraded fallback
+ * parses this sitemap, so Surprise me can reach any pool even during an outage.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   // Resolved from the request host (or SITE_URL override) so a custom domain attached in
@@ -27,11 +28,25 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   return await withEdgeCachedResponse(urlString, 3600, async () => {
     let entries: Array<[string, string]> = [];
     try {
-      const docs = await getCatalogIndex();
-      entries = docs.map((doc) => [doc.identifier, String(doc.addeddate ?? "")]);
+      // List all ten pools, not just the films union: the serial/audio pools (tv/anime/cartoons/
+      // otr/music) are disjoint from films, so /api/random's sitemap fallback can reach them
+      // during an outage too. Loads run in parallel (each pool is edge-cached 24h and
+      // single-flighted), so a cold edge pays max(build), not the sum. Identifiers dedupe
+      // across pools (shorts/silents are 100% subsets of films; docs/sports overlap), keeping
+      // the sitemap's unique-URL guarantee — the union stays under the 50k ceiling.
+      const pools = await Promise.all(RANDOM_VARIANTS.map((variant) => getCatalogIndex(fetch, variant)));
+      const seen = new Set<string>();
+      for (const docs of pools) {
+        for (const doc of docs) {
+          if (doc.identifier && !seen.has(doc.identifier)) {
+            seen.add(doc.identifier);
+            entries.push([doc.identifier, String(doc.addeddate ?? "")]);
+          }
+        }
+      }
     } catch {
       // Index unavailable (fully cold + upstream down): fall back to a direct one-shot
-      // catalog fetch. If that also fails, serve an honest 502 rather than a broken sitemap.
+      // films-union fetch. If that also fails, serve an honest 502 rather than a broken sitemap.
       try {
         entries = (await fetchSitemapCatalog()).slice(0, 50000);
       } catch {
@@ -42,7 +57,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       }
     }
 
-    const staticPaths = ["/", "/about", "/privacy", "/terms", "/advertise", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/collections"];
+    const staticPaths = ["/", "/about", "/privacy", "/terms", "/advertise", "/browse", "/search", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/collections"];
     const movieUrls = entries.map(([id, added]) => {
       const lastmod = addedDateOf(added);
       return `  <url><loc>${escapeHtml(site + `/movie/${encodeURIComponent(id)}`)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;

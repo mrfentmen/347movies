@@ -29,6 +29,8 @@ const POOLS: Array<{ variant: IndexVariant; filmsOnly: boolean }> = [
   { variant: "sports", filmsOnly: false },
   { variant: "shorts", filmsOnly: false },
   { variant: "silents", filmsOnly: false },
+  { variant: "publictv", filmsOnly: false },
+  { variant: "science", filmsOnly: false },
 ];
 
 export const onRequestGet: PagesFunction<Env> = async ({ request }) => {

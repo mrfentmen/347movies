@@ -404,6 +404,10 @@ function descriptionOf(value: unknown, maxLength: number): string | null {
  */
 const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["classic_tv"], "tv"],
+  // `television` is checked AFTER classic_tv: a classic_tv item that also sits in the broad
+  // television collection must stay a Classic TV page, while the AAPB public-broadcasting
+  // items (which live only in `television`) resolve to the publictv pool.
+  [["television"], "publictv"],
   [["anime"], "anime"],
   [["animationandcartoons"], "cartoons"],
   [["oldtimeradio"], "otr"],
@@ -412,6 +416,7 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["sports"], "sports"],
   [["short_films"], "shorts"],
   [["silent_films"], "silents"],
+  [["wellcomefilm"], "science"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

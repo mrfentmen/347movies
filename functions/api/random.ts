@@ -1,7 +1,6 @@
 import type { PagesFunction } from "@cloudflare/workers-types";
 import { randomCatalogIdentifier } from "../../lib/catalog-index.ts";
 import type { Env } from "../../lib/env.ts";
-import { isNonFilmTitle } from "../../lib/film-policy.ts";
 import { resolveSiteUrl } from "../../lib/site-url.ts";
 import { headHandler } from "../_head.ts";
 
@@ -14,9 +13,9 @@ import { headHandler } from "../_head.ts";
  * pool keeps its films-only policy (never "Episode 18" or a trailer); the other pools are
  * drawn as browse presents them (episodes/tracks ARE the content). If the index is
  * unavailable (fully cold + upstream down), falls back to parsing our own edge-cached
- * sitemap — which lists only the films union, so the degraded path is a films-only subset
- * (still legal, never guessed). Rate-limited like every /api/* route; noindex via
- * middleware.
+ * sitemap — which now lists all ten pools, so the degraded path stays uniform over the whole
+ * legal catalog (still legal, never guessed). Rate-limited like every /api/* route; noindex
+ * via middleware.
  */
 export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
   // Request-host resolution so a custom domain redirects to itself, not pages.dev.
@@ -45,16 +44,16 @@ export const onRequestGet: PagesFunction<Env> = async ({ env, request }) => {
       const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
         .map((m) => m[1] as string)
         .filter((u) => u.includes("/movie/"));
-      // The sitemap lists only the films union (not the newer pools), so the degraded path
-      // is a films-only subset — still legal, still never "Episode 18" or a trailer.
-      const films = locs.filter((u) => !isNonFilmTitle(decodeURIComponent(u.split("/").pop() ?? "")));
-      if (films.length === 0) {
+      // The sitemap lists all ten pools, so the degraded path draws uniformly over every
+      // legal catalog item — including episodes and tracks, which ARE the content outside
+      // the films pool. Every URL is a license-gated item the detail page still verifies.
+      if (locs.length === 0) {
         return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
       }
       // Normalize the sitemap URL to the resolved origin: the sitemap may be an
       // edge-cached copy from before a SITE_URL change, and every redirect must honor
       // the pinned origin (lib/site-url.ts), not a stale host.
-      const chosen = (films[Math.floor(Math.random() * films.length)] as string).replace(
+      const chosen = (locs[Math.floor(Math.random() * locs.length)] as string).replace(
         /^https?:\/\/[^/]+/,
         site,
       );

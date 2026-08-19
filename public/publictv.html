@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0c0d11">
-<title>Shorts — 347movies</title>
-<meta name="description" content="Short films and one-reelers — Movietone revues, comedy, animation, and more, free in the public domain and Creative Commons on 347movies. A curated view of the Films catalog — every title here also appears there.">
-<link rel="canonical" href="https://347movies.pages.dev/shorts">
+<title>Public Broadcasting — 347movies</title>
+<meta name="description" content="American Archive of Public Broadcasting — PBS and NPR-affiliate news, documentaries, and public-affairs programs, free in the public domain and Creative Commons on 347movies.">
+<link rel="canonical" href="https://347movies.pages.dev/publictv">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="347movies">
-<meta property="og:title" content="Shorts — 347movies">
-<meta property="og:description" content="Free public domain and Creative Commons short films — a curated view of the Films catalog.">
-<meta property="og:url" content="https://347movies.pages.dev/shorts">
+<meta property="og:title" content="Public Broadcasting — 347movies">
+<meta property="og:description" content="Free public domain and Creative Commons public broadcasting programs and news.">
+<meta property="og:url" content="https://347movies.pages.dev/publictv">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="preconnect" href="https://archive.org">
-<link rel="preload" as="image" href="/images/03-nyc-brooklyn-bridge-dusk.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="/images/07-nyc-lower-manhattan-skyline.jpg" fetchpriority="high">
 <link rel="preload" href="/fonts/limelight.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
 </head>
-<body data-page="shorts">
+<body data-page="publictv">
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="container header-inner">
@@ -49,9 +49,9 @@
       <a href="/about">About</a>
     </nav>
     <form class="header-search" action="/search" method="get" role="search">
-      <label class="visually-hidden" for="search-input">Search shorts</label>
-      <input id="search-input" name="q" type="search" placeholder="Search shorts…" maxlength="80" autocomplete="off" required>
-      <input type="hidden" name="shorts" value="1">
+      <label class="visually-hidden" for="search-input">Search public broadcasting</label>
+      <input id="search-input" name="q" type="search" placeholder="Search public broadcasting…" maxlength="80" autocomplete="off" required>
+      <input type="hidden" name="publictv" value="1">
       <button type="submit">Search</button>
     </form>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to day mode">
@@ -69,9 +69,8 @@
   <section class="hero">
     <div class="container">
       <p class="hero-eyebrow">The projection booth presents</p>
-      <h1>Shorts</h1>
-      <p class="hero-sub">Short films and one-reelers — Movietone revues, comedy, animation, and more, free in the public domain and Creative Commons. Streamed embedded from the Internet Archive; no accounts, no paywall, and ads never interrupt the film.</p>
-      <p class="hero-note">A curated view of the <a href="/browse">Films</a> catalog — every title here also appears there.</p>
+      <h1>Public Broadcasting</h1>
+      <p class="hero-sub">The American Archive of Public Broadcasting — PBS and NPR-affiliate news, documentaries, and public-affairs programs, free in the public domain and Creative Commons. Streamed embedded from the Internet Archive; no accounts, no paywall, and ads never interrupt a program.</p>
       <nav class="genre-chips" aria-label="Collections">
         <a class="genre-chip" href="/browse">Films</a>
         <a class="genre-chip" href="/tv">TV</a>
@@ -81,8 +80,10 @@
         <a class="genre-chip" href="/music">Music</a>
         <a class="genre-chip" href="/documentaries">Documentaries</a>
         <a class="genre-chip" href="/sports">Sports</a>
-        <a class="genre-chip is-active" href="/shorts" aria-current="page">Shorts</a>
+        <a class="genre-chip" href="/shorts">Shorts</a>
         <a class="genre-chip" href="/silents">Silents</a>
+        <a class="genre-chip is-active" href="/publictv" aria-current="page">Public Broadcasting</a>
+        <a class="genre-chip" href="/science">Science</a>
       </nav>
       <p><a class="hero-surprise" href="/api/random">Surprise me — jump to a random title</a></p>
     </div>
@@ -90,10 +91,10 @@
   <div class="container">
     <div class="genre">
       <div class="genre-main">
-        <p class="section-eyebrow">One reel, no filler</p>
+        <p class="section-eyebrow">The airwaves</p>
         <div class="section-head">
-          <h2>Shorts, free</h2>
-          <a class="see-all" href="/browse?shorts=1">See all &rarr;</a>
+          <h2>Public broadcasting, free</h2>
+          <a class="see-all" href="/browse?publictv=1">See all &rarr;</a>
         </div>
         <p class="count" id="count" role="status"></p>
         <div class="grid" id="results" aria-busy="true">
@@ -105,9 +106,25 @@
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
           <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
+          <div class="card card--skeleton" aria-hidden="true"><div class="card__poster card__poster--skeleton"></div><div class="card__body"><span class="skeleton-line"></span><span class="skeleton-line skeleton-line--short"></span></div></div>
         </div>
         <div id="pagination"></div>
-        <noscript><p class="empty">This page loads shorts with JavaScript. Enable JavaScript to browse the catalog — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
+        <noscript><p class="empty">This page loads public broadcasting programs with JavaScript. Enable JavaScript to browse the catalog — or watch these films directly on <a href="https://archive.org">archive.org</a>.</p></noscript>
       </div>
       <aside class="genre-side">
         <aside class="ad-slot ad-slot--sidebar" data-ad-slot="sidebar" role="complementary" aria-label="Advertisement slot">
@@ -119,8 +136,8 @@
           <span class="ad-slot__note">This reserved slot is never placed over or inside a film. <a class="ad-slot__cta" href="mailto:contactae2000@gmail.com?subject=Advertising%20inquiry">Email us about advertising &rarr;</a></span>
         </aside>
         <div class="affiliate-slot">
-          <p class="affiliate-note">Every short on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts the film.</p>
-          <a class="affiliate-link" href="/browse?shorts=1">Browse every short &rarr;</a>
+          <p class="affiliate-note">Every program on this page is free, legal, and embedded from the Internet Archive. Nothing here ever interrupts a program.</p>
+          <a class="affiliate-link" href="/browse?publictv=1">Browse every public broadcasting program &rarr;</a>
         </div>
       </aside>
     </div>
