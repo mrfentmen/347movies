@@ -54,6 +54,7 @@ export const COUNTED_PATHS = [
   "/otr",
   "/music",
   "/documentaries",
+  "/ted",
   "/sports",
   "/shorts",
   "/silents",

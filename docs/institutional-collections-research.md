@@ -75,3 +75,31 @@ The licensed-content ceiling holds except for one genuine addition: **`avgeeks` 
 Registering it is a small, honest win — same gate, same trust model, no new bounds — and brings
 the classic educational/sponsored-film canon to a pool that currently only reaches it
 secondhand through `moviesandfilms`. The 15-pool register is otherwise confirmed complete.
+
+## Re-verification 2026-08-21 (after PR #32)
+
+Re-probed ~120 candidate collections through the license gate (four rounds: wide sweep, film
+subtypes, TV siblings, radio/audio variants). **No new institutional pools exist; the
+registered 17 are complete.** Evidence:
+
+- **`opensource_movies` (402,714 gated) — REJECTED.** The only large collection that clears
+  the gate, but it is the community junk drawer with self-declared marks, same failure mode
+  as `audio_music`/`opensource_audio`. Even the pre-1928 PD-by-age band (2,745 gated) is
+  unreliable: top item by downloads tagged `year=1919` is a 2013 music video; "NFL REPLAYS"
+  tagged 720; the 120k-item yearless band is pure junk. Unlike `78rpm` (institutional Great 78
+  metadata) or `anime` (year bound verified against samples), `opensource_movies` year data is
+  uploader garbage, so an age-bound gate there would leak modern uploads. Zero overlap with
+  the films union confirms it is a separate population.
+- **`television` (17,744 gated) — already captured.** Only 1,653 are the AAPB `aapb*`
+  subset (the `publictv` pool); the remaining 16,091 are modern community rips excluded by
+  the identifier bound, as documented in lib/archive.ts.
+- **`tvarchive` = 1 item.** All other TV siblings (`classic_television`, `old_tv`,
+  `tv_programs`, `kinescope`, `golden_age_tv`, …) = 0 gated.
+- **Gate counts re-measured live: identical to registration** for all 16 non-film gates
+  (e.g. classic_tv 2,514, 78rpm 5,039, FedFlix 5,948, nasa 719, avgeeks 413). No organic
+  growth to harvest; the curated collections are not accumulating new license-marked items.
+
+**Conclusion:** the catalog ceiling (~73k items / 17 pools) is confirmed complete for a
+third time. Adding content beyond it requires either a new institutional archive.org
+collection appearing upstream (re-probe periodically) or relaxing the license gate, which
+the constitution forbids.

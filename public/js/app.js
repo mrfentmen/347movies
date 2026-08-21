@@ -619,6 +619,8 @@
     loadHomeSection("ephemera", "/api/browse?ephemera=1&sort=recent&page=1");
     // 2026-08-19: space & NASA (NASA's own public-domain space footage).
     loadHomeSection("space", "/api/browse?space=1&sort=recent&page=1");
+    // 2026-08-21: TED Talks — a curated view of Documentaries (TED's real CC-licensed talks).
+    loadHomeSection("ted", "/api/browse?ted=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -631,6 +633,7 @@
     const otr = params.get("otr") === "1";
     const music = params.get("music") === "1";
     const documentaries = params.get("documentaries") === "1";
+    const ted = params.get("ted") === "1";
     const sports = params.get("sports") === "1";
     const shorts = params.get("shorts") === "1";
     const silents = params.get("silents") === "1";
@@ -641,7 +644,7 @@
     const records = params.get("records") === "1";
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -650,6 +653,7 @@
       otr: { label: "Old Time Radio", noun: "series" },
       music: { label: "Music & Concerts", noun: "recording" },
       documentaries: { label: "Documentaries", noun: "film" },
+      ted: { label: "TED Talks", noun: "talk" },
       sports: { label: "Sports", noun: "film" },
       shorts: { label: "Shorts", noun: "short" },
       silents: { label: "Silent films", noun: "film" },
@@ -1110,6 +1114,7 @@
   function initRecords() { initDestination("records", "/records"); }
   function initEphemera() { initDestination("ephemera", "/ephemera"); }
   function initSpace() { initDestination("space", "/space"); }
+  function initTed() { initDestination("ted", "/ted"); }
 
   /* ---------- collections hub ----------
      The /collections page (public/collections.html, data-page="collections"): ten pool
@@ -1159,6 +1164,7 @@
     const otr = params.get("otr") === "1";
     const music = params.get("music") === "1";
     const documentaries = params.get("documentaries") === "1";
+    const ted = params.get("ted") === "1";
     const sports = params.get("sports") === "1";
     const shorts = params.get("shorts") === "1";
     const silents = params.get("silents") === "1";
@@ -1170,7 +1176,7 @@
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
     // Which serialized pool this browse view serves.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1225,7 +1231,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "ted" ? "TED Talks" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1426,6 +1432,7 @@
   else if (page === "records") initRecords();
   else if (page === "ephemera") initEphemera();
   else if (page === "space") initSpace();
+  else if (page === "ted") initTed();
   else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();

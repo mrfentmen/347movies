@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
  * Exits 0 when everything passes, 1 otherwise. Every check is a real network request.
  */
 const BASE = (process.env.SMOKE_BASE_URL || "https://347movies.pages.dev").replace(/\/$/, "");
-// Full catalog floor: the sitemap index's sub-sitemaps total ~73k URLs across all seventeen
+// Full catalog floor: the sitemap index's sub-sitemaps total ~76k URLs across all eighteen
 // pools (films union + every curated pool). 50,000 also catches a single-file regression —
 // the protocol caps one sitemap at 50k URLs, so a broken build that collapses back to one
 // file can never reach this floor.
@@ -51,6 +51,7 @@ const CASES = [
   ["GET", "/manifest.webmanifest", 200],
   ["GET", "/api/browse?music=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?documentaries=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?ted=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?sports=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?shorts=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?silents=1&sort=recent&page=1", 200],
@@ -62,6 +63,7 @@ const CASES = [
   ["GET", "/api/browse?ephemera=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?space=1&sort=recent&page=1", 200],
   ["GET", "/documentaries", 200],
+  ["GET", "/ted", 200],
   ["GET", "/sports", 200],
   ["GET", "/shorts", 200],
   ["GET", "/silents", 200],
@@ -252,7 +254,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -333,6 +335,7 @@ try {
   ok(js.includes("/api/browse?records=1&sort=recent&page=1"), "JS: Vintage records home feed wired");
   ok(js.includes("/api/browse?ephemera=1&sort=recent&page=1"), "JS: Ephemeral films home feed wired");
   ok(js.includes("/api/browse?space=1&sort=recent&page=1"), "JS: Space & NASA home feed wired");
+  ok(js.includes("/api/browse?ted=1&sort=recent&page=1"), "JS: TED Talks home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
@@ -563,7 +566,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -892,7 +895,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;
@@ -956,7 +959,7 @@ try {
   ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 17, "collections page carries seventeen pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 18, "collections page carries eighteen pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -969,28 +972,34 @@ try {
   ok(footerNav.includes('<a href="/collections">Collections</a>'), "footer: Collections hub link present");
   ok(!/href="\/(tv|anime|cartoons|otr|music|documentaries|sports|shorts|silents)"/.test(footerNav), "footer: individual pool links consolidated into the hub");
   // Curated-view disclosure: shorts and silents are 100% subsets of the films union (measured
-  // 2026-08-18: 0 exclusive items), so they must be labeled as curated views, never implied
-  // to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
-  ok((collectionsHtml.match(/Curated view/g) || []).length === 2, "collections page badges shorts + silents as curated views");
-  ok((homeFooterPage.match(/Curated view/g) || []).length === 2, "home page badges the shorts + silents sections as curated views");
+  // 2026-08-18: 0 exclusive items), and tedtalks is a 100% subset of culturalandacademicfilms
+  // (measured 2026-08-21: 2,933 = 2,933), so all three must be labeled as curated views, never
+  // implied to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
+  ok((collectionsHtml.match(/Curated view/g) || []).length === 3, "collections page badges shorts + silents + TED as curated views");
+  ok((homeFooterPage.match(/Curated view/g) || []).length === 3, "home page badges the shorts + silents + TED sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
   ok(shortsHtml.includes("A curated view") && shortsHtml.includes('href="/browse"'), "shorts page discloses it is a curated view of Films");
   ok(silentsHtml.includes("A curated view") && silentsHtml.includes('href="/browse"'), "silents page discloses it is a curated view of Films");
+  const tedHtml = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
+  ok(tedHtml.includes("A curated view") && tedHtml.includes('href="/documentaries"'), "ted page discloses it is a curated view of Documentaries");
   // The overlap must also be visible to search engines: the page meta description (what a
   // SERP shows) discloses the curated-view relationship, not just the visible hero note.
   ok(/<meta name="description"[^>]*curated view/i.test(shortsHtml), "shorts meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(silentsHtml), "silents meta description discloses the curated-view overlap");
+  ok(/<meta name="description"[^>]*curated view/i.test(tedHtml), "ted meta description discloses the curated-view overlap");
   // Same disclosure for structured-data consumers: the JSON-LD CollectionPage names the
   // parent Films catalog via isPartOf so crawlers see the subset relationship too.
   ok(shortsHtml.includes('"isPartOf"') && shortsHtml.includes('347movies.pages.dev/browse'), "shorts JSON-LD exposes isPartOf → /browse");
   ok(silentsHtml.includes('"isPartOf"') && silentsHtml.includes('347movies.pages.dev/browse'), "silents JSON-LD exposes isPartOf → /browse");
+  ok(tedHtml.includes('"isPartOf"') && tedHtml.includes('347movies.pages.dev/documentaries'), "ted JSON-LD exposes isPartOf → /documentaries");
   // Canonical decision (docs/decisions/002): the pages stay SELF-canonical, never → /browse.
   // rel=canonical signals duplication ("same content, index only one"); shorts/silents are
   // distinct landing pages (own title/description/hero), and pointing them at /browse would
   // de-index them. The subset relationship belongs to isPartOf (above), not canonical.
   ok(shortsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/shorts">'), "shorts stays self-canonical (not → /browse)");
   ok(silentsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/silents">'), "silents stays self-canonical (not → /browse)");
+  ok(tedHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/ted">'), "ted stays self-canonical (not → /documentaries)");
 } catch (err) {
   failures += 1;
   checks += 1;
@@ -1019,7 +1028,7 @@ try {
       const xml = await res.text();
       locs += (xml.match(/<loc>/g) || []).length;
       lastmods += (xml.match(/<lastmod>/g) || []).length;
-      if (xml.includes("curated view of /browse")) curatedAnnotated = true;
+      if (xml.includes("curated view of /browse") || xml.includes("curated view of /documentaries")) curatedAnnotated = true;
     }
     return { locs, lastmods, curatedAnnotated, subs: subs.length };
   }
@@ -1037,14 +1046,14 @@ try {
   ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
-  ok(fresh.subs >= 18, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
+  ok(fresh.subs >= 19, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, …) carry no lastmod; every catalog URL does.
   ok(fresh.lastmods >= fresh.locs - 25, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries)`);
   // Curated-view annotation: the static sub-sitemap documents that /shorts and /silents are
-  // views of /browse (protocol has no description field, so this is an XML comment — the
-  // SERP-visible disclosure is the page meta description).
-  ok(fresh.curatedAnnotated, "sitemap annotates /shorts and /silents as curated views of /browse");
+  // views of /browse and /ted is a view of /documentaries (protocol has no description field,
+  // so this is an XML comment — the SERP-visible disclosure is the page meta description).
+  ok(fresh.curatedAnnotated, "sitemap annotates /shorts + /silents → /browse and /ted → /documentaries");
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await fetchSitemapTotals("/sitemap.xml");

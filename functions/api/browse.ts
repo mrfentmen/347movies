@@ -70,6 +70,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const otr = validateFlag(url.searchParams.get("otr"));
     const music = validateFlag(url.searchParams.get("music"));
     const documentaries = validateFlag(url.searchParams.get("documentaries"));
+    const ted = validateFlag(url.searchParams.get("ted"));
     const sports = validateFlag(url.searchParams.get("sports"));
     const shorts = validateFlag(url.searchParams.get("shorts"));
     const silents = validateFlag(url.searchParams.get("silents"));
@@ -80,10 +81,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const records = validateFlag(url.searchParams.get("records"));
     const ephemera = validateFlag(url.searchParams.get("ephemera"));
     const space = validateFlag(url.searchParams.get("space"));
-    if ([tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space.");
+    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an

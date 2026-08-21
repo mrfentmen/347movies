@@ -27,6 +27,7 @@ export const SITEMAP_POOLS: IndexVariant[] = [
   "otr",
   "music",
   "documentaries",
+  "ted",
   "sports",
   "shorts",
   "silents",
@@ -55,6 +56,7 @@ export const STATIC_PATHS = [
   "/otr",
   "/music",
   "/documentaries",
+  "/ted",
   "/sports",
   "/shorts",
   "/silents",
@@ -77,6 +79,7 @@ export const STATIC_PATHS = [
 const CURATED_VIEW_NOTE: Record<string, string> = {
   "/shorts": "curated view of /browse (Films): every title here also appears there",
   "/silents": "curated view of /browse (Films): every title here also appears there",
+  "/ted": "curated view of /documentaries: every title here also appears there",
 };
 
 /** The static sub-sitemap's <url> lines (with the curated-view annotations). */

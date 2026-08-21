@@ -23,6 +23,7 @@ const HEADER = `<header class="site-header">
           <a href="/otr">Radio</a>
           <a href="/music">Music</a>
           <a href="/documentaries">Documentaries</a>
+          <a href="/ted">TED Talks</a>
           <a href="/sports">Sports</a>
           <a href="/shorts">Shorts</a>
           <a href="/silents">Silents</a>
@@ -80,6 +81,7 @@ const POOL_LANDING: Record<IndexVariant, { path: string; label: string }> = {
   otr: { path: "/otr", label: "Old Time Radio" },
   music: { path: "/music", label: "Music & Concerts" },
   documentaries: { path: "/documentaries", label: "Documentaries & Learning" },
+  ted: { path: "/ted", label: "TED Talks" },
   sports: { path: "/sports", label: "Sports" },
   shorts: { path: "/shorts", label: "Shorts" },
   silents: { path: "/silents", label: "Silent Films" },

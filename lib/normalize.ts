@@ -412,6 +412,10 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["animationandcartoons"], "cartoons"],
   [["oldtimeradio"], "otr"],
   [["gratefuldead", "etree"], "music"],
+  // `tedtalks` maps to the ted pool BEFORE `culturalandacademicfilms` (documentaries): every
+  // tedtalks item also sits in the documentaries collection (measured 2026-08-21: 2,933 = 2,933),
+  // so the more specific curated-view landing page must win on the detail page.
+  [["tedtalks"], "ted"],
   [["culturalandacademicfilms"], "documentaries"],
   [["sports"], "sports"],
   [["short_films"], "shorts"],
