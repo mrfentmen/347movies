@@ -111,6 +111,17 @@ export const OTR_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:oldtimeradio AND 
  */
 export const DOCUMENTARIES_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:culturalandacademicfilms AND mediatype:movies`;
 
+/**
+ * TED Talks catalog gate: the same license gate over archive.org's `tedtalks` collection
+ * (TED's official talks, each carrying TED's real CC BY-NC(-ND) license terms — the marks
+ * mirror the speaker agreement, not fan self-declaration). Measured live 2026-08-21: 2,933
+ * license-marked movies, ALL of which also sit in `culturalandacademicfilms` (the
+ * documentaries pool) — so this is a CURATED VIEW of Documentaries, disclosed on the
+ * landing page (hero note, meta description, JSON-LD isPartOf) and the sitemap, exactly
+ * like shorts/silents → films. Talks ARE the content, so no films-only exclusion.
+ */
+export const TED_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:tedtalks AND mediatype:movies`;
+
 /** Sports catalog gate (measured live 2026-08-18: 3,625 license-marked of 9,953).
  * Overlap-measured 2026-08-18 (re-checked 2026-08-21): 0 items also sit in the films union —
  * fully disjoint, so NO curated-view label (unlike shorts/silents). */
@@ -213,6 +224,7 @@ export type IndexVariant =
   | "otr"
   | "music"
   | "documentaries"
+  | "ted"
   | "sports"
   | "shorts"
   | "silents"
@@ -243,6 +255,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return MUSIC_BASE_CLAUSE;
     case "documentaries":
       return DOCUMENTARIES_BASE_CLAUSE;
+    case "ted":
+      return TED_BASE_CLAUSE;
     case "sports":
       return SPORTS_BASE_CLAUSE;
     case "shorts":

@@ -26,6 +26,7 @@ const POOLS: Array<{ variant: IndexVariant; filmsOnly: boolean }> = [
   { variant: "otr", filmsOnly: false },
   { variant: "music", filmsOnly: false },
   { variant: "documentaries", filmsOnly: false },
+  { variant: "ted", filmsOnly: false },
   { variant: "sports", filmsOnly: false },
   { variant: "shorts", filmsOnly: false },
   { variant: "silents", filmsOnly: false },

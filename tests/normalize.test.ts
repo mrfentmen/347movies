@@ -209,6 +209,8 @@ test("poolFromCollections maps archive.org collections to the specific pool, fil
   assert.equal(poolFromCollections(["silent_films", "feature_films"]), "silents");
   assert.equal(poolFromCollections("sports"), "sports");
   assert.equal(poolFromCollections(["culturalandacademicfilms", "something-else"]), "documentaries");
+  assert.equal(poolFromCollections(["tedtalks"]), "ted");
+  assert.equal(poolFromCollections(["tedtalks", "culturalandacademicfilms"]), "ted"); // the specific curated view wins over documentaries
   assert.equal(poolFromCollections(["classic_tv"]), "tv");
   assert.equal(poolFromCollections(["oldtimeradio"]), "otr");
   assert.equal(poolFromCollections(["GratefulDead", "etree"]), "music");
