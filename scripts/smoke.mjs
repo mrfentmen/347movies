@@ -981,6 +981,16 @@ try {
   // SERP shows) discloses the curated-view relationship, not just the visible hero note.
   ok(/<meta name="description"[^>]*curated view/i.test(shortsHtml), "shorts meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(silentsHtml), "silents meta description discloses the curated-view overlap");
+  // Same disclosure for structured-data consumers: the JSON-LD CollectionPage names the
+  // parent Films catalog via isPartOf so crawlers see the subset relationship too.
+  ok(shortsHtml.includes('"isPartOf"') && shortsHtml.includes('347movies.pages.dev/browse'), "shorts JSON-LD exposes isPartOf → /browse");
+  ok(silentsHtml.includes('"isPartOf"') && silentsHtml.includes('347movies.pages.dev/browse'), "silents JSON-LD exposes isPartOf → /browse");
+  // Canonical decision (docs/decisions/002): the pages stay SELF-canonical, never → /browse.
+  // rel=canonical signals duplication ("same content, index only one"); shorts/silents are
+  // distinct landing pages (own title/description/hero), and pointing them at /browse would
+  // de-index them. The subset relationship belongs to isPartOf (above), not canonical.
+  ok(shortsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/shorts">'), "shorts stays self-canonical (not → /browse)");
+  ok(silentsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/silents">'), "silents stays self-canonical (not → /browse)");
 } catch (err) {
   failures += 1;
   checks += 1;

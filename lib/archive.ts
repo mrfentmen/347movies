@@ -106,10 +106,14 @@ export const OTR_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:oldtimeradio AND 
  * community uploads (historical-society interviews, choral concerts) — the honest label is
  * "learning & local history", not the classic documentary canon (which, like classic_films,
  * mostly carries no licenseurl mark). Episodes/items ARE the content, so no films-only exclusion.
+ * Overlap-measured 2026-08-18 (re-checked 2026-08-21): 0 items also sit in the films union —
+ * fully disjoint, so NO curated-view label (unlike shorts/silents).
  */
 export const DOCUMENTARIES_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:culturalandacademicfilms AND mediatype:movies`;
 
-/** Sports catalog gate (measured live 2026-08-18: 3,625 license-marked of 9,953). */
+/** Sports catalog gate (measured live 2026-08-18: 3,625 license-marked of 9,953).
+ * Overlap-measured 2026-08-18 (re-checked 2026-08-21): 0 items also sit in the films union —
+ * fully disjoint, so NO curated-view label (unlike shorts/silents). */
 export const SPORTS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:sports AND mediatype:movies`;
 
 /** Short films catalog gate (measured live 2026-08-18: 1,858 license-marked of 3,139). */

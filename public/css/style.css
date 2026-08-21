@@ -1532,8 +1532,8 @@ body[data-page="tv"] .hero {
   color: var(--accent);
 }
 
-/* "Curated view" badge on hub cards whose pool overlaps the Films catalog (shorts/silents). */
-.collection-card__badge {
+/* "Curated view" badge on hub cards and home sections whose pool overlaps the Films catalog (shorts/silents). */
+.curated-badge {
   display: inline-block;
   font-family: var(--font-mono);
   font-size: 0.58rem;
