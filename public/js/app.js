@@ -205,14 +205,34 @@
     }
   }
 
+  /* Per-episode resume keys: a bundle saves each episode under `${identifier}#${ep}` so
+     every episode remembers its own position (switching episodes is not lossy), while
+     single films keep the plain identifier key — today's exact behavior. Archive.org
+     identifiers never contain "#", so the suffix is unambiguous. */
+  function progressKeyFor(id, ep) {
+    return ep == null ? id : `${id}#${ep}`;
+  }
+
+  function progressEpOf(key) {
+    const m = /#(\d+)$/.exec(key);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function progressBaseOf(key) {
+    return progressEpOf(key) === null ? key : key.slice(0, key.lastIndexOf("#"));
+  }
+
   function progressUpdate(item) {
+    const key = progressKeyFor(item.id, item.ep);
     const list = progressLoad();
-    const i = list.findIndex((x) => x.id === item.id);
+    const i = list.findIndex((x) => x.id === key);
     if (i >= 0) list.splice(i, 1);
     list.unshift({
-      id: item.id,
+      id: key,
       title: item.title || "Untitled",
       thumb: item.thumb || "",
+      ep: item.ep == null ? undefined : item.ep,
+      epLabel: item.epLabel || "",
       pos: Math.max(0, item.pos),
       dur: item.dur > 0 ? item.dur : 0,
       at: Date.now(),
@@ -226,8 +246,8 @@
     if (next.length !== list.length) progressSave(next);
   }
 
-  function progressGet(id) {
-    return progressLoad().find((x) => x.id === id) || null;
+  function progressGet(id, ep) {
+    return progressLoad().find((x) => x.id === progressKeyFor(id, ep)) || null;
   }
 
   /* The single card builder — every movie card on the site (grids, watchlist, search,
@@ -525,13 +545,20 @@
 
   function resumeCard(entry) {
     const title = entry.title || "Untitled";
+    // A bundle card names the episode it resumes inside ("Fantomas · 02 - Terror no Gelo").
+    const displayTitle = entry.epLabel && entry.epLabel !== title ? `${title} · ${entry.epLabel}` : title;
     const img = entry.thumb
-      ? `<img class="card__poster" src="${escapeHtml(entry.thumb)}" alt="" data-title="${escapeHtml(title)}" loading="lazy" decoding="async">`
-      : `<div class="card__poster card__poster--empty" aria-hidden="true">${escapeHtml(initialsOf(title))}</div>`;
+      ? `<img class="card__poster" src="${escapeHtml(entry.thumb)}" alt="" data-title="${escapeHtml(displayTitle)}" loading="lazy" decoding="async">`
+      : `<div class="card__poster card__poster--empty" aria-hidden="true">${escapeHtml(initialsOf(displayTitle))}</div>`;
     const frac = entry.dur > 0 && entry.pos < entry.dur ? Math.min(1, entry.pos / entry.dur) : 0;
     const pct = Math.round(frac * 100);
-    const item = { id: entry.id, title, year: "", thumb: entry.thumb };
-    return `<div class="card card--resume" data-progress-id="${escapeHtml(entry.id)}"><a class="card__main" href="/movie/${encodeURIComponent(entry.id)}">${img}<span class="card__body"><span class="card__title">${escapeHtml(title)}</span><span class="card__year">${escapeHtml(formatRemaining(entry))}</span></span></a>${watchBtnHtml(item, watchHas(entry.id))}<button type="button" class="resume-dismiss" data-dismiss-id="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(title)} from continue watching">\u00d7</button><span class="card__progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% watched"><span class="card__progress-bar" style="width:${pct}%"></span></span></div>`;
+    // The stored id is the episode key ("id#ep" for bundles); the card links to the item
+    // with ?ep=N so the movie page opens on the exact episode, and the watch button + save
+    // stay item-scoped (the plain identifier).
+    const baseId = progressBaseOf(entry.id);
+    const href = `/movie/${encodeURIComponent(baseId)}${entry.ep != null ? `?ep=${entry.ep}` : ""}`;
+    const item = { id: baseId, title: displayTitle, year: "", thumb: entry.thumb };
+    return `<div class="card card--resume" data-progress-id="${escapeHtml(entry.id)}"><a class="card__main" href="${href}">${img}<span class="card__body"><span class="card__title">${escapeHtml(displayTitle)}</span><span class="card__year">${escapeHtml(formatRemaining(entry))}</span></span></a>${watchBtnHtml(item, watchHas(baseId))}<button type="button" class="resume-dismiss" data-dismiss-id="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(displayTitle)} from continue watching">\u00d7</button><span class="card__progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% watched"><span class="card__progress-bar" style="width:${pct}%"></span></span></div>`;
   }
 
   function renderContinueWatching() {
@@ -543,7 +570,15 @@
       section.hidden = true;
       return;
     }
-    grid.innerHTML = entries.map(resumeCard).join("");
+    // One card per item: a bundle saves each episode under its own key; show only the most
+    // recent episode's entry (deduped by the base identifier).
+    const byItem = new Map();
+    for (const e of entries) {
+      const base = progressBaseOf(e.id);
+      const prev = byItem.get(base);
+      if (!prev || e.at > prev.at) byItem.set(base, e);
+    }
+    grid.innerHTML = [...byItem.values()].map(resumeCard).join("");
     bindPosterFallbacks(grid);
     bindWatchButtons(grid);
     // Dismiss button: removes the entry from continue watching without finishing it.
@@ -774,10 +809,22 @@
     } catch {
       episodes = [];
     }
+    // Which episode to start on: the continue-watching row links bundles with ?ep=N so a
+    // visitor returns to the exact episode they left. Clamped + validated, default 0.
     let activeEp = 0;
-    // An episode switch must not seek the new episode to the item-level saved position
-    // (the Continue-watching resume is item-scoped; a fresh episode starts at 0).
-    let skipResume = false;
+    if (episodes.length > 1) {
+      const rawEp = new URLSearchParams(window.location.search).get("ep");
+      const parsedEp = parseInt(rawEp || "", 10);
+      if (Number.isFinite(parsedEp) && parsedEp >= 0) {
+        activeEp = Math.min(parsedEp, episodes.length - 1);
+      }
+    }
+    // Episode-scoped resume: bundles key each episode's position separately — an episode
+    // with a saved entry resumes exactly there, one without starts at 0. Single films
+    // keep ep=null and the plain identifier key, so their behavior is unchanged.
+    let progressEp = episodes.length > 1 ? activeEp : null;
+    let savedEntry = progressGet(identifier, progressEp);
+    const epLabelOf = () => (episodes.length > 1 ? (episodes[activeEp]?.label || "") : "");
 
     function srcFor(mode, path) {
       const base = mode === "mirror" && mirrorBase
@@ -790,38 +837,40 @@
     // is cross-origin and keeps its own time). Saved positions drive both the resume seek
     // below and the home-page "Continue watching" row.
     let activeVideo = null;
-    const savedEntry = progressGet(identifier);
 
     function track(video) {
       activeVideo = video;
-      // Resume: seek to the saved position once metadata is known. The 30s guard skips
-      // near-start bookmarks (a visitor who peeked and left doesn't want to be dropped
-      // 5 seconds before the opening credits); the 30s-from-the-end guard treats a film
-      // as effectively finished.
+      // Resume: seek to the saved position once metadata is known. The entry is captured
+      // at element creation so a later episode switch can't steer an older element's seek.
+      // The 30s guard skips near-start bookmarks (a visitor who peeked and left doesn't
+      // want to be dropped 5 seconds before the opening credits); the 30s-from-the-end
+      // guard treats a film as effectively finished.
+      const seekEntry = savedEntry;
       video.addEventListener("loadedmetadata", () => {
-        if (!skipResume && savedEntry && savedEntry.pos > 30 && (savedEntry.dur === 0 || savedEntry.pos < savedEntry.dur - 30)) {
+        if (seekEntry && seekEntry.pos > 30 && (seekEntry.dur === 0 || seekEntry.pos < seekEntry.dur - 30)) {
           try {
-            video.currentTime = savedEntry.pos;
+            video.currentTime = seekEntry.pos;
           } catch {
             /* seek can fail before the source is ready — the visitor can scrub manually */
           }
         }
       });
       // Throttled saves (≤1 per 5s) of the position; the first 10s of playback are not
-      // recorded so a stray click doesn't bookmark the opening frame. `ended` clears the
-      // entry — a finished film leaves the Continue row.
+      // recorded so a stray click doesn't bookmark the opening frame. `ended` clears only
+      // THIS episode's entry — a finished episode leaves the Continue row while a bundle's
+      // other saved episodes stay.
       let lastSaveAt = 0;
       video.addEventListener("timeupdate", () => {
         if (video.ended) {
-          progressRemove(identifier);
+          progressRemove(progressKeyFor(identifier, progressEp));
           return;
         }
         const now = Date.now();
         if (now - lastSaveAt < 5000 || video.currentTime < 10) return;
         lastSaveAt = now;
-        progressUpdate({ id: identifier, title, thumb: poster, pos: video.currentTime, dur: video.duration || 0 });
+        progressUpdate({ id: identifier, ep: progressEp, epLabel: epLabelOf(), title, thumb: poster, pos: video.currentTime, dur: video.duration || 0 });
       });
-      video.addEventListener("ended", () => progressRemove(identifier));
+      video.addEventListener("ended", () => progressRemove(progressKeyFor(identifier, progressEp)));
     }
 
     // One final save when the page goes away, so a visitor who closes the tab mid-scene
@@ -829,9 +878,33 @@
     window.addEventListener("pagehide", () => {
       const v = activeVideo;
       if (v && !v.ended && v.currentTime > 10) {
-        progressUpdate({ id: identifier, title, thumb: poster, pos: v.currentTime, dur: v.duration || 0 });
+        progressUpdate({ id: identifier, ep: progressEp, epLabel: epLabelOf(), title, thumb: poster, pos: v.currentTime, dur: v.duration || 0 });
       }
     });
+
+    // Resume chip: the native player auto-seeks on loadedmetadata; the chip shows the
+    // ACTIVE episode's saved position (per-episode for bundles) and just scrolls to the
+    // player on click. Updated on every episode switch.
+    const resumeChip = $("#resume-chip");
+    function updateResumeChip() {
+      if (!resumeChip) return;
+      const entry = progressGet(identifier, episodes.length > 1 ? activeEp : null);
+      const show = entry && entry.pos > 30 && (entry.dur === 0 || entry.pos < entry.dur - 30);
+      if (show) {
+        resumeChip.textContent = `Resume at ${formatPosition(entry.pos)}`;
+        resumeChip.hidden = false;
+      } else {
+        resumeChip.hidden = true;
+      }
+    }
+    if (resumeChip) {
+      resumeChip.addEventListener("click", () => {
+        // The chip sits beside the player wrap (not inside it — apply() replaces the wrap's
+        // children), so the scroll target is the wrap itself.
+        const playerWrap = $(".player-wrap");
+        if (playerWrap) playerWrap.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
 
     function rebuildQuality(ep) {
       if (!quality) return;
@@ -846,22 +919,7 @@
       }
     }
 
-    // Switch the active episode: swap the default source, rebuild the quality selector
-    // with that episode's own derivatives, and rebuild the native player (skipping the
-    // item-level resume seek so the new episode starts at 0). From embed mode the server
-    // is flipped to direct first — the embed iframe cannot select a file.
-    function selectEpisode(index) {
-      if (episodes.length === 0) return;
-      const clamped = Math.max(0, Math.min(episodes.length - 1, index));
-      if (clamped === activeEp) return;
-      activeEp = clamped;
-      const ep = episodes[activeEp];
-      defaultPath = ep.path;
-      if (quality) rebuildQuality(ep);
-      if (server.value === "embed") server.value = "cdn";
-      skipResume = true;
-      apply();
-      skipResume = false;
+    function syncEpisodeUI() {
       for (const btn of document.querySelectorAll(".episode-btn")) {
         const idx = parseInt(btn.getAttribute("data-ep-index") || "-1", 10);
         const isActive = idx === activeEp;
@@ -875,6 +933,27 @@
       const next = $(".episodes__next");
       if (prev) prev.disabled = activeEp === 0;
       if (next) next.disabled = activeEp === episodes.length - 1;
+    }
+
+    // Switch the active episode: swap the default source, rebuild the quality selector
+    // with that episode's own derivatives, and rebuild the native player. The new element
+    // seeks to THIS episode's own saved entry (per-episode resume) or starts at 0 when the
+    // episode has never been watched. From embed mode the server is flipped to direct
+    // first — the embed iframe cannot select a file.
+    function selectEpisode(index) {
+      if (episodes.length === 0) return;
+      const clamped = Math.max(0, Math.min(episodes.length - 1, index));
+      if (clamped === activeEp) return;
+      activeEp = clamped;
+      progressEp = activeEp;
+      savedEntry = progressGet(identifier, progressEp);
+      const ep = episodes[activeEp];
+      defaultPath = ep.path;
+      if (quality) rebuildQuality(ep);
+      if (server.value === "embed") server.value = "cdn";
+      apply();
+      syncEpisodeUI();
+      updateResumeChip();
     }
 
     function apply() {
@@ -931,7 +1010,16 @@
           selectEpisode(parseInt(btn.getAttribute("data-ep-index") || "0", 10));
         });
       }
+      // A ?ep=N entry (continue-watching row) starts on that episode: point the player at
+      // its source + quality and sync the list UI before the first apply.
+      if (activeEp !== 0) {
+        const ep = episodes[activeEp];
+        defaultPath = ep.path;
+        if (quality) rebuildQuality(ep);
+        syncEpisodeUI();
+      }
     }
+    updateResumeChip();
 
     // Apply the saved preference on load so tracking and quality control work immediately.
     apply();
@@ -948,20 +1036,6 @@
 
   function initMovie() {
     initPlaybackTools();
-    // Resume chip: show when there's a saved position for this identifier.
-    const resumeChip = $("#resume-chip");
-    if (resumeChip) {
-      const identifier = resumeChip.closest(".player-wrap")?.querySelector(".player-tools")?.getAttribute("data-identifier") || "";
-      const entry = identifier ? progressGet(identifier) : null;
-      if (entry && entry.pos > 30 && (entry.dur === 0 || entry.pos < entry.dur - 30)) {
-        resumeChip.textContent = `Resume at ${formatPosition(entry.pos)}`;
-        resumeChip.hidden = false;
-        resumeChip.addEventListener("click", () => {
-          // The native player auto-seeks on loadedmetadata; this click just scrolls to it.
-          resumeChip.closest(".player-wrap")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      }
-    }
     const poster = $(".movie-poster");
     if (poster && poster.parentElement) bindPosterFallbacks(poster.parentElement);
     // Shared card-grid fetcher for the two client-side detail rows ("More like this"

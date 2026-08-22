@@ -1183,6 +1183,12 @@ body[data-page="tv"] .hero {
   min-width: 0;
 }
 
+.player-shell {
+  /* Anchors the resume chip's absolute overlay to the player area. The chip lives in the
+     shell, not the wrap: the native player swaps the wrap's children (replaceChildren). */
+  position: relative;
+}
+
 .player-wrap {
   position: relative;
   width: 100%;

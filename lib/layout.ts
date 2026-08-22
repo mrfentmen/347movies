@@ -270,9 +270,16 @@ export function renderMoviePage(
     kind === "audio"
       ? `<span class="hero-badge hero-badge--audio"><span aria-hidden="true">🎧</span> Audio</span>`
       : "";
-  const player = `<div class="player-wrap">
+  // The resume chip is a SIBLING of the player wrap inside a positioned shell, NOT a child
+  // of the wrap: the native player's apply() swaps the wrap's children in place
+  // (replaceChildren), which would destroy a chip nested inside it. The shell keeps the
+  // chip's absolute overlay anchored to the player area while surviving every
+  // server/quality/episode swap.
+  const player = `<div class="player-shell">
   <div id="resume-chip" class="resume-chip" hidden></div>
-  <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="${verb} ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
+  <div class="player-wrap">
+    <iframe class="player" src="https://archive.org/embed/${encodeURIComponent(id)}" title="${verb} ${escapeHtml(title)}" allow="fullscreen" frameborder="0" fetchpriority="high"></iframe>
+  </div>
 </div>`;
 
   const body = `<div class="container">

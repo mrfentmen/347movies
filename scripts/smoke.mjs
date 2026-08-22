@@ -385,13 +385,15 @@ try {
   ok(js.includes('"role", "listbox"'), "JS: autocomplete panel uses listbox semantics (a11y)");
   ok(js.includes("data-episodes"), "JS: multi-episode player swap wired (episode bundles)");
   ok(css.includes(".episode-list"), "CSS: episode list styled (multi-episode bundles)");
+  ok(js.includes("progressKeyFor"), "JS: per-episode resume keys wired (bundle positions survive switching)");
+  ok(js.includes("?ep="), "JS: continue-watching links preserve the episode (?ep=N deep link)");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
   ok(js.includes("browse the catalog</a>"), "JS: search no-results state offers the next step (browse link, TV-aware)");
   ok(js.includes("Your watchlist is empty"), "JS: empty watchlist invites action (direction copy)");
   ok(js.includes("347movies.progress.v1"), "JS: continue-watching storage key wired (localStorage only)");
-  ok(js.includes('progressRemove(identifier)'), "JS: finishing a film clears its continue-watching entry");
+  ok(js.includes('progressRemove(progressKeyFor(identifier, progressEp))'), "JS: finishing a film/episode clears its continue-watching entry");
   ok(js.includes("No films match these filters"), "JS: browse empty-filter view points to the next step");
   ok(js.includes("https:\\/\\/"), "JS: ad bootstrap independently requires https before injection");
   // Web-interface-guidelines pass (2026-08-16): the dark theme signals color-scheme,
