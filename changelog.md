@@ -4,6 +4,31 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Per-episode resume for bundles (deploy 05547abd, 477 checks)
+
+- A bundle now saves each episode's position under its own localStorage key
+  (`identifier#ep`), so switching episodes is never lossy: prev/next and direct episode
+  clicks restore the exact episode's position, an episode with no saved entry starts at 0,
+  and the `?ep=N` deep link from the continue-watching row opens the movie page on the
+  episode you left. Single films keep the plain identifier key — today's exact behavior —
+  and finishing an episode clears only that episode's entry. Reuses the existing progress
+  store (same array; the key is derived from id+ep, no new mechanism).
+- **Continue-watching row:** one card per item (deduped to the most recent episode), the
+  card names the episode ("Fantomas · 02 - Terror no Gelo") and deep-links `?ep=N`; the
+  watch/dismiss buttons stay item-scoped; dismiss removes only the shown episode's key.
+- **Pre-existing bug the browser check exposed and fixed:** the native player's
+  `replaceChildren` on `.player-wrap` destroyed the resume chip (it lived inside the
+  wrap), so the chip never survived player init on the default direct-stream path. The
+  chip now lives in a positioned `.player-shell` beside the wrap, surviving every
+  server/quality/episode swap; chip text unchanged ("Resume at …"), now per-episode.
+- **Verified:** typecheck clean, 204/204 unit tests, dev + canonical smoke **477/477** on
+  deploy `05547abd` (verified production). Browser check (system Chrome): ep1 saves
+  `#0:100` and ep2 `#1:200` under separate keys; switching back restores each episode's
+  own chip position (3:20 / 1:40); unsaved episode shows no chip; `?ep=1` opens on
+  episode 2 with its position; `it-1927` uses the plain key (no `#0`); home row shows
+  2 cards (one per item) with the `?ep=1` href; dismiss keeps the bundle's other episode.
+  Commit `451c69f`.
+
 ## 2026-08-22 — Episode navigation for multi-episode catalog bundles (deploy 6c7e17f9, 475 checks)
 
 - **The last unshipped item from the features list, and a real defect:** one archive.org
