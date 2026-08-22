@@ -63,6 +63,14 @@ const CASES = [
   ["GET", "/api/browse?ephemera=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?space=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?footage=1&sort=recent&page=1", 200],
+  // Decade chips link to decade-START bounds (from/to must end in 0; the route maps to+9).
+  // Each of these 200s; a chip pointing at to=1969-style bounds 400s — the TED-chip bug
+  // (PR #45 shipped to=2009) is exactly the class this pins.
+  ["GET", "/api/browse?footage=1&from=1910&to=1910&sort=newest&page=1", 200],
+  ["GET", "/api/browse?footage=1&from=1960&to=1960&sort=newest&page=1", 200],
+  ["GET", "/api/browse?ted=1&from=2000&to=2000&sort=newest&page=1", 200],
+  ["GET", "/api/browse?ted=1&from=2010&to=2010&sort=newest&page=1", 200],
+  ["GET", "/api/browse?publictv=1&from=1950&to=1970&sort=newest&page=1", 200],
   ["GET", "/api/youtube?q=short+film", 200],
   ["GET", "/documentaries", 200],
   ["GET", "/ted", 200],
@@ -333,7 +341,7 @@ try {
   ok(js.includes("/api/browse?shorts=1&sort=recent&page=1"), "JS: Shorts home feed wired");
   ok(js.includes("/api/browse?silents=1&sort=recent&page=1"), "JS: Silent films home feed wired");
   ok(js.includes("/api/browse?publictv=1&sort=recent&page=1"), "JS: Public broadcasting home feed wired");
-  ok(js.includes("/api/browse?publictv=1&from=1950&to=1979"), "JS: Golden-age public broadcasting feed wired");
+  ok(js.includes("/api/browse?publictv=1&from=1950&to=1970"), "JS: Golden-age public broadcasting feed wired (decade-start bound)");
   ok(js.includes("/api/browse?science=1&sort=recent&page=1"), "JS: Science & medicine home feed wired");
   ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
   ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
@@ -456,8 +464,15 @@ try {
   ok(records.includes('id="results-head"'), "Records: results heading carries the id for filter-aware titles");
   // TED Talks page: decade-filtered chips for the golden age of ideas (2000s, 2010s).
   const ted = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
-  ok(ted.includes('/browse?ted=1&from=2000&to=2009'), "TED: 2000s decade chip present");
-  ok(ted.includes('/browse?ted=1&from=2010&to=2019'), "TED: 2010s decade chip present");
+  ok(ted.includes('/browse?ted=1&from=2000&to=2000'), "TED: 2000s decade chip present (decade-start bound)");
+  ok(ted.includes('/browse?ted=1&from=2010&to=2010'), "TED: 2010s decade chip present (decade-start bound)");
+  // Vintage Footage page: decade-filtered chips for the pre-1970 archival band (1910s-1960s).
+  const footage = await (await request("GET", `/footage?smoke=${Date.now()}`)).text();
+  // Decade chips must use decade-START bounds (from/to ending in 0) — the API maps to+9,
+  // so from=1910&to=1910 covers years 1910-1919. A to=1919 bound 400s (the PR #45 lesson).
+  for (const [decade, d] of [["1910s", 1910], ["1920s", 1920], ["1930s", 1930], ["1940s", 1940], ["1950s", 1950], ["1960s", 1960]]) {
+    ok(footage.includes(`/browse?footage=1&from=${d}&to=${d}`), `Footage: ${decade} decade chip present (decade-start bound)`);
+  }
   ok(browse.includes('id="count" role="status"'), "Browse: result count announces async updates (role=status)");
   ok(search.includes('id="count" role="status"'), "Search: result count announces async updates (role=status)");
   const movie = await (await request("GET", `/movie/it-1927?smoke=${Date.now()}`)).text();
