@@ -4,6 +4,33 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Science curated-view parity, ephemera decade chips, license-gate sweep tooling (deploy d02b5dc2)
+
+- **Science curated-view parity complete:** the audit found science ⊂ documentaries
+  (257/257 measured 2026-08-21) had only the hub JSON-LD entry — now disclosed on all
+  seven channels like the other four curated pools: hero note, meta description, page
+  JSON-LD `isPartOf → /documentaries`, hub badge, home badge, sitemap annotation,
+  self-canonical (unchanged, decision 002). Smoke curated counts 4 → 5 (hub + home).
+- **Ephemera decade chips** (1940s–70s) mirroring the footage/TED pattern — 288 of 413
+  dated items sit in that golden-age band; the yearless 95 are the same classic canon
+  per the avgeeks research. All four endpoints verified live with matching counts.
+- **Records 1890s option added** — the decade dropdown was missing 1890s, leaving 49
+  shellac items unreachable by decade. Space deliberately got no chips (60% yearless,
+  no decade structure — documented in the smoke comment).
+- **License-gate test hardening:** the unit suite now imports and pins the exact
+  `LEGAL_CLAUSE` constant (mutation-tested: changing the host fails 2 tests), so a
+  refactor cannot silently break every pool query and the weekly sweep.
+- **Weekly license-gate re-probe:** `scripts/license-sweep.ts` + Wednesday workflow
+  (`weekly-license-sweep.yml`) opens an issue when a genuinely new licensed collection
+  appears; baseline-aware so known junk drawers are flagged review-only, never
+  auto-registered. Verified end-to-end with a live run.
+- **Verified:** typecheck clean, 195/195 tests, dev smoke (static-content checks all
+  green; only the documented dev-server rate-limiter 429s on /api/* + sitemap upstream
+  calls), canonical smoke **468/468** against production, deploy `d02b5dc2` verified
+  production, every changed-file signature confirmed live via cache-busted fetches.
+  Browser battery: same pre-existing wrangler-dev boot + CSP-unsafe-eval harness
+  failures as all prior merged PRs (all change-specific gates green).
+
 ## 2026-08-22 — Footage decade chips + decade-bound bugfix (PR #47, deploy 7e44de56)
 
 - **Decade chips on `/footage`** (1910s-1960s) mirroring the TED pattern, each linking to
