@@ -1130,8 +1130,19 @@ try {
     let lastmods = 0;
     let staticLocs = 0;
     let curatedAnnotated = false;
+    let subFailures = 0;
+    const failedSubs = [];
     for (const sub of subs) {
       const res = await request("GET", sub);
+      if (res.status !== 200) {
+        // The index can name a sub-sitemap the code doesn't generate (e.g. a pool added to
+        // the index but not to lib/sitemap.ts SITEMAP_POOLS — the footage gap, 2026-08-22):
+        // a listed-but-404 sub-sitemap silently drops every URL it should hold, so it must
+        // fail the suite, not just add zero to the totals.
+        subFailures += 1;
+        failedSubs.push(sub);
+        continue;
+      }
       const xml = await res.text();
       locs += (xml.match(/<loc>/g) || []).length;
       lastmods += (xml.match(/<lastmod>/g) || []).length;
@@ -1146,7 +1157,7 @@ try {
         curatedAnnotated = curatedAnnotated || footageAnnot;
       }
     }
-    return { locs, lastmods, staticLocs, curatedAnnotated, subs: subs.length };
+    return { locs, lastmods, staticLocs, curatedAnnotated, subs: subs.length, subFailures, failedSubs };
   }
 
   // Hard check on a uniquely cache-busted URL: proves the deployed code builds the FULL
@@ -1162,7 +1173,13 @@ try {
   ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
-  ok(fresh.subs >= 19, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
+  // Every pool gets its own sub-sitemap: static + 19 pools (films union + tv, anime,
+  // cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science,
+  // govfilms, audiobooks, records, ephemera, space, footage). The count is pinned exactly —
+  // a pool added to the catalog but not to SITEMAP_POOLS (the footage gap, 2026-08-22)
+  // would shrink the index and must fail.
+  ok(fresh.subs === 20, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 20)`);
+  ok(fresh.subFailures === 0, `every listed sub-sitemap serves 200 (failed: ${fresh.failedSubs.join(", ") || "none"})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, /footage, /shortfilms, …) carry no lastmod; every
   // catalog URL does. The slack is the static sub-sitemap's OWN URL count (measured from the
