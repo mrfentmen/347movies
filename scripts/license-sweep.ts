@@ -113,8 +113,8 @@ function parseArgs(argv: string[]): Args {
     if (arg === "--json") args.json = true;
     else if (arg === "--force-change") {
       // Test/ops knob: pretend a change happened so the workflow's issue-creation step fires.
-      // Used by workflow_dispatch (force-change input) to prove the positive path end-to-end
-      // on a quiet week; never set on the scheduled run.
+      // Used by workflow_dispatch (force-change input, passed via SWEEP_FORCE_CHANGE) to
+      // prove the positive path end-to-end on a quiet week; never set on the scheduled run.
       args.forceChange = true;
     } else if (arg === "--help" || arg === "-h") {
       console.log(
@@ -131,6 +131,12 @@ function parseArgs(argv: string[]): Args {
     }
   }
   return args;
+}
+
+/** The workflow sets SWEEP_FORCE_CHANGE=1 (from the dispatch input) instead of passing the
+ *  flag on the command line — the env-var handoff is what the workflow actually uses. */
+function forceChangeRequested(args: Args): boolean {
+  return args.forceChange || process.env.SWEEP_FORCE_CHANGE === "1";
 }
 
 async function probe(query: string): Promise<ProbeResult> {
@@ -271,9 +277,10 @@ function renderMarkdown(report: SweepReport, baselineFrom: string | null): strin
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const report = await runSweep();
-  // --force-change: report data stays honest (a quiet week still reports "No changes"), but
-  // anyChange flips so the workflow's issue step fires — the end-to-end positive-path test.
-  if (args.forceChange) report.anyChange = true;
+  // Force-change knob: report data stays honest (a quiet week still reports "No changes"),
+  // but anyChange flips so the workflow's issue step fires — the end-to-end positive-path
+  // test. Set via --force-change or the workflow's SWEEP_FORCE_CHANGE env var.
+  if (forceChangeRequested(args)) report.anyChange = true;
 
   if (args.json) {
     const out = {

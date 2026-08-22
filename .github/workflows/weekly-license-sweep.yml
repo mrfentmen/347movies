@@ -29,15 +29,21 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Resolve the force-change test knob
+        id: force
+        env:
+          INPUT: ${{ inputs.force-change }}
+        run: |
+          # Dispatch booleans arrive as strings; the env var keeps the comparison out of the
+          # sweep command line (an Actions expression inline there proved unreliable).
+          if [ "$INPUT" = "true" ]; then echo "SWEEP_FORCE_CHANGE=1" >> "$GITHUB_ENV"; fi
       - name: Re-probe the license gate
         id: sweep
         run: |
           # One script, two artifacts: JSON for the gate, markdown for the issue. The script
           # exits 0 either way (a quiet week is a valid result); the issue only opens when
-          # something actually changed (or --force-change is set for the dispatch test).
-          # workflow_dispatch booleans arrive as strings — compare against 'true' explicitly
-          # (a bare `inputs.force-change &&` is always truthy: "false" is a non-empty string).
-          node scripts/license-sweep.ts --json --baseline-from=2026-08-22 --body-out=/tmp/license-sweep.md ${{ inputs.force-change == 'true' && '--force-change' || '' }} > /tmp/license-sweep.json
+          # something actually changed (or SWEEP_FORCE_CHANGE=1 is set for the dispatch test).
+          node scripts/license-sweep.ts --json --baseline-from=2026-08-22 --body-out=/tmp/license-sweep.md > /tmp/license-sweep.json
           ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/license-sweep.json','utf8')).anyChange")
           echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
           echo "Re-probe complete (anyChange=$ANY)."
