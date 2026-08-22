@@ -447,6 +447,10 @@ try {
   ok(records.includes('<option value="1910">1910s</option>'), "Records: 1910s decade option present");
   ok(records.includes('<option value="1920">1920s</option>'), "Records: 1920s decade option present");
   ok(records.includes('id="results-head"'), "Records: results heading carries the id for filter-aware titles");
+  // TED Talks page: decade-filtered chips for the golden age of ideas (2000s, 2010s).
+  const ted = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
+  ok(ted.includes('/browse?ted=1&from=2000&to=2009'), "TED: 2000s decade chip present");
+  ok(ted.includes('/browse?ted=1&from=2010&to=2019'), "TED: 2010s decade chip present");
   ok(browse.includes('id="count" role="status"'), "Browse: result count announces async updates (role=status)");
   ok(search.includes('id="count" role="status"'), "Search: result count announces async updates (role=status)");
   const movie = await (await request("GET", `/movie/it-1927?smoke=${Date.now()}`)).text();
