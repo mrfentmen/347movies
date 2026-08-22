@@ -609,6 +609,9 @@
     loadHomeSection("silentfilms", "/api/browse?silents=1&sort=recent&page=1");
     // 2026-08-18 pools (round 2): public broadcasting (AAPB) and science & medicine (Wellcome).
     loadHomeSection("publictv", "/api/browse?publictv=1&sort=recent&page=1");
+    // Golden-age public broadcasting: pre-1980 AAPB programs (PBS/NPR-affiliate news
+    // and public affairs), newest release years first — mirrors the anime/cartoon decade showcases.
+    loadHomeSection("publictvgolden", "/api/browse?publictv=1&from=1950&to=1979&sort=newest&page=1");
     loadHomeSection("science", "/api/browse?science=1&sort=recent&page=1");
     // 2026-08-18 pools (round 3): government films (FedFlix) and audiobooks (LibriVox).
     loadHomeSection("govfilms", "/api/browse?govfilms=1&sort=recent&page=1");

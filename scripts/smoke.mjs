@@ -329,6 +329,7 @@ try {
   ok(js.includes("/api/browse?shorts=1&sort=recent&page=1"), "JS: Shorts home feed wired");
   ok(js.includes("/api/browse?silents=1&sort=recent&page=1"), "JS: Silent films home feed wired");
   ok(js.includes("/api/browse?publictv=1&sort=recent&page=1"), "JS: Public broadcasting home feed wired");
+  ok(js.includes("/api/browse?publictv=1&from=1950&to=1979"), "JS: Golden-age public broadcasting feed wired");
   ok(js.includes("/api/browse?science=1&sort=recent&page=1"), "JS: Science & medicine home feed wired");
   ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
   ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
@@ -401,6 +402,7 @@ try {
   ok(home.includes('id="hkaction"'), "Home: Hong Kong action section present (keyword feed)");
   ok(home.includes('id="tvclassics"'), "Home: Classic TV section present (classic_tv feed)");
   ok(home.includes('id="tv1960s"'), "Home: 1960s TV showcase present");
+  ok(home.includes('id="publictvgolden"'), "Home: Golden-age public broadcasting showcase present");
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
   ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
