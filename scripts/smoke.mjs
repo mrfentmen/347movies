@@ -14,6 +14,10 @@ import { readFileSync } from "node:fs";
  * Exits 0 when everything passes, 1 otherwise. Every check is a real network request.
  */
 const BASE = (process.env.SMOKE_BASE_URL || "https://347movies.pages.dev").replace(/\/$/, "");
+// The ONLY third-party script host the static CSP may ever permit: the AdSense loader
+// (lib/ad.ts AD_NETWORK_ALLOWLIST / AD_CSP_HOSTS.script — the reviewed T4.5 network).
+// Anything else in script-src while ads are dormant is a silent relaxation, not a config.
+const AD_SANCTIONED_SCRIPT_HOSTS = new Set(["pagead2.googlesyndication.com"]);
 // Full catalog floor: the sitemap index's sub-sitemaps total ~76k URLs across all eighteen
 // pools (films union + every curated pool). 50,000 also catches a single-file regression —
 // the protocol caps one sitemap at 50k URLs, so a broken build that collapses back to one
@@ -163,6 +167,18 @@ try {
   ok(csp.includes("media-src https://archive.org"), "CSP: media loads only from archive.org (constitution §7 / vow 4 — $0 storage)");
   ok(csp.includes("connect-src 'self' https://archive.org"), "CSP: connect-src honors the archive.org preconnect (perf pass)");
   ok(csp.includes("script-src 'self'") && !csp.includes("unsafe-inline"), "CSP: no inline scripts");
+  // The static _headers CSP pre-permits the AdSense script host while dormant (documented
+  // tradeoff: static pages can't branch on env; the client injects nothing while disabled).
+  // That permission is inert ONLY while the permitted script hosts stay inside the ad
+  // network's allowlist — a future edit that adds ANY other third-party script host here
+  // must fail (it would be a silent script-src relaxation with no enablement review).
+  const scriptSrc = (csp.match(/script-src ([^;]+)/) || [])[1] || "";
+  const scriptHosts = (scriptSrc.match(/https?:\/\/[^ ]+/g) || []).map((h) => h.replace(/^https?:\/\//, "").replace(/\/$/, ""));
+  const unexpectedScriptHosts = scriptHosts.filter((h) => !AD_SANCTIONED_SCRIPT_HOSTS.has(h));
+  ok(
+    unexpectedScriptHosts.length === 0,
+    `static CSP script-src hosts stay inside the ad allowlist (got ${scriptHosts.join(", ") || "none"})`,
+  );
   ok(hsts.includes("preload"), "HSTS preload");
   ok(res.headers.get("x-content-type-options") === "nosniff", "nosniff");
   ok(res.headers.get("x-frame-options") === "SAMEORIGIN", "frame options");
