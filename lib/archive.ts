@@ -155,6 +155,8 @@ export const PUBLICTV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:television A
  * license-marked movies. Items ARE the content, so the films-only exclusion does not apply.
  */
 export const SCIENCE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wellcomefilm AND mediatype:movies`;
+// Overlap-measured 2026-08-21: ALL 257 items also sit in culturalandacademicfilms (the
+// documentaries pool) — this is a CURATED VIEW of Documentaries, like TED Talks.
 
 /**
  * Government films catalog gate: the same license gate over `FedFlix`, the US government's
