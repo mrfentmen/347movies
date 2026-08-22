@@ -4,6 +4,17 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Vintage Footage pool + Short Films page shipped (PR #46, deploy f0f2b3ae)
+
+- **Shipped via PR #46** (merge commit `851097e`): the Vintage Footage curated-view pool
+  (`/footage`, 445 pre-1970 archival items, disclosed as a view of /browse on all four
+  channels) and the Short Films YouTube-CC shelf (`/shortfilms`, dormant until
+  `YOUTUBE_API_KEY`). Deployed `f0f2b3ae` to production; **448/448 smoke checks pass**
+  live, including the footage disclosure guards.
+- **CI fix bundled in:** the smoke suite's `<lastmod>` slack was a hardcoded 25; adding
+  `/footage` + `/shortfilms` (both static, no lastmod) pushed past it. Now derived from the
+  static sub-sitemap's own URL count — self-adjusts as pages are added.
+
 ## 2026-08-22 — Short Films page: YouTube CC embeds (keyword-targeted shelf)
 
 - **New page: Short Films (`/shortfilms`).** A second content source beyond archive.org:
