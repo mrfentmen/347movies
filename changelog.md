@@ -4,6 +4,20 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Re-deploy of main (deploy 820c2fa0) — confirm nothing drifted after the gate-consolidation work
+
+- Redeployed the current main (clean tree, HEAD = origin/main) via the canonical `npm run
+deploy`; **0 files changed** (the bundle was already current — the BASE_CLAUSE export landed
+in d013049, before the previous deploy d02b5dc2 — so this run is confirmation, not a new
+bundle). Deploy id `820c2fa0`, verified `environment = production`.
+- **Canonical smoke: 468/468 checks pass** against production (full catalog 76,069 URLs);
+  live API spot-checks green: `/api/search?q=detour` returns 33 license-gated results,
+  `/api/browse?page=1` 200. Nothing drifted.
+- **Verified:** typecheck clean, 199/199 tests, CI green on the gate-consolidation commits
+  (fd55116: typecheck+tests, live smoke, secret scan, prototype, gate-scripts — only the
+  known pre-existing browser-battery failures), deploy `820c2fa0` verified production,
+  canonical smoke 468/468.
+
 ## 2026-08-22 — Science curated-view parity, ephemera decade chips, license-gate sweep tooling (deploy d02b5dc2)
 
 - **Science curated-view parity complete:** the audit found science ⊂ documentaries
