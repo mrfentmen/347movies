@@ -155,7 +155,7 @@ test("uncounted input still returns 204-safe success (recordPageView returns fal
   for (const bad of ["", "/about", "https://evil.example/x", "/movie/" + "a".repeat(300)]) {
     assert.equal(await recordPageView(EMPTY_ENV, bad), false);
   }
-  assert.equal(COUNTED_PATHS.length, 25, "the bounded bucket set stays small and deliberate (one per catalog destination)");
+  assert.equal(COUNTED_PATHS.length, 27, "the bounded bucket set stays small and deliberate (one per catalog destination)");
 });
 
 test("the edge Cache API persists counts across isolates and is read back after memory resets", async () => {

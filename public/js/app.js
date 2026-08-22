@@ -626,6 +626,9 @@
     loadHomeSection("space", "/api/browse?space=1&sort=recent&page=1");
     // 2026-08-21: TED Talks — a curated view of Documentaries (TED's real CC-licensed talks).
     loadHomeSection("ted", "/api/browse?ted=1&sort=recent&page=1");
+    // 2026-08-22: vintage footage — pre-1970 archival film (Coney Island 1940s, Hindenburg
+    // over NYC 1937, 1939 World's Fair) — a curated view of Films.
+    loadHomeSection("footage", "/api/browse?footage=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -649,7 +652,8 @@
     const records = params.get("records") === "1";
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
+    const footage = params.get("footage") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -669,6 +673,7 @@
       records: { label: "Vintage Records", noun: "record" },
       ephemera: { label: "Ephemeral Films", noun: "film" },
       space: { label: "Space & NASA", noun: "film" },
+      footage: { label: "Vintage Footage", noun: "film" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -1165,6 +1170,88 @@
   function initEphemera() { initDestination("ephemera", "/ephemera"); }
   function initSpace() { initDestination("space", "/space"); }
   function initTed() { initDestination("ted", "/ted"); }
+  function initFootage() { initDestination("footage", "/footage"); }
+
+  /* ---------- short films (YouTube) ----------
+     The /shortfilms page (public/shortfilms.html, data-page="shortfilms"): a shelf of
+     Creative Commons short films streamed embedded from YouTube. The page keyword-targets
+     "short film / short films / small film / indie film / small films". Feeds from
+     /api/youtube (CC-filtered search, dormant until YOUTUBE_API_KEY is configured — same
+     pattern as the ad network): when unconfigured the API returns { enabled: false } and
+     the grid shows an honest pending note instead of a broken embed wall. Embeds load
+     from youtube-nocookie.com (privacy-enhanced mode), never the site's own storage. */
+  function initShortFilms() {
+    const params = new URLSearchParams(window.location.search);
+    const q = (params.get("q") || "short film").trim().slice(0, 80);
+    const input = $("#shortfilm-q");
+    if (input && !input.value) input.value = q;
+    const head = $("#results-head");
+    if (head) head.textContent = q ? `Short films · "${q}"` : "Short films, free";
+    const grid = $("#results");
+    // Mark the active keyword chip (short film / short films / small film / indie film /
+    // small films / animation) so the visitor sees which search is live.
+    for (const chip of document.querySelectorAll(".genre-chip")) {
+      if (chip.getAttribute("href") === `/shortfilms?q=${encodeURIComponent(q)}`) {
+        chip.classList.add("is-active");
+      }
+    }
+    apiFetch(`/api/youtube?q=${encodeURIComponent(q)}`)
+      .then((data) => {
+        if (!data || data.enabled === false) {
+          grid.innerHTML = "";
+          const pending = document.createElement("p");
+          pending.className = "empty";
+          pending.textContent = "The short-film shelf is being wired up — YouTube embeds appear here once the site owner configures the YouTube API key. Meanwhile, browse the archive's public-domain shorts.";
+          const link = document.createElement("a");
+          link.href = "/shorts";
+          link.textContent = "Browse archive shorts";
+          pending.appendChild(document.createTextNode(" "));
+          pending.appendChild(link);
+          grid.appendChild(pending);
+          const count = $("#count");
+          if (count) count.textContent = "";
+          return;
+        }
+        const results = Array.isArray(data.results) ? data.results : [];
+        grid.innerHTML = "";
+        const count = $("#count");
+        if (count) count.textContent = `${results.length} Creative Commons short films`;
+        if (results.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "empty";
+          empty.textContent = "No Creative Commons shorts found for that search. Try a different term.";
+          grid.appendChild(empty);
+          return;
+        }
+        for (const v of results) {
+          const card = document.createElement("article");
+          card.className = "card card--youtube";
+          const frameWrap = document.createElement("div");
+          frameWrap.className = "card__embed";
+          const frame = document.createElement("iframe");
+          frame.src = v.embedUrl;
+          frame.title = v.title;
+          frame.loading = "lazy";
+          frame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+          frame.allowFullscreen = true;
+          frameWrap.appendChild(frame);
+          const body = document.createElement("div");
+          body.className = "card__body";
+          const h = document.createElement("h3");
+          h.className = "card__title";
+          h.textContent = v.title;
+          const meta = document.createElement("p");
+          meta.className = "card__meta";
+          meta.textContent = v.channel || "YouTube · Creative Commons";
+          body.appendChild(h);
+          body.appendChild(meta);
+          card.appendChild(frameWrap);
+          card.appendChild(body);
+          grid.appendChild(card);
+        }
+      })
+      .catch((err) => renderError(grid, err.message));
+  }
 
   /* ---------- collections hub ----------
      The /collections page (public/collections.html, data-page="collections"): ten pool
@@ -1225,8 +1312,9 @@
     const records = params.get("records") === "1";
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
+    const footage = params.get("footage") === "1";
     // Which serialized pool this browse view serves.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1281,7 +1369,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "ted" ? "TED Talks" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "ted" ? "TED Talks" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : catalog === "footage" ? "Vintage Footage" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1483,6 +1571,8 @@
   else if (page === "ephemera") initEphemera();
   else if (page === "space") initSpace();
   else if (page === "ted") initTed();
+  else if (page === "footage") initFootage();
+  else if (page === "shortfilms") initShortFilms();
   else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();
   else if (page === "watchlist") initWatchlist();

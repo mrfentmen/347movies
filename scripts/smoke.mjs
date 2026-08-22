@@ -62,6 +62,8 @@ const CASES = [
   ["GET", "/api/browse?records=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?ephemera=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?space=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?footage=1&sort=recent&page=1", 200],
+  ["GET", "/api/youtube?q=short+film", 200],
   ["GET", "/documentaries", 200],
   ["GET", "/ted", 200],
   ["GET", "/sports", 200],
@@ -72,6 +74,8 @@ const CASES = [
   ["GET", "/govfilms", 200],
   ["GET", "/audiobooks", 200],
   ["GET", "/records", 200],
+  ["GET", "/footage", 200],
+  ["GET", "/shortfilms", 200],
   ["GET", "/ephemera", 200],
   ["GET", "/space", 200],
   ["GET", "/collections", 200],
@@ -254,7 +258,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/shortfilms", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -337,6 +341,8 @@ try {
   ok(js.includes("/api/browse?records=1&sort=recent"), "JS: New records this week feed wired (recently added)");
   ok(js.includes("/api/browse?ephemera=1&sort=recent&page=1"), "JS: Ephemeral films home feed wired");
   ok(js.includes("/api/browse?space=1&sort=recent&page=1"), "JS: Space & NASA home feed wired");
+  ok(js.includes("/api/browse?footage=1&sort=recent&page=1"), "JS: Vintage footage home feed wired");
+  ok(js.includes("/api/youtube?q="), "JS: Short films page wired to the CC-filtered YouTube search");
   ok(js.includes("/api/browse?ted=1&sort=recent&page=1"), "JS: TED Talks home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
@@ -405,6 +411,7 @@ try {
   ok(home.includes('id="tv1960s"'), "Home: 1960s TV showcase present");
   ok(home.includes('id="publictvgolden"'), "Home: Golden-age public broadcasting showcase present");
   ok(home.includes('id="recordsnew"'), "Home: New records this week section present");
+  ok(home.includes('id="footage"'), "Home: Vintage footage section present (archival pre-1970 feed)");
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
   ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
@@ -480,7 +487,7 @@ try {
   const queriedIds = [
     ...new Set([...js.matchAll(/(?:\$\("#|getElementById\("|querySelector(?:All)?\("#)([A-Za-z0-9_-]+)"\)/g)].map((m) => m[1])),
   ];
-  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/movie/it-1927"];
+  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/shortfilms", "/movie/it-1927"];
   const presentIds = new Set();
   const dupReports = [];
   for (const path of idScanPages) {
@@ -582,7 +589,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/shortfilms", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -911,7 +918,7 @@ try {
   const slotAt = movieHtml.indexOf('data-ad-slot="sidebar"');
   const slot2At = movieHtml.indexOf('data-ad-slot="sidebar-2"');
   ok(pw !== -1 && slotAt > pwClose && slot2At > pwClose, "movie-page ad slots sit outside the player wrap");
-  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space"]) {
+  for (const path of ["/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/shortfilms"]) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const s = (html.match(/data-ad-slot="sidebar"/g) || []).length;
     const s2 = (html.match(/data-ad-slot="sidebar-2"/g) || []).length;
@@ -945,6 +952,21 @@ try {
   console.error(`FAIL  ad loader dormant — ${err.message}`);
 }
 
+console.log("\n— short films page keyword targeting —");
+try {
+  const html = await (await request("GET", `/shortfilms?smoke=${Date.now()}`)).text();
+  ok(html.includes("Short Films"), "shortfilms page: H1/title present");
+  for (const kw of ["short film", "short films", "small film", "indie film", "small films"]) {
+    ok(html.toLowerCase().includes(kw), `shortfilms page targets the "${kw}" keyword`);
+  }
+  ok(html.includes('action="/shortfilms"') && html.includes('id="shortfilm-q"'), "shortfilms page: search form posts to the page (GET /shortfilms?q=…)");
+  ok(html.includes('data-page="shortfilms"'), "shortfilms page: data-page hook present");
+} catch (err) {
+  failures += 1;
+  checks += 1;
+  console.error(`FAIL  short films page — ${err.message}`);
+}
+
 console.log("\n— page-view counter (vow 5: aggregate, cookie-free) —");
 try {
   const stats = await (await request("GET", "/api/views?days=7")).json();
@@ -970,12 +992,12 @@ console.log("\n— collections hub counts —");
 try {
   const c = await (await request("GET", "/api/collections")).json();
   const pools = c && typeof c.pools === "object" ? c.pools : {};
-  const expected = ["films", "tv", "anime", "cartoons", "otr", "music", "documentaries", "sports", "shorts", "silents"];
+  const expected = ["films", "tv", "anime", "cartoons", "otr", "music", "documentaries", "sports", "shorts", "silents", "footage"];
   const allCounted = expected.every((k) => typeof pools[k] === "number" && pools[k] >= 0);
-  ok(allCounted, `collections API returns all ten pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
+  ok(allCounted, `collections API returns all pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 18, "collections page carries eighteen pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 19, "collections page carries nineteen pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -987,11 +1009,12 @@ try {
   const footerNav = homeFooterPage.slice(footerStart, homeFooterPage.indexOf("</nav>", footerStart) + "</nav>".length);
   ok(footerNav.includes('<a href="/collections">Collections</a>'), "footer: Collections hub link present");
   ok(!/href="\/(tv|anime|cartoons|otr|music|documentaries|sports|shorts|silents)"/.test(footerNav), "footer: individual pool links consolidated into the hub");
-  // Curated-view disclosure: shorts and silents are 100% subsets of the films union (measured
-  // 2026-08-18: 0 exclusive items), and tedtalks is a 100% subset of culturalandacademicfilms
-  // (measured 2026-08-21: 2,933 = 2,933), so all three must be labeled as curated views, never
-  // implied to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
-  ok((collectionsHtml.match(/Curated view/g) || []).length === 3, "collections page badges shorts + silents + TED as curated views");
+  // Curated-view disclosure: shorts, silents, and vintage footage are 100% subsets of the
+  // films union (measured 2026-08-18 and 2026-08-22: 0 exclusive items), and tedtalks is a
+  // 100% subset of culturalandacademicfilms (measured 2026-08-21: 2,933 = 2,933), so all
+  // four must be labeled as curated views, never implied to be disjoint catalogs. Guard
+  // both the hub badges and the landing-page notes.
+  ok((collectionsHtml.match(/Curated view/g) || []).length === 4, "collections page badges shorts + silents + footage + TED as curated views");
   // Disjoint pools: measured 2026-08-21 (cross-pool overlap matrix, docs/cross-pool-overlap-matrix.md)
   // — 8 pools have 0 overlap with any other pool. Each carries a "Unique" badge so visitors
   // know titles aren't duplicated elsewhere.
@@ -999,22 +1022,26 @@ try {
   // The collections hub carries JSON-LD expressing the curated-view relationships so
   // structured-data consumers see the subset hierarchy from the hub itself.
   ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
-  ok((homeFooterPage.match(/Curated view/g) || []).length === 3, "home page badges the shorts + silents + TED sections as curated views");
+  ok((homeFooterPage.match(/Curated view/g) || []).length === 4, "home page badges the shorts + silents + footage + TED sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
   ok(shortsHtml.includes("A curated view") && shortsHtml.includes('href="/browse"'), "shorts page discloses it is a curated view of Films");
   ok(silentsHtml.includes("A curated view") && silentsHtml.includes('href="/browse"'), "silents page discloses it is a curated view of Films");
+  const footageHtml = await (await request("GET", `/footage?smoke=${Date.now()}`)).text();
+  ok(footageHtml.includes("A curated view") && footageHtml.includes('href="/browse"'), "footage page discloses it is a curated view of Films");
   const tedHtml = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
   ok(tedHtml.includes("A curated view") && tedHtml.includes('href="/documentaries"'), "ted page discloses it is a curated view of Documentaries");
   // The overlap must also be visible to search engines: the page meta description (what a
   // SERP shows) discloses the curated-view relationship, not just the visible hero note.
   ok(/<meta name="description"[^>]*curated view/i.test(shortsHtml), "shorts meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(silentsHtml), "silents meta description discloses the curated-view overlap");
+  ok(/<meta name="description"[^>]*curated view/i.test(footageHtml), "footage meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(tedHtml), "ted meta description discloses the curated-view overlap");
   // Same disclosure for structured-data consumers: the JSON-LD CollectionPage names the
   // parent Films catalog via isPartOf so crawlers see the subset relationship too.
   ok(shortsHtml.includes('"isPartOf"') && shortsHtml.includes('347movies.pages.dev/browse'), "shorts JSON-LD exposes isPartOf → /browse");
   ok(silentsHtml.includes('"isPartOf"') && silentsHtml.includes('347movies.pages.dev/browse'), "silents JSON-LD exposes isPartOf → /browse");
+  ok(footageHtml.includes('"isPartOf"') && footageHtml.includes('347movies.pages.dev/browse'), "footage JSON-LD exposes isPartOf → /browse");
   ok(tedHtml.includes('"isPartOf"') && tedHtml.includes('347movies.pages.dev/documentaries'), "ted JSON-LD exposes isPartOf → /documentaries");
   // Canonical decision (docs/decisions/002): the pages stay SELF-canonical, never → /browse.
   // rel=canonical signals duplication ("same content, index only one"); shorts/silents are
@@ -1022,6 +1049,7 @@ try {
   // de-index them. The subset relationship belongs to isPartOf (above), not canonical.
   ok(shortsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/shorts">'), "shorts stays self-canonical (not → /browse)");
   ok(silentsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/silents">'), "silents stays self-canonical (not → /browse)");
+  ok(footageHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/footage">'), "footage stays self-canonical (not → /browse)");
   ok(tedHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/ted">'), "ted stays self-canonical (not → /documentaries)");
 } catch (err) {
   failures += 1;
@@ -1045,15 +1073,25 @@ try {
     });
     let locs = 0;
     let lastmods = 0;
+    let staticLocs = 0;
     let curatedAnnotated = false;
     for (const sub of subs) {
       const res = await request("GET", sub);
       const xml = await res.text();
       locs += (xml.match(/<loc>/g) || []).length;
       lastmods += (xml.match(/<lastmod>/g) || []).length;
+      if (sub.endsWith("static.xml")) staticLocs = (xml.match(/<loc>/g) || []).length;
       if (xml.includes("curated view of /browse") || xml.includes("curated view of /documentaries")) curatedAnnotated = true;
+      // Pin the footage annotation specifically: the static sub-sitemap's /footage <url>
+      // entry must be followed by the curated-view-of-/browse comment (same disclosure
+      // channel as shorts/silents — added with the pool, 2026-08-22).
+      if (sub.endsWith("static.xml")) {
+        const footageLoc = xml.indexOf("pages.dev/footage");
+        const footageAnnot = footageLoc !== -1 && xml.includes("curated view of /browse", footageLoc);
+        curatedAnnotated = curatedAnnotated || footageAnnot;
+      }
     }
-    return { locs, lastmods, curatedAnnotated, subs: subs.length };
+    return { locs, lastmods, staticLocs, curatedAnnotated, subs: subs.length };
   }
 
   // Hard check on a uniquely cache-busted URL: proves the deployed code builds the FULL
@@ -1071,12 +1109,17 @@ try {
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
   ok(fresh.subs >= 19, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps)`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
-  // /anime, /cartoons, /otr, /music, …) carry no lastmod; every catalog URL does.
-  ok(fresh.lastmods >= fresh.locs - 25, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries)`);
-  // Curated-view annotation: the static sub-sitemap documents that /shorts and /silents are
-  // views of /browse and /ted is a view of /documentaries (protocol has no description field,
-  // so this is an XML comment — the SERP-visible disclosure is the page meta description).
-  ok(fresh.curatedAnnotated, "sitemap annotates /shorts + /silents → /browse and /ted → /documentaries");
+  // /anime, /cartoons, /otr, /music, /footage, /shortfilms, …) carry no lastmod; every
+  // catalog URL does. The slack is the static sub-sitemap's OWN URL count (measured from the
+  // same fetched XML), so it self-adjusts as static pages are added — no magic number to
+  // go stale (2026-08-22: a hardcoded 25 broke when /footage + /shortfilms landed).
+  ok(fresh.lastmods >= fresh.locs - fresh.staticLocs, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries, ${fresh.staticLocs} static paths exempt)`);
+  // Curated-view annotation: the static sub-sitemap documents that /shorts, /silents, and
+  // /footage are views of /browse and /ted is a view of /documentaries (protocol has no
+  // description field, so this is an XML comment — the SERP-visible disclosure is the page
+  // meta description). The footage annotation is pinned precisely: /footage's own <url> entry
+  // must carry the curated-view comment (added with the pool, 2026-08-22).
+  ok(fresh.curatedAnnotated, "sitemap annotates /shorts + /silents + /footage → /browse and /ted → /documentaries");
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await fetchSitemapTotals("/sitemap.xml");

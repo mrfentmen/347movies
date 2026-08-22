@@ -55,6 +55,7 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   records: "https://347movies.internal/records-index-v1",
   ephemera: "https://347movies.internal/ephemera-index-v1",
   space: "https://347movies.internal/space-index-v1",
+  footage: "https://347movies.internal/footage-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -445,6 +446,7 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "records",
   "ephemera",
   "space",
+  "footage",
 ];
 
 /**

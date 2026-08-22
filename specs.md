@@ -120,19 +120,20 @@ Phase status detail:
 | 3 — Pages | Deployed & verified | Home/search/browse/detail/static pages render from real API data; It (1927) plays in the archive.org embed ad-free; 404 returns 404 live |
 | 4 — Monetization | Slots live; loader mechanism built + dormant; rendering pending a real network contract | Marked sidebar/leaderboard slots live (never over player) with a real advertiser contact (contactae2000@gmail.com) + `/about#advertise`; ad loader mechanism built + tested (lib/ad.ts + /api/ad-config + client bootstrap, Decision 001) and provably dormant — `enabled:false`, zero third-party scripts on every page; affiliate mechanism unit-tested; nothing fake renders (constitution §4) |
 | 5 — Hardening | Deployed & verified | 55/55 tests, `npm audit` 0, header/CSP audit, back-door grep sweep clean |
-| 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (75,821 URLs — full catalog — 19 sub-sitemaps under a sitemap index) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization, CollectionPage with `isPartOf` for curated views); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids; curated-view canonical strategy documented (Decision 002) |
+| 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (full catalog — one sub-sitemap per pool under a sitemap index) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization, CollectionPage with `isPartOf` for curated views); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids; curated-view canonical strategy documented (Decision 002) |
 | 7 — Production launch | **DEPLOYED & verified live** | `wrangler pages deploy` succeeded; live walkthrough: all routes 200, player embed present, headers verified, 404 works |
 
-**Catalog size (live, verified 2026-08-19):** seventeen pools, all under the same license gate:
-films (15,920) + TV (2,514) + anime (24) + cartoons (1,308) + radio (2,309) + music (1,455) +
-documentaries (8,417) + sports (3,625) + shorts (1,858) + silents (729) + public broadcasting
-(1,653) + science (257) + government films (5,947) + audiobooks (18,344) + vintage records
-(5,038) + ephemeral films (413) + space & NASA (719) ≈ **73k items** across the sitemap. The
-`films=1` view (episodes + trailers + teasers + music videos + serial chapters/parts excluded
-— Solr-identical, verified 2026-08-16) serves **15,920 films**; 138 film-noir; 533 in the
-1920s decade. The sitemap deliberately lists every pool's items, split into one sub-sitemap per
-pool under a sitemap index (75,821 URLs — every playable legal page, including
-trailers/episodes reachable by direct URL, and each file under the 50k protocol ceiling).
+**Catalog size (live, verified 2026-08-22):** nineteen pools, all under the same license gate:
+films (18,491) + TV (2,513) + anime (24) + cartoons (1,308) + radio (2,309) + music (1,456) +
+documentaries (8,420) + TED (2,933) + sports (3,625) + shorts (1,858) + silents (729) + public
+broadcasting (1,653) + science (257) + government films (5,948) + audiobooks (18,349) +
+vintage records (5,039) + ephemeral films (413) + space & NASA (719) + vintage footage (445)
+≈ **76k items** across the sitemap. The `films=1` view (episodes + trailers + teasers + music
+videos + serial chapters/parts excluded — Solr-identical, verified 2026-08-16) serves the
+feature-film subset; 138 film-noir; 533 in the 1920s decade. The sitemap deliberately lists
+every pool's items, split into one sub-sitemap per pool under a sitemap index (every playable
+legal page, including trailers/episodes reachable by direct URL, and each file under the 50k
+protocol ceiling).
 
 ### Curated-view canonical strategy (Decision 002)
 
@@ -164,3 +165,26 @@ own pool. The measurement is recorded at the gate definitions in `lib/archive.ts
 future session won't re-measure or mislabel them.
 
 See `docs/decisions/002-curated-view-canonical.md` for the full decision record.
+
+### YouTube short films (/shortfilms)
+
+A second content source beyond archive.org: Creative Commons short films streamed
+**embedded from YouTube** (privacy-enhanced `youtube-nocookie.com` player — the site never
+hosts or stores video). The page keyword-targets "short film / short films / small film /
+indie film / small films" in its title, meta description, hero copy, and keyword chips.
+
+**License gate (YouTube equivalent of the archive gate):** the search is filtered server-side
+to `videoLicense=creativeCommon` + `videoEmbeddable=true` + `type=video` +
+`videoDuration=medium` (4–20 min, the short-film sweet spot) + `safeSearch=strict`
+(`lib/youtube.ts`), so every embed is legally reusable content — never a pirated rip.
+
+**Dormant until configured** (same pattern as the ad network): `YOUTUBE_API_KEY` is a
+server-side secret (never rendered to the browser). Until it's set, `/api/youtube` returns
+`{ enabled: false }` and the page shows an honest pending note linking to the archive's
+shorts. When set, the CSP relaxations (youtube-nocookie frame-src, i.ytimg img-src) apply
+conditionally in the middleware; the static `_headers` CSP carries the hosts inertly, exactly
+like the ad hosts.
+
+**How to enable:** create a YouTube Data API v3 key in Google Cloud Console (enable the
+"YouTube Data API v3"), then add it as a Pages secret `YOUTUBE_API_KEY` (never in the repo
+or `_headers`).

@@ -26,6 +26,13 @@ export interface Env {
    * unless it is https on a patreon host (dormant by default, like the affiliate tag).
    */
   PATREON_URL?: string;
+  /**
+   * Optional YouTube Data API v3 key — enables the CC-filtered short-film search behind
+   * /shortfilms (lib/youtube.ts). Dormant until set: /api/youtube returns
+   * { enabled: false } and the page shows an honest pending state (same pattern as the
+   * ad network). The key is a server-side secret — never rendered to the browser.
+   */
+  YOUTUBE_API_KEY?: string;
   /** Public site origin used for canonical/OG URLs. */
   SITE_URL?: string;
   /**

@@ -47,6 +47,21 @@ function contentSecurityPolicy(env: Env): string {
         `connect-src 'self' https://archive.org https://*.archive.org ${AD_CSP_HOSTS.connect.join(" ")}`,
       );
   }
+  // YouTube short-film embeds (/shortfilms): only when YOUTUBE_API_KEY is configured does
+  // the page render embeds, and only then do the privacy-enhanced player (youtube-nocookie)
+  // and its thumbnails (i.ytimg.com) need CSP allowance. Dormant = strict, unchanged —
+  // same pattern as the ad relaxation above.
+  if (env.YOUTUBE_API_KEY) {
+    csp = csp
+      .replace(
+        "img-src 'self' data: https://archive.org https://*.archive.org",
+        "img-src 'self' data: https://archive.org https://*.archive.org https://i.ytimg.com",
+      )
+      .replace(
+        "frame-src https://archive.org https://*.archive.org",
+        "frame-src https://archive.org https://*.archive.org https://www.youtube-nocookie.com https://www.youtube.com",
+      );
+  }
   return csp;
 }
 
