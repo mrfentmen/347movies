@@ -4,6 +4,33 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Production-readiness verification pass (no code changed)
+
+AFK production sweep — verified the live site end-to-end and confirmed the content
+ceiling before stopping:
+
+- **All routes healthy:** 11/11 pages 200 (home, browse, search, collections, anime,
+  cartoons, otr, music, records, footage, science); canonical smoke 468/468 on deploy
+  `820c2fa0`.
+- **Content ceiling reconfirmed (10th sweep):** license-sweep live run — 18/18 pools
+  at baseline (films 18,491, tv 2,513, anime 24…), 0 probe errors, zero new collections;
+  the only growth is the known-rejected `opensource_movies` junk drawer (+41, review-only).
+  Nothing new to register without a YouTube key or a new institutional archive upstream.
+- **View counter live:** `/api/views?days=7` → 42 views/7d (top `/` 35), fed into the
+  advertise page's audience-stats line.
+- **OTR/music detail pages verified:** audio player renders (e.g. Nick Carter Master
+  Detective search hit → `movie/OTRR_Certified_Nick_Carter_Master_Detective` carries the
+  audio player).
+- **Ad dormancy re-confirmed:** `/api/ad-config` → `{enabled:false}`; home carries zero
+  third-party scripts. The static `_headers` CSP pre-permits AdSense hosts — a documented
+  deliberate tradeoff (lib/ad.ts: "the header merely permits the hosts; the client never
+  injects while disabled"); the middleware CSP is gate-conditional (strict while dormant),
+  so the dormant-by-structure contract holds. Not a defect — changing it would contradict
+  the recorded Decision 001 design.
+- **Remaining founder-gated items unchanged:** WAF/KV (Cloudflare account access), ad
+  network contract, `YOUTUBE_API_KEY` for /shortfilms. The weekly license-sweep workflow
+  auto-watches for new licensed content.
+
 ## 2026-08-22 — Re-deploy of main (deploy 820c2fa0) — confirm nothing drifted after the gate-consolidation work
 
 - Redeployed the current main (clean tree, HEAD = origin/main) via the canonical `npm run
