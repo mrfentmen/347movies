@@ -4,6 +4,28 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Playback speed selector on the native player (deploy 39ec4d45, 490 checks)
+
+- A small rate control (0.5x–2x, default 1x) on the player-tools row, consistent with the
+  quality/server controls — same label+select markup, zero new CSS (`.player-tools` styles
+  are class-based), native select so it is keyboard-operable and aria-labeled via
+  `label[for]`. Works for audio too (HTMLMediaElement.playbackRate). The select lives in
+  player-tools (never rebuilt by apply(), which only replaces the media element), so
+  reading its value on every apply() carries the viewer's rate across server/quality/
+  episode swaps for free — the same minimal state-carry pattern as the captions track.
+  Like quality, a rate chosen from embed flips to the native player (the embed iframe is
+  archive.org's own player and ignores playbackRate); the flip takes effect now without
+  rewriting the stored server preference, exactly like quality.
+- **Verified:** typecheck clean, 214/214 tests, dev + canonical smoke 490/490,
+  real-browser check: default 1x; 1.5x applies during playback; rate survives quality,
+  server, and episode swaps; embed->direct flip on rate change; audio 0.75x applies;
+  Tab-reachable (headless ArrowDown on a closed native select is the documented harness
+  limitation — select_option fires the identical change event).
+- Commit `7a8151e`, deploy `39ec4d45` verified production; live bundle carries
+  `parseFloat(rate.value)`, live page serves `id="player-rate"` with `1×` selected.
+
+---
+
 ## 2026-08-22 — Native caption tracks on the video player (deploy 805378f9, 487 checks)
 
 - Probe (28.6% of sampled licensed films) found archive.org's auto-generated ASR subtitles
