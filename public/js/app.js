@@ -617,7 +617,9 @@
     loadHomeSection("govfilms", "/api/browse?govfilms=1&sort=recent&page=1");
     loadHomeSection("audiobooks", "/api/browse?audiobooks=1&sort=recent&page=1");
     // 2026-08-19: vintage records (Great 78 Project, pre-1927 shellac).
-    loadHomeSection("records", "/api/browse?records=1&sort=recent&page=1");
+    loadHomeSection("records", "/api/browse?records=1&sort=newest&page=1");
+    // New records this week: same pool, most recently added to the archive — a fresh-arrivals slot for vintage music.
+    loadHomeSection("recordsnew", "/api/browse?records=1&sort=recent&page=1");
     // 2026-08-19: ephemeral films (AV Geeks archive of sponsored/educational shorts).
     loadHomeSection("ephemera", "/api/browse?ephemera=1&sort=recent&page=1");
     // 2026-08-19: space & NASA (NASA's own public-domain space footage).
