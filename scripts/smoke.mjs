@@ -988,6 +988,10 @@ try {
   // (measured 2026-08-21: 2,933 = 2,933), so all three must be labeled as curated views, never
   // implied to be disjoint catalogs. Guard both the hub badges and the landing-page notes.
   ok((collectionsHtml.match(/Curated view/g) || []).length === 3, "collections page badges shorts + silents + TED as curated views");
+  // Disjoint pools: measured 2026-08-21 (cross-pool overlap matrix, docs/cross-pool-overlap-matrix.md)
+  // — 8 pools have 0 overlap with any other pool. Each carries a "Unique" badge so visitors
+  // know titles aren't duplicated elsewhere.
+  ok((collectionsHtml.match(/Unique/g) || []).length === 8, "collections page badges 8 disjoint pools as Unique");
   ok((homeFooterPage.match(/Curated view/g) || []).length === 3, "home page badges the shorts + silents + TED sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
