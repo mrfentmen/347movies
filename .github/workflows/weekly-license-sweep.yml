@@ -6,7 +6,15 @@ on:
     # registered pool gained licensed items, or a candidate collection newly cleared the
     # license gate (the only honest way the catalog can grow).
     - cron: "0 12 * * 3"
-  workflow_dispatch: # also run manually: Actions → Weekly license-gate re-probe → Run workflow
+  workflow_dispatch:
+    # Manual runs default to the real sweep. force-change=true simulates a change so the
+    # issue-creation step fires on a quiet week — the end-to-end positive-path test
+    # (proves the exact `gh issue create` command opens an issue; close it afterwards).
+    inputs:
+      force-change:
+        description: "Simulate a change so the issue step fires (test only)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,8 +34,10 @@ jobs:
         run: |
           # One script, two artifacts: JSON for the gate, markdown for the issue. The script
           # exits 0 either way (a quiet week is a valid result); the issue only opens when
-          # something actually changed.
-          node scripts/license-sweep.ts --json --baseline-from=2026-08-22 --body-out=/tmp/license-sweep.md > /tmp/license-sweep.json
+          # something actually changed (or --force-change is set for the dispatch test).
+          # workflow_dispatch booleans arrive as strings — compare against 'true' explicitly
+          # (a bare `inputs.force-change &&` is always truthy: "false" is a non-empty string).
+          node scripts/license-sweep.ts --json --baseline-from=2026-08-22 --body-out=/tmp/license-sweep.md ${{ inputs.force-change == 'true' && '--force-change' || '' }} > /tmp/license-sweep.json
           ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/license-sweep.json','utf8')).anyChange")
           echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
           echo "Re-probe complete (anyChange=$ANY)."

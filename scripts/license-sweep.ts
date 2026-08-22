@@ -104,15 +104,21 @@ interface Args {
   json: boolean;
   bodyOut: string | null;
   baselineFrom: string | null;
+  forceChange: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { json: false, bodyOut: null, baselineFrom: null };
+  const args: Args = { json: false, bodyOut: null, baselineFrom: null, forceChange: false };
   for (const arg of argv) {
     if (arg === "--json") args.json = true;
-    else if (arg === "--help" || arg === "-h") {
+    else if (arg === "--force-change") {
+      // Test/ops knob: pretend a change happened so the workflow's issue-creation step fires.
+      // Used by workflow_dispatch (force-change input) to prove the positive path end-to-end
+      // on a quiet week; never set on the scheduled run.
+      args.forceChange = true;
+    } else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/license-sweep.ts [--json] [--body-out=FILE] [--baseline-from=YYYY-MM-DD]",
+        "Usage: node scripts/license-sweep.ts [--json] [--body-out=FILE] [--baseline-from=YYYY-MM-DD] [--force-change]",
       );
       process.exit(0);
     } else if (arg.startsWith("--body-out=")) {
@@ -265,6 +271,9 @@ function renderMarkdown(report: SweepReport, baselineFrom: string | null): strin
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const report = await runSweep();
+  // --force-change: report data stays honest (a quiet week still reports "No changes"), but
+  // anyChange flips so the workflow's issue step fires — the end-to-end positive-path test.
+  if (args.forceChange) report.anyChange = true;
 
   if (args.json) {
     const out = {
