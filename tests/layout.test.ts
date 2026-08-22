@@ -76,6 +76,12 @@ test("renderMoviePage renders an episode list for multi-episode bundles", () => 
   assert.ok(html.includes('data-episodes='), "client swap data present");
   assert.ok(html.includes('data-path="01%20-%20First.ia.mp4"'), "default path is the first episode's primary");
   assert.ok(!html.includes("02 - Second.ia.mp4"), "non-active episode derivative is not in the quality selector");
+  assert.ok(html.includes('class="up-next"') && html.includes('id="up-next"'), "up-next affordance renders in episode mode");
+});
+
+test("renderMoviePage renders no up-next element for a single film", () => {
+  const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
+  assert.ok(!html.includes('id="up-next"'), "single film must not render the up-next affordance");
 });
 
 test("renderMoviePage renders a More-from-this-pool strip for a pooled item", () => {

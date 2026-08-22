@@ -870,7 +870,14 @@
         lastSaveAt = now;
         progressUpdate({ id: identifier, ep: progressEp, epLabel: epLabelOf(), title, thumb: poster, pos: video.currentTime, dur: video.duration || 0 });
       });
-      video.addEventListener("ended", () => progressRemove(progressKeyFor(identifier, progressEp)));
+      video.addEventListener("ended", () => {
+        // The finished episode leaves the Continue row (only its own key is cleared).
+        progressRemove(progressKeyFor(identifier, progressEp));
+        // Up next: auto-advance to the following episode. Only reaches here on a REAL ended
+        // event (a pause before the end never fires ended), never on the last episode, and
+        // never for single films (episodes is empty — no up-next element is rendered).
+        if (episodes.length > 1 && activeEp < episodes.length - 1) showUpNext();
+      });
     }
 
     // One final save when the page goes away, so a visitor who closes the tab mid-scene
@@ -919,6 +926,26 @@
       }
     }
 
+    // Up-next affordance: when an episode finishes, a short "Up next: <label>" bar appears
+    // above the episode list and the player auto-advances after a beat (or immediately when
+    // the bar is clicked). Single films never render the element; the last episode never
+    // advances; any manual episode switch cancels a pending advance.
+    let upNextTimer = null;
+    function hideUpNext() {
+      clearTimeout(upNextTimer);
+      const bar = $("#up-next");
+      if (bar) bar.hidden = true;
+    }
+    function showUpNext() {
+      const bar = $("#up-next");
+      if (!bar || episodes.length <= 1 || activeEp >= episodes.length - 1) return;
+      const go = bar.querySelector(".up-next__go");
+      if (go) go.textContent = `Up next: ${episodes[activeEp + 1].label}`;
+      bar.hidden = false;
+      clearTimeout(upNextTimer);
+      upNextTimer = setTimeout(() => selectEpisode(activeEp + 1), 1200);
+    }
+
     function syncEpisodeUI() {
       for (const btn of document.querySelectorAll(".episode-btn")) {
         const idx = parseInt(btn.getAttribute("data-ep-index") || "-1", 10);
@@ -942,6 +969,9 @@
     // first — the embed iframe cannot select a file.
     function selectEpisode(index) {
       if (episodes.length === 0) return;
+      // Any switch cancels a pending up-next advance (the auto-advance must not fire into a
+      // manually-chosen episode).
+      hideUpNext();
       const clamped = Math.max(0, Math.min(episodes.length - 1, index));
       if (clamped === activeEp) return;
       activeEp = clamped;
@@ -1008,6 +1038,12 @@
       for (const btn of document.querySelectorAll(".episode-btn")) {
         btn.addEventListener("click", () => {
           selectEpisode(parseInt(btn.getAttribute("data-ep-index") || "0", 10));
+        });
+      }
+      const upNextGo = $("#up-next .up-next__go");
+      if (upNextGo) {
+        upNextGo.addEventListener("click", () => {
+          if (activeEp < episodes.length - 1) selectEpisode(activeEp + 1);
         });
       }
       // A ?ep=N entry (continue-watching row) starts on that episode: point the player at

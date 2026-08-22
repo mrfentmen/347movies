@@ -464,6 +464,9 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
     .join("");
   return `${tools}
 <div class="episodes" aria-label="Episodes">
+  <div class="up-next" id="up-next" hidden>
+    <button type="button" class="up-next__go" aria-label="Play the next episode">Up next</button>
+  </div>
   <div class="episodes__nav">
     <button type="button" class="episodes__prev" aria-label="Previous episode" disabled>&larr; Prev</button>
     <span class="episodes__count" aria-live="polite">1 of ${episodes.length}</span>

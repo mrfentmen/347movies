@@ -387,6 +387,8 @@ try {
   ok(css.includes(".episode-list"), "CSS: episode list styled (multi-episode bundles)");
   ok(js.includes("progressKeyFor"), "JS: per-episode resume keys wired (bundle positions survive switching)");
   ok(js.includes("?ep="), "JS: continue-watching links preserve the episode (?ep=N deep link)");
+  ok(js.includes("showUpNext"), "JS: up-next auto-advance wired (episode bundles)");
+  ok(css.includes(".up-next"), "CSS: up-next affordance styled");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");
@@ -543,7 +545,10 @@ try {
   const queriedIds = [
     ...new Set([...js.matchAll(/(?:\$\("#|getElementById\("|querySelector(?:All)?\("#)([A-Za-z0-9_-]+)"\)/g)].map((m) => m[1])),
   ];
-  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/shortfilms", "/movie/it-1927"];
+  // /movie/fantomascompleto52ep_202112 is the episode-mode page: it carries the
+  // episode-only ids (#up-next) that single-film / movie-it-1927 and the static pages
+  // never render. Union across the set — ids are page-specific by design.
+  const idScanPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/shortfilms", "/movie/it-1927", "/movie/fantomascompleto52ep_202112"];
   const presentIds = new Set();
   const dupReports = [];
   for (const path of idScanPages) {
