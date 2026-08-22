@@ -881,27 +881,43 @@
     }
     const poster = $(".movie-poster");
     if (poster && poster.parentElement) bindPosterFallbacks(poster.parentElement);
+    // Shared card-grid fetcher for the two client-side detail rows ("More like this"
+    // and "More from this pool"). Both fetch /api/browse, slice to 8 cards, render via
+    // renderGrid, and unhide the hidden element on success — failing closed (stays
+    // hidden) on any error or empty result.
+    //   section — the element carrying `hidden` to unhide on success
+    //   grid    — the grid container to fill
+    //   url     — the /api/browse?… URL to fetch
+    //   filter  — optional (results) => results  (e.g. exclude the current item)
+    function fillDetailRow(section, grid, url, filter) {
+      if (!section || !grid) return;
+      apiFetch(url)
+        .then((data) => {
+          let items = (data.results || []).slice(0, 8);
+          if (filter) items = filter(items);
+          if (items.length === 0) return;
+          renderGrid(grid, items);
+          section.hidden = false;
+        })
+        .catch(() => {
+          /* fail closed: the row stays hidden */
+        });
+    }
+
     // More like this: fetch /api/browse?subject=<first usable subject tag> and render a
-    // related row; hide the section when the subject yields nothing (it ships hidden).
+    // related row. The <section> ships hidden and only unhides when it has items.
     const relatedSection = $("#related-section");
     const relatedGrid = $("#related");
     if (relatedSection && relatedGrid) {
       const subject = (relatedSection.getAttribute("data-subject") || "").trim();
       if (subject) {
-        apiFetch(`/api/browse?subject=${encodeURIComponent(subject)}&sort=newest&page=1`)
-          .then((data) => {
-            if (!data.results || data.results.length === 0) return;
-            renderGrid(relatedGrid, data.results.slice(0, 8));
-            relatedSection.hidden = false;
-          })
-          .catch(() => {
-            /* fail closed: the related row stays hidden */
-          });
+        fillDetailRow(relatedSection, relatedGrid,
+          `/api/browse?subject=${encodeURIComponent(subject)}&sort=newest&page=1`);
       }
     }
     // More from this pool: fill the grid client-side from /api/browse?<pool>=1 (the item's
     // curated pool), excluding the item the visitor is already on. The heading + See-all link
-    // are server-rendered; the grid ships hidden and only shows when it has items (fail closed).
+    // are server-rendered; the grid <div> ships hidden and only shows when it has items.
     const poolSection = $("#pool-section");
     const poolGrid = $("#pool-more");
     if (poolSection && poolGrid) {
@@ -910,18 +926,8 @@
       if (pool) {
         const params = new URLSearchParams({ page: "1", sort: "recent" });
         if (pool !== "films") params.set(pool, "1");
-        apiFetch(`/api/browse?${params.toString()}`)
-          .then((data) => {
-            const items = (data.results || [])
-              .filter((r) => r && r.identifier !== exclude)
-              .slice(0, 8);
-            if (items.length === 0) return;
-            renderGrid(poolGrid, items);
-            poolGrid.hidden = false;
-          })
-          .catch(() => {
-            /* fail closed: the row stays hidden */
-          });
+        fillDetailRow(poolGrid, poolGrid, `/api/browse?${params.toString()}`,
+          (items) => items.filter((r) => r && r.identifier !== exclude).slice(0, 8));
       }
     }
     // The player is a cross-origin iframe: focus inside the archive.org embed does NOT
