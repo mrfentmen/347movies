@@ -757,9 +757,27 @@
     const identifier = tools.getAttribute("data-identifier") || "";
     const title = tools.getAttribute("data-title") || "film";
     const poster = tools.getAttribute("data-poster") || "";
-    const defaultPath = tools.getAttribute("data-path") || "";
+    let defaultPath = tools.getAttribute("data-path") || "";
     const mirrorBase = server.getAttribute("data-mirror") || "";
     const origIframe = wrap.querySelector("iframe.player");
+    // Multi-episode bundles: the server renders the episode list + a data-episodes JSON of
+    // {label, path, files[]} per episode. Clicking an episode swaps the player's source and
+    // rebuilds the quality selector from that episode's own derivatives. Absent (single
+    // films / audio) this is a no-op — the quality/server controls behave exactly as before.
+    let episodes = [];
+    try {
+      const raw = tools.getAttribute("data-episodes");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 1) episodes = parsed;
+      }
+    } catch {
+      episodes = [];
+    }
+    let activeEp = 0;
+    // An episode switch must not seek the new episode to the item-level saved position
+    // (the Continue-watching resume is item-scoped; a fresh episode starts at 0).
+    let skipResume = false;
 
     function srcFor(mode, path) {
       const base = mode === "mirror" && mirrorBase
@@ -781,7 +799,7 @@
       // 5 seconds before the opening credits); the 30s-from-the-end guard treats a film
       // as effectively finished.
       video.addEventListener("loadedmetadata", () => {
-        if (savedEntry && savedEntry.pos > 30 && (savedEntry.dur === 0 || savedEntry.pos < savedEntry.dur - 30)) {
+        if (!skipResume && savedEntry && savedEntry.pos > 30 && (savedEntry.dur === 0 || savedEntry.pos < savedEntry.dur - 30)) {
           try {
             video.currentTime = savedEntry.pos;
           } catch {
@@ -814,6 +832,50 @@
         progressUpdate({ id: identifier, title, thumb: poster, pos: v.currentTime, dur: v.duration || 0 });
       }
     });
+
+    function rebuildQuality(ep) {
+      if (!quality) return;
+      quality.innerHTML = "";
+      const files = ep && Array.isArray(ep.files) && ep.files.length > 0 ? ep.files : null;
+      if (!files) return;
+      for (const f of files) {
+        const opt = document.createElement("option");
+        opt.value = f.path;
+        opt.textContent = f.label;
+        quality.appendChild(opt);
+      }
+    }
+
+    // Switch the active episode: swap the default source, rebuild the quality selector
+    // with that episode's own derivatives, and rebuild the native player (skipping the
+    // item-level resume seek so the new episode starts at 0). From embed mode the server
+    // is flipped to direct first — the embed iframe cannot select a file.
+    function selectEpisode(index) {
+      if (episodes.length === 0) return;
+      const clamped = Math.max(0, Math.min(episodes.length - 1, index));
+      if (clamped === activeEp) return;
+      activeEp = clamped;
+      const ep = episodes[activeEp];
+      defaultPath = ep.path;
+      if (quality) rebuildQuality(ep);
+      if (server.value === "embed") server.value = "cdn";
+      skipResume = true;
+      apply();
+      skipResume = false;
+      for (const btn of document.querySelectorAll(".episode-btn")) {
+        const idx = parseInt(btn.getAttribute("data-ep-index") || "-1", 10);
+        const isActive = idx === activeEp;
+        btn.classList.toggle("is-active", isActive);
+        if (isActive) btn.setAttribute("aria-current", "true");
+        else btn.removeAttribute("aria-current");
+      }
+      const count = $(".episodes__count");
+      if (count) count.textContent = `${activeEp + 1} of ${episodes.length}`;
+      const prev = $(".episodes__prev");
+      const next = $(".episodes__next");
+      if (prev) prev.disabled = activeEp === 0;
+      if (next) next.disabled = activeEp === episodes.length - 1;
+    }
 
     function apply() {
       const mode = server.value;
@@ -858,6 +920,17 @@
         if (server.value === "embed") server.value = "cdn";
         apply();
       });
+    }
+    if (episodes.length > 1) {
+      const prev = $(".episodes__prev");
+      const next = $(".episodes__next");
+      if (prev) prev.addEventListener("click", () => selectEpisode(activeEp - 1));
+      if (next) next.addEventListener("click", () => selectEpisode(activeEp + 1));
+      for (const btn of document.querySelectorAll(".episode-btn")) {
+        btn.addEventListener("click", () => {
+          selectEpisode(parseInt(btn.getAttribute("data-ep-index") || "0", 10));
+        });
+      }
     }
 
     // Apply the saved preference on load so tracking and quality control work immediately.

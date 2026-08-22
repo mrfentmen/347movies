@@ -41,6 +41,16 @@ export interface AudioFile {
   path: string;
 }
 
+/** One playable file group of a multi-episode item (see `episodesFrom`). */
+export interface EpisodeFile {
+  /** Human label — the file stem with derivative markers and the extension removed. */
+  label: string;
+  /** Primary playable path (h.264 preferred, then largest). */
+  path: string;
+  /** This episode's own derivatives, for the quality selector (h.264 first, largest). */
+  files: VideoFile[];
+}
+
 export interface MovieRecord {
   identifier: string;
   title: string;
@@ -59,6 +69,10 @@ export interface MovieRecord {
   hasVideo: boolean;
   /** Playable video derivatives (empty for search-index docs; populated on the detail path). */
   videoFiles: VideoFile[];
+  /** Playable file groups (empty for single-film items and search-index docs). When more
+   *  than one group exists the detail page renders an episode list instead of treating
+   *  every file as a quality option. Populated on the detail path. */
+  episodes: EpisodeFile[];
   /** True when the item's files include a playable audio derivative (Old Time Radio). */
   hasAudio: boolean;
   /** Playable audio derivatives (empty for search-index docs; populated on the detail path). */
@@ -287,10 +301,40 @@ function toPositiveInt(value: unknown): number | null {
   return null;
 }
 
+/** Build one VideoFile from a raw archive.org file entry (shared by the quality selector
+ *  and episode grouping so both label derivatives identically). */
+function videoFileFromEntry(rec: Record<string, unknown>): VideoFile | null {
+  const name = String(rec["name"] ?? "");
+  if (!name) return null;
+  const format = String(rec["format"] ?? "video");
+  const sizeRaw = rec["size"];
+  const size =
+    typeof sizeRaw === "number"
+      ? sizeRaw
+      : typeof sizeRaw === "string" && /^\d+$/.test(sizeRaw)
+        ? parseInt(sizeRaw, 10)
+        : null;
+  const width = toPositiveInt(rec["width"]);
+  const height = toPositiveInt(rec["height"]);
+  const res = resolutionLabel(width, height);
+  const base = videoFormatLabel(format);
+  const sizePart = size != null ? ` · ${formatBytes(size)}` : "";
+  const label = res ? `${res} · ${base}${sizePart}` : `${base}${sizePart}`;
+  return { name, format, label, size, width, height, path: encodeURIComponent(name) };
+}
+
+/** h.264 first (best browser compatibility — archive.org's recommended derivative), then largest. */
+function compareVideoFiles(a: VideoFile, b: VideoFile): number {
+  const ah = a.format.toLowerCase().includes("h.264") ? 0 : 1;
+  const bh = b.format.toLowerCase().includes("h.264") ? 0 : 1;
+  if (ah !== bh) return ah - bh;
+  return (b.size ?? 0) - (a.size ?? 0);
+}
+
 /**
  * Extract the playable video derivatives from an item's file list, for the movie page's
- * quality selector. Sorted h.264 first (best browser compatibility — it is archive.org's
- * recommended derivative), then largest first; capped to keep the selector short.
+ * quality selector. Sorted h.264 first, then largest first; capped to keep the selector
+ * short.
  */
 export function videoFilesFrom(files: unknown): VideoFile[] {
   if (!Array.isArray(files)) return [];
@@ -302,29 +346,78 @@ export function videoFilesFrom(files: unknown): VideoFile[] {
     const name = String(rec["name"] ?? "");
     if (!name || seen.has(name)) continue;
     seen.add(name);
-    const format = String(rec["format"] ?? "video");
-    const sizeRaw = rec["size"];
-    const size =
-      typeof sizeRaw === "number"
-        ? sizeRaw
-        : typeof sizeRaw === "string" && /^\d+$/.test(sizeRaw)
-          ? parseInt(sizeRaw, 10)
-          : null;
-    const width = toPositiveInt(rec["width"]);
-    const height = toPositiveInt(rec["height"]);
-    const res = resolutionLabel(width, height);
-    const base = videoFormatLabel(format);
-    const sizePart = size != null ? ` · ${formatBytes(size)}` : "";
-    const label = res ? `${res} · ${base}${sizePart}` : `${base}${sizePart}`;
-    out.push({ name, format, label, size, width, height, path: encodeURIComponent(name) });
+    const vf = videoFileFromEntry(rec);
+    if (vf) out.push(vf);
   }
-  out.sort((a, b) => {
-    const ah = a.format.toLowerCase().includes("h.264") ? 0 : 1;
-    const bh = b.format.toLowerCase().includes("h.264") ? 0 : 1;
-    if (ah !== bh) return ah - bh;
-    return (b.size ?? 0) - (a.size ?? 0);
-  });
+  out.sort(compareVideoFiles);
   return out.slice(0, 6);
+}
+
+/**
+ * Suffixes that mark a file as a DERIVATIVE of the same content rather than its own
+ * episode: archive.org's derived h.264 is `<name>.ia.<ext>`, its size variants are
+ * `<name>_512kb.<ext>`, plus common quality tags. Stripped from the stem before episode
+ * grouping so quality variants collapse into one episode instead of splitting a single
+ * film into fake episodes (verified on live items: `electromagnetism` has mp4/mpeg/ogv
+ * + `_512kb` — one film, one group).
+ */
+const DERIVATIVE_SUFFIXES: RegExp[] = [
+  /\.ia$/i,
+  /_\d+kb$/i,
+  /_hq$/i,
+  /_lq$/i,
+  /_sd$/i,
+  /_hd$/i,
+  /_small$/i,
+  /_large$/i,
+];
+
+/** File stem: name minus its extension, minus derivative markers ("E1.ia.mp4" → "E1"). */
+function fileStem(name: string): string {
+  let stem = name.replace(/\.[^.]+$/, "");
+  for (const re of DERIVATIVE_SUFFIXES) stem = stem.replace(re, "");
+  return stem.trim();
+}
+
+/** Natural (numeric-aware) label order: "02" before "10", "52" last. */
+function compareEpisodeLabels(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+/**
+ * Group an item's playable video files into episodes. Single films (one content stem with
+ * quality/format variants) yield exactly one group — the detail page only enters episode
+ * mode when this returns more than one. Groups are ordered naturally ("01, 02, … 10, 52")
+ * and capped to keep the record JSON and the UI bounded.
+ */
+export function episodesFrom(files: unknown, cap = 100): EpisodeFile[] {
+  if (!Array.isArray(files)) return [];
+  const groups = new Map<string, VideoFile[]>();
+  for (const f of files) {
+    if (!isVideoFileEntry(f)) continue;
+    const rec = f as Record<string, unknown>;
+    const name = String(rec["name"] ?? "");
+    if (!name) continue;
+    const stem = fileStem(name);
+    if (!stem) continue;
+    const vf = videoFileFromEntry(rec);
+    if (!vf) continue;
+    const list = groups.get(stem);
+    if (list) {
+      if (!list.some((x) => x.name === vf.name)) list.push(vf);
+    } else {
+      groups.set(stem, [vf]);
+    }
+  }
+  const out: EpisodeFile[] = [];
+  for (const [label, list] of groups) {
+    list.sort(compareVideoFiles);
+    const primary = list[0];
+    if (!primary) continue; // a group always has at least one file — guard for strict TS
+    out.push({ label, path: primary.path, files: list });
+  }
+  out.sort((a, b) => compareEpisodeLabels(a.label, b.label));
+  return out.slice(0, cap);
 }
 
 const AUDIO_FORMAT_HINTS = ["mp3", "ogg vorbis", "vorbis"];
@@ -476,6 +569,7 @@ export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
     // (Old Time Radio) are not video — hasAudio is false here; the detail page verifies.
     hasVideo: true,
     videoFiles: [],
+    episodes: [],
     hasAudio: false,
     audioFiles: [],
     server: null,
@@ -516,6 +610,7 @@ export function normalizeMetadata(
     source_url: `https://archive.org/details/${encodeURIComponent(identifier)}`,
     hasVideo: hasVideoFiles(files),
     videoFiles: videoFilesFrom(files),
+    episodes: episodesFrom(files),
     hasAudio: hasAudioFiles(files),
     audioFiles: audioFilesFrom(files),
     server,

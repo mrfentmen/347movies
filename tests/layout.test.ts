@@ -23,6 +23,7 @@ const RECORD: MovieRecord = {
   source_url: "https://archive.org/details/it-1927",
   hasVideo: true,
   videoFiles: [],
+  episodes: [],
   hasAudio: false,
   audioFiles: [],
   server: null,
@@ -55,6 +56,26 @@ test("renderMoviePage renders quality + server playback controls when derivative
   assert.ok(html.includes('value="mirror"'), "mirror option present");
   assert.ok(html.includes('data-mirror="https://dn600208.us.archive.org/0/items/it-1927"'), "mirror base present");
   assert.ok(html.includes('data-path="It%20%20%281927%29.mp4"'), "default path present");
+});
+
+test("renderMoviePage renders an episode list for multi-episode bundles", () => {
+  const withEpisodes = {
+    ...RECORD,
+    episodes: [
+      { label: "01 - First", path: "01%20-%20First.ia.mp4", files: [{ name: "01 - First.ia.mp4", format: "h.264 IA", label: "HD · h.264 · 92 MB", size: 96000000, width: null, height: null, path: "01%20-%20First.ia.mp4" }] },
+      { label: "02 - Second", path: "02%20-%20Second.ia.mp4", files: [{ name: "02 - Second.ia.mp4", format: "h.264 IA", label: "HD · h.264 · 96 MB", size: 100000000, width: null, height: null, path: "02%20-%20Second.ia.mp4" }] },
+    ],
+  };
+  const html = renderMoviePage(withEpisodes, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes('class="episode-list"'), "episode list present");
+  assert.ok(html.includes('data-ep-index="0"'), "episode buttons carry their index");
+  assert.ok(html.includes('data-ep-index="1"'));
+  assert.ok(html.includes("01 - First"), "episode labels rendered");
+  assert.ok(html.includes("1 of 2"), "episode count rendered");
+  assert.ok(html.includes("episodes__prev") && html.includes("episodes__next"), "prev/next nav present");
+  assert.ok(html.includes('data-episodes='), "client swap data present");
+  assert.ok(html.includes('data-path="01%20-%20First.ia.mp4"'), "default path is the first episode's primary");
+  assert.ok(!html.includes("02 - Second.ia.mp4"), "non-active episode derivative is not in the quality selector");
 });
 
 test("renderMoviePage renders a More-from-this-pool strip for a pooled item", () => {

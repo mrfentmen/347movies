@@ -398,10 +398,22 @@ export function renderMoviePage(
  * no-JS path. Rendered only when the item has at least one playable derivative.
  */
 function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
-  const files = kind === "audio" ? record.audioFiles : record.videoFiles;
-  if (files.length === 0) return "";
   const id = record.identifier;
   const title = record.title || "film";
+  // Multi-episode bundles: one archive.org item can hold many episodes (e.g. a 52-episode
+  // TV compilation). Those render an episode list instead of treating every file as a
+  // quality option — each episode gets its own derivatives, and app.js swaps the player
+  // between them. Single films (one content stem, several quality variants) stay on the
+  // plain quality selector. Episodes are server-derived in lib/normalize.ts (episodesFrom).
+  const episodes = kind === "video" ? (record.episodes ?? []) : [];
+  const episodeMode = episodes.length > 1;
+  // The active episode (default: the first) drives the quality selector + default path;
+  // single-film items use the full files list exactly as before. Episode mode sources the
+  // playable files from the active episode itself, so the no-derivative early return below
+  // reads the right data even when record.videoFiles was capped elsewhere.
+  const activeEp = episodeMode ? episodes[0] : null;
+  const files = activeEp ? activeEp.files : kind === "audio" ? record.audioFiles : record.videoFiles;
+  if (files.length === 0) return "";
   // `server` + `dir` pin the direct node (verified live: 206 on Range requests), giving a
   // real fallback when the canonical download endpoint redirects into an overloaded node.
   const mirrorBase = record.server && record.dir ? `https://${record.server}${record.dir}` : "";
@@ -409,7 +421,7 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
   const qualityOptions = files
     .map((f) => `<option value="${escapeHtml(f.path)}">${escapeHtml(f.label)}</option>`)
     .join("");
-  const quality = files.length >= 2
+  const quality = files.length >= (episodeMode ? 1 : 2)
     ? `<div class="player-tools__control">
   <label for="player-quality">Quality</label>
   <select id="player-quality" class="player-quality">${qualityOptions}</select>
@@ -428,9 +440,29 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
   </select>
 </div>`;
 
-  return `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(files[0]?.path ?? "")}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}">
+  // The episode list ships server-side (no-JS visitors can still see the episodes and the
+  // active one), and the data-episodes JSON drives the client swap. Only the label/path and
+  // per-episode derivative label/path are sent — nothing untrusted beyond already-escaped
+  // text, and the attribute is HTML-escaped so the JSON round-trips safely.
+  const dataEpisodes = episodeMode
+    ? ` data-episodes="${escapeHtml(JSON.stringify(episodes.map((e) => ({ label: e.label, path: e.path, files: e.files.map((f) => ({ path: f.path, label: f.label })) }))))}"`
+    : "";
+  const tools = `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(activeEp ? activeEp.path : (files[0]?.path ?? ""))}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}"${dataEpisodes}>
   ${quality}
   ${server}
+</div>`;
+  if (!episodeMode) return tools;
+  const list = episodes
+    .map((e, i) => `<li><button type="button" class="episode-btn${i === 0 ? " is-active" : ""}" data-ep-index="${i}"${i === 0 ? ' aria-current="true"' : ""}>${escapeHtml(e.label)}</button></li>`)
+    .join("");
+  return `${tools}
+<div class="episodes" aria-label="Episodes">
+  <div class="episodes__nav">
+    <button type="button" class="episodes__prev" aria-label="Previous episode" disabled>&larr; Prev</button>
+    <span class="episodes__count" aria-live="polite">1 of ${episodes.length}</span>
+    <button type="button" class="episodes__next" aria-label="Next episode">Next &rarr;</button>
+  </div>
+  <ol class="episode-list">${list}</ol>
 </div>`;
 }
 

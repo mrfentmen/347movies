@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   audioFilesFrom,
+  episodesFrom,
   hasAudioFiles,
   hasVideoFiles,
   licenseFromRights,
@@ -127,6 +128,68 @@ test("videoFilesFrom keeps label useful when resolution or size is missing", () 
 test("videoFilesFrom returns [] for non-arrays", () => {
   assert.deepEqual(videoFilesFrom(null), []);
   assert.deepEqual(videoFilesFrom("x"), []);
+});
+
+test("episodesFrom collapses a single film's quality variants into one episode", () => {
+  // Real shape: `electromagnetism` has h.264 + MPEG2 + Ogg + a _512kb size variant — one
+  // film, four files. The MPEG2 (.mpeg) is intentionally excluded like every other
+  // non-browser-playable derivative (isVideoFileEntry), so three playable files remain.
+  // Without derivative stripping the _512kb variant would split the film into two fake
+  // episodes and wrongly trigger episode mode on every Prelinger film.
+  const out = episodesFrom([
+    { name: "electromagnetism.mp4", format: "h.264", size: 65250004 },
+    { name: "electromagnetism.mpeg", format: "MPEG2", size: 293818372 },
+    { name: "electromagnetism.ogv", format: "Ogg Video", size: 44771323 },
+    { name: "electromagnetism_512kb.mp4", format: "512Kb MPEG4", size: 45604415 },
+  ]);
+  assert.equal(out.length, 1, "one content stem → one episode");
+  assert.equal(out[0]?.label, "electromagnetism", "label is the cleaned stem");
+  assert.equal(out[0]?.path, "electromagnetism.mp4", "primary is the h.264 derivative");
+  assert.equal(out[0]?.files.length, 3, "the playable derivatives survive as quality options");
+  assert.equal(out[0]?.files[0]?.name, "electromagnetism.mp4", "h.264 leads the quality list");
+  assert.equal(out[0]?.files[1]?.name, "electromagnetism_512kb.mp4", "_512kb collapsed into the same episode");
+  assert.equal(out[0]?.files[2]?.name, "electromagnetism.ogv");
+});
+
+test("episodesFrom groups a 52-episode bundle naturally with per-episode derivatives", () => {
+  // Real shape: `fantomascompleto52ep_202112` — each episode has a `.ia.mp4` (h.264 IA)
+  // and a plain `.mp4` (MPEG4) derivative. All 52 episodes, ordered 01..52, each with its
+  // own quality list led by the h.264 file.
+  const files = [];
+  for (let i = 1; i <= 52; i++) {
+    const n = String(i).padStart(2, "0");
+    const stem = `${n} - Episodio ${i}`;
+    files.push({ name: `${stem}.ia.mp4`, format: "h.264 IA", size: 90000000 + i });
+    files.push({ name: `${stem}.mp4`, format: "MPEG4", size: 90000000 + i });
+  }
+  const out = episodesFrom(files);
+  assert.equal(out.length, 52);
+  assert.equal(out[0]?.label, "01 - Episodio 1", ".ia derivative stripped from the label");
+  assert.equal(out[1]?.label, "02 - Episodio 2");
+  assert.equal(out[10]?.label, "11 - Episodio 11", "natural (numeric) order — 11 after 10, not after 1");
+  assert.equal(out[51]?.label, "52 - Episodio 52");
+  assert.equal(out[0]?.files.length, 2, "per-episode derivatives");
+  assert.equal(out[0]?.files[0]?.name, "01 - Episodio 1.ia.mp4", "h.264 leads each episode");
+  assert.equal(out[0]?.path, "01%20-%20Episodio%201.ia.mp4", "primary path is URL-encoded");
+});
+
+test("episodesFrom handles .ia-only pairs and non-arrays", () => {
+  // A Hollywood Detour (1942): `Name.ia.mp4` + `Name.mp4` → one episode.
+  const detour = episodesFrom([
+    { name: "A Hollywood Detour (1942).ia.mp4", format: "h.264 IA", size: 38182003 },
+    { name: "A Hollywood Detour (1942).mp4", format: "MPEG4", size: 38182003 },
+  ]);
+  assert.equal(detour.length, 1);
+  assert.equal(detour[0]?.label, "A Hollywood Detour (1942)");
+  assert.deepEqual(episodesFrom(null), []);
+  assert.deepEqual(episodesFrom("x"), []);
+  assert.deepEqual(episodesFrom([{ name: "a.txt", format: "Text" }]), []);
+});
+
+test("episodesFrom caps the record and UI to a bounded list", () => {
+  const files = Array.from({ length: 300 }, (_, i) => ({ name: `ep${i + 1}.mp4`, format: "h.264" }));
+  assert.equal(episodesFrom(files).length, 100, "default cap");
+  assert.equal(episodesFrom(files, 5).length, 5, "explicit smaller cap");
 });
 
 test("audioFilesFrom picks mp3/ogg, sorts MP3 first then largest, dedupes, encodes paths", () => {

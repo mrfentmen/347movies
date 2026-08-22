@@ -1320,6 +1320,94 @@ body[data-page="tv"] .hero {
   outline-offset: 2px;
 }
 
+/* Episode list for multi-episode bundles (one archive.org item, many episodes). The nav
+   row gives prev/next + a live count; the list itself is a scrollable column of >=40px
+   buttons (WCAG 2.5.8) with the active episode accented. Same surface tokens as the rest
+   of the player controls. */
+.episodes {
+  margin-top: 14px;
+}
+
+.episodes__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.episodes__nav button {
+  min-height: 40px;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.episodes__nav button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.episodes__nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.episodes__nav button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.episodes__count {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.episode-list {
+  display: grid;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.episode-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  min-height: 40px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.episode-btn:hover {
+  background: var(--surface);
+}
+
+.episode-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.episode-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .movie-head {
   margin-top: 20px;
 }
