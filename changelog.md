@@ -4,6 +4,28 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Native caption tracks on the video player (deploy 805378f9, 487 checks)
+
+- Probe (28.6% of sampled licensed films) found archive.org's auto-generated ASR subtitles
+  (`.asr.srt` / `.asr.vtt`); the download endpoint sends **no CORS headers**, so a cross-origin
+  `<track>` can't render and a client fetch is blocked. Shipped a same-origin proxy
+  `/api/subtitle` (SRT→WebVTT conversion, traversal + size caps, fail-closed), a real
+  `<track kind="captions">` on the native player, and `'self'` in both CSP media-src with
+  guard updates. The browser's native CC control is the honest toggle — appears only when a
+  track exists; audio items and uncaptioned items never get one. Track state is preserved
+  across server/quality/episode swaps via `track.default` (apply() rebuilds the element;
+  a disabled track is never fetched, so the proxy is only hit when captions are turned on).
+- **Verified:** typecheck clean, 214/214 tests (new `tests/subtitles.test.ts` — SRT→WebVTT
+  conversion + rejection cases; normalize/layout additions), dev + canonical smoke 487/487,
+  real-browser check: `iron_mask` track attaches same-origin, toggle on loads 516 cues
+  (first cue "In the."), toggle off, CC state survives a quality swap; `it-1927` and audio
+  items render no track. The check exposed a genuine pre-existing gap (disabled tracks are
+  never fetched) — fixed via `track.default` rather than preloading for every page view.
+- Commit `bb39ccc`, deploy `805378f9` verified production; live bundle carries `data-subtitle`,
+  live page serves `data-subtitle="iron_mask.asr.srt"`, live proxy returns WEBVTT.
+
+---
+
 ## 2026-08-22 — Up-next auto-advance for bundles (deploy e3625d66, 479 checks)
 
 - When an episode of a multi-episode bundle finishes, the player shows a short
