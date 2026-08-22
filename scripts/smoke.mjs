@@ -992,6 +992,9 @@ try {
   // — 8 pools have 0 overlap with any other pool. Each carries a "Unique" badge so visitors
   // know titles aren't duplicated elsewhere.
   ok((collectionsHtml.match(/Unique/g) || []).length === 8, "collections page badges 8 disjoint pools as Unique");
+  // The collections hub carries JSON-LD expressing the curated-view relationships so
+  // structured-data consumers see the subset hierarchy from the hub itself.
+  ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
   ok((homeFooterPage.match(/Curated view/g) || []).length === 3, "home page badges the shorts + silents + TED sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
