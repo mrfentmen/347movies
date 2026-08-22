@@ -4,6 +4,24 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Catalog-index search autocomplete in the header (deploy 3c98ffc3, 473 checks)
+
+- The header search box on every page now suggests titles as you type (>=3 chars,
+  debounced 200ms), served by the local catalog index (`/api/browse?q=…`) so no
+  archive.org call fires per keystroke. Pool-aware: /search?tv=1's hidden pool input or a
+  landing page's data-page picks the pool; elsewhere suggestions come from the films pool.
+- Progressive enhancement: Enter with no active option still submits to /search (e2e
+  contract preserved), a failed fetch just hides the panel, and the dropdown never blocks
+  typing. Combobox semantics (ARIA 1.2): role=combobox/listbox/option on the input/panel,
+  aria-expanded + aria-activedescendant wired to Arrow/Enter/Escape with in-panel scroll
+  into view; focus-preserving mousedown so the panel can't close before a click lands.
+- **Verified:** real-browser check (system Chrome) — typing "detour" renders 7
+  suggestions ("A Hollywood Detour (1942)" first), ArrowDown sets
+  aria-activedescendant, Enter opens the movie page, Escape closes, bare Enter submits to
+  /search. Dev smoke 473/473, canonical smoke **473/473** on deploy `3c98ffc3` (verified
+  production), live bundle carries `initSearchSuggest` + `.search-suggest` CSS. Commit
+  `dcedaa2`.
+
 ## 2026-08-22 — Founder checklist refreshed to current state (+ YouTube item)
 
 - The checklist had drifted from reality: catalog 17 → 18 pools (footage), tests 55/55 →
