@@ -4,6 +4,14 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Founder checklist refreshed to current state (+ YouTube item)
+
+- The checklist had drifted from reality: catalog 17 → 18 pools (footage), tests 55/55 →
+  199/199, smoke 376 → 471/471, sitemap 73,125 URLs/18 sub-sitemaps → 76,069/20, and it
+  lacked the /shortfilms unlock path. Now current: item 1b documents the exact YouTube Data
+  API v3 setup + `wrangler pages secret put YOUTUBE_API_KEY` command, and the quick-status
+  table reflects the true state. Commit `79c67a9`.
+
 ## 2026-08-22 — Footage pool added to the sitemap sub-sitemap list (deploy 28d4c539, 471 checks)
 
 - **Real gap found in the production sitemap audit:** the Vintage Footage pool shipped in PR
