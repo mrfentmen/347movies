@@ -4,6 +4,28 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Up-next auto-advance for bundles (deploy e3625d66, 479 checks)
+
+- When an episode of a multi-episode bundle finishes, the player shows a short
+  "Up next: <episode>" bar above the episode list and auto-advances to the following
+  episode through the existing `selectEpisode` path — so per-episode resume, aria-current,
+  the live count, prev/next state and the episode list all update exactly as a manual
+  switch does, and the finished episode's own continue-watching key is cleared. The bar's
+  button advances immediately.
+- **Guards:** a pause before the end never fires `ended` (only a real ended event
+  advances); the last episode never advances and shows no bar; a manual episode switch
+  cancels any pending advance; single films are completely unaffected (no up-next element
+  is rendered at all — episode-mode SSR only). No settings system — one cheap affordance.
+- **Smoke:** the id-presence guard's union page set needed the episode-mode bundle page
+  (`#up-next` is page-specific by design; single films never render it), so the scan set
+  now includes `/movie/fantomascompleto52ep_202112`.
+- **Verified:** typecheck clean, 205/205 unit tests (up-next renders in episode mode, not
+  for single films), dev + canonical smoke **479/479** on deploy `e3625d66` (verified
+  production). Browser check (system Chrome): ended on ep1 → bar "Up next: 02 - Terror no
+  Gelo" → auto-advance to ep2 (src, "2 of 52", aria-current, prev enabled), finished
+  episode's key cleared; pause does not advance; ep52 never advances; `it-1927` has no
+  up-next element and its source is untouched by ended. Commit `10f6af0`.
+
 ## 2026-08-22 — Per-episode resume for bundles (deploy 05547abd, 477 checks)
 
 - A bundle now saves each episode's position under its own localStorage key
