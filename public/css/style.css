@@ -355,6 +355,8 @@ button {
   margin-left: auto;
   display: flex;
   gap: 8px;
+  /* Anchors the autocomplete panel below the input (search suggestions). */
+  position: relative;
 }
 
 .header-search input {
@@ -391,6 +393,55 @@ button {
   padding: 8px 16px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Search autocomplete: the catalog-index suggestion panel under the header input
+   (initSearchSuggest). A surface panel that floats above page content (z-index beats the
+   sticky header's own 20), scrolls past 7 rows, and highlights the active option with the
+   site accent. Works in both themes via the same surface/border/text tokens as the input. */
+.search-suggest {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(320px, 80vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 30;
+}
+
+.search-suggest li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.search-suggest li[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.search-suggest__year {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  flex: none;
+}
+
+.search-suggest li[aria-selected="true"] .search-suggest__year {
+  color: inherit;
+  opacity: 0.85;
 }
 
 /* Day/night toggle: a compact pill at the far right of the header. The glyph is a moon

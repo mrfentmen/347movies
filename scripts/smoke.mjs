@@ -381,6 +381,8 @@ try {
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
   ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
+  ok(js.includes("initSearchSuggest"), "JS: header search autocomplete wired (catalog index)");
+  ok(js.includes('"role", "listbox"'), "JS: autocomplete panel uses listbox semantics (a11y)");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");

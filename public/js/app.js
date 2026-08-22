@@ -1546,9 +1546,168 @@
     });
   }
 
+  /* ---------- header search suggestions ----------
+     Autocomplete for the header search box on every page: title suggestions as you type,
+     served by the local catalog index (/api/browse?q=… — one edge-cached copy, no
+     archive.org call per keystroke). Pool-aware: the /search pool shortcut records its
+     pool as a hidden form input (initSearch), and pool landing pages carry data-page —
+     both are read at request time so suggestions match the page's catalog. Everywhere
+     else suggestions come from the films pool. The panel is a progressive enhancement:
+     the form still submits to /search on Enter, and a failed fetch just hides it (typing
+     is never blocked). Combobox semantics (ARIA 1.2): role=combobox on the input,
+     role=listbox/option on the panel, aria-expanded + aria-activedescendant wired to
+     Arrow/Enter/Escape keyboard navigation. */
+  const SUGGEST_POOLS = {
+    tv: "tv", anime: "anime", cartoons: "cartoons", otr: "otr", music: "music",
+    documentaries: "documentaries", ted: "ted", sports: "sports", shorts: "shorts",
+    silents: "silents", publictv: "publictv", science: "science", govfilms: "govfilms",
+    audiobooks: "audiobooks", records: "records", ephemera: "ephemera", space: "space",
+    footage: "footage",
+  };
+  function initSearchSuggest() {
+    const input = $("#search-input");
+    if (!input) return;
+    const form = input.closest("form");
+    if (!form) return;
+
+    const list = document.createElement("ul");
+    list.className = "search-suggest";
+    list.id = "search-suggest";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+    form.appendChild(list);
+
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-controls", list.id);
+
+    let timer = null;
+    let seq = 0;
+    let active = -1;
+    const items = [];
+
+    // Which pool this page searches, read at request time: a hidden pool input on
+    // /search?tv=1 (added by initSearch after this init runs) wins; otherwise the
+    // landing page's data-page names the pool; default is the films catalog.
+    const currentPool = () => {
+      for (const flag of Object.keys(SUGGEST_POOLS)) {
+        const hidden = form.querySelector(`input[name="${flag}"]`);
+        if (hidden && hidden.value === "1") return flag;
+      }
+      const page = document.body ? document.body.dataset.page || "" : "";
+      return SUGGEST_POOLS[page] || "";
+    };
+
+    const close = () => {
+      list.hidden = true;
+      list.innerHTML = "";
+      items.length = 0;
+      active = -1;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    };
+
+    const render = (results) => {
+      list.innerHTML = "";
+      items.length = 0;
+      active = -1;
+      if (!results || results.length === 0) {
+        close();
+        return;
+      }
+      for (const r of results.slice(0, 7)) {
+        const li = document.createElement("li");
+        li.setAttribute("role", "option");
+        li.id = `search-suggest-option-${items.length}`;
+        li.setAttribute("aria-selected", "false");
+        const title = document.createElement("span");
+        title.className = "search-suggest__title";
+        title.textContent = r && r.title ? String(r.title) : "Untitled";
+        li.appendChild(title);
+        if (r && r.year) {
+          const year = document.createElement("span");
+          year.className = "search-suggest__year";
+          year.textContent = String(r.year);
+          li.appendChild(year);
+        }
+        const href = `/movie/${encodeURIComponent(r && r.identifier ? String(r.identifier) : "")}`;
+        // mousedown-preventDefault keeps focus in the input so blur can't close the
+        // panel before the click lands; the click then navigates.
+        li.addEventListener("mousedown", (e) => e.preventDefault());
+        li.addEventListener("click", () => { window.location.href = href; });
+        list.appendChild(li);
+        items.push({ href, el: li });
+      }
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    };
+
+    const setActive = (index) => {
+      active = index;
+      for (let i = 0; i < items.length; i++) {
+        items[i].el.setAttribute("aria-selected", i === active ? "true" : "false");
+      }
+      if (active >= 0 && items[active]) {
+        input.setAttribute("aria-activedescendant", items[active].el.id);
+        const el = items[active].el;
+        if (el.offsetTop < list.scrollTop) {
+          list.scrollTop = el.offsetTop;
+        } else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) {
+          list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight;
+        }
+      } else {
+        input.removeAttribute("aria-activedescendant");
+      }
+    };
+
+    input.addEventListener("input", () => {
+      const q = input.value.trim();
+      if (q.length < 3) {
+        close();
+        return;
+      }
+      clearTimeout(timer);
+      const mySeq = ++seq;
+      timer = setTimeout(() => {
+        const pool = currentPool();
+        const poolParam = pool ? `&${pool}=1` : "";
+        apiFetch(`/api/browse?q=${encodeURIComponent(q)}&page=1${poolParam}`)
+          .then((data) => {
+            if (mySeq !== seq) return; // a newer keystroke owns the panel
+            render(Array.isArray(data.results) ? data.results : []);
+          })
+          .catch(() => {
+            if (mySeq === seq) close();
+          });
+      }, 200);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (list.hidden) return; // Enter/Escape keep their normal behavior
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        if (items.length === 0) return;
+        const delta = e.key === "ArrowDown" ? 1 : -1;
+        setActive((active + delta + items.length) % items.length);
+      } else if (e.key === "Enter" && active >= 0) {
+        e.preventDefault();
+        window.location.href = items[active].href;
+      } else if (e.key === "Escape") {
+        close();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      // Delay so a click on an option can land before the panel hides.
+      setTimeout(close, 150);
+    });
+  }
+
   /* ---------- boot ---------- */
   initTheme();
   reportPageView();
+  initSearchSuggest();
   const page = document.body ? document.body.dataset.page : "";
   if (page === "home") initHome();
   else if (page === "search") initSearch();
