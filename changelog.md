@@ -4,6 +4,22 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Footage pool added to the sitemap sub-sitemap list (deploy 28d4c539, 471 checks)
+
+- **Real gap found in the production sitemap audit:** the Vintage Footage pool shipped in PR
+  #46 but was never added to `lib/sitemap.ts SITEMAP_POOLS` — its 445 items were unindexed
+  and `/sitemap/footage.xml` 404'd. The smoke's loose `subs >= 19` passed because the index
+  sat at static + 18 pools. Now fixed: footage is in `SITEMAP_POOLS`, the smoke pins the
+  count exactly (20 = static + 19 pools) and fails if any listed sub-sitemap does not serve
+  200.
+- **Verified live both ways:** the new assertion caught the pre-deploy production gap (19 vs
+  20); after deploy `28d4c539` the index serves 20 entries and `/sitemap/footage.xml`
+  returns 200 with 445 URLs. Canonical smoke **471/471**, CI live-smoke 471/471, typecheck
+  clean, 199/199 tests.
+- **Verified:** deploy `28d4c539` verified production; commits `7979552` (fix) +
+  ledger entry. Footer: the 20-sub-sitemap count is now pinned — adding or removing a pool
+  requires updating the smoke expectation deliberately.
+
 ## 2026-08-22 — Smoke pins the function-route CSP script-src too (guard +1, 470 checks)
 
 - Mirror of the static-header guard for the middleware CSP: while the ad gate is dormant a
