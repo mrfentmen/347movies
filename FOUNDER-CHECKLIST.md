@@ -1,9 +1,10 @@
-# 347movies — Founder checklist (things that need your Cloudflare account)
+# 347movies — Founder checklist (things that need your account)
 
 The site is **live at https://347movies.pages.dev** and fully functional. Everything below is
-the short list of items that need **your Cloudflare account/zone access** — the deployment
-token used during the build is scoped to Cloudflare Pages only and cannot do these. Each item
-is the exact step; the code is already written and waiting for it.
+the short list of items that need **your Cloudflare account/zone access** (one also needs a
+Google Cloud project) — the deployment token used during the build is scoped to Cloudflare
+Pages only and cannot do these. Each item is the exact step; the code is already written and
+waiting for it.
 
 ---
 
@@ -49,6 +50,23 @@ re-fetched as often.
    ```
 The code uses KV automatically when the binding exists — no other changes needed.
 
+## 1b. YouTube API key — needs a Google Cloud project (unlocks /shortfilms)
+
+The `/shortfilms` page (YouTube Creative-Commons shelf) is built and live but dormant until
+the `YOUTUBE_API_KEY` secret exists — `/api/youtube` returns `{"enabled":false,"reason":"youtube_key_missing"}`
+and the CSP stays strict until the key is set (verified 2026-08-22).
+
+1. Google Cloud Console → create/pick a project → enable **YouTube Data API v3**
+   (APIs & Services → Library).
+2. APIs & Services → Credentials → Create Credentials → **API key**.
+3. Add it as a Pages secret (the deploy token can do this):
+   ```bash
+   npx wrangler pages secret put YOUTUBE_API_KEY
+   ```
+   then `npm run deploy`. The API switches to CC-only search (`videoLicense=creativeCommon`,
+   embeddable, 4–20 min), the CSP relaxes for `youtube-nocookie`/`i.ytimg.com`, and embeds
+   render on `/shortfilms`.
+
 ## 2. Zone settings (WAF, bot fight mode, TLS) — needs the domain on Cloudflare
 
 The `*.pages.dev` origin is behind Cloudflare's shared edge protections and TLS already, but
@@ -78,8 +96,9 @@ seen as duplicate content instead of the primary site.
 1. Go to https://search.google.com/search-console and add the property
    `https://347movies.pages.dev` (or your custom domain).
 2. Verify ownership (DNS TXT record from your Cloudflare zone, or HTML tag).
-3. Submit the sitemap index: `https://347movies.pages.dev/sitemap.xml` (currently 73,125 URLs
-   across 18 per-pool sub-sitemaps, all seventeen pools).
+3. Submit the sitemap index: `https://347movies.pages.dev/sitemap.xml` (currently **76,069 URLs
+   across 20 per-pool sub-sitemaps** — static + 19 pools including footage; verified serving
+   2026-08-22).
 
 ## 4. Real ad network rendering — needs a contract
 
@@ -150,12 +169,13 @@ then self-heal — see `changelog.md`). Point it at another deployment with
 |---|---|
 | Live site | ✅ https://347movies.pages.dev |
 | Deploy token | 🔴 leaked 2026-08-16 — purge from tip done, CI scan added; **rotate now (item 0)** |
-| Catalog | ✅ 17 pools, license-verified, fail-closed (films + TV/anime/cartoons/radio/music/documentaries/sports/shorts/silents/publictv/science/govfilms/audiobooks/records/ephemera/space) |
-| Tests | ✅ 55/55, typecheck clean, `npm audit` 0 |
+| Catalog | ✅ 18 pools, license-verified, fail-closed (films + TV/anime/cartoons/radio/music/documentaries/sports/shorts/silents/publictv/science/govfilms/audiobooks/records/ephemera/space/footage) |
+| Tests | ✅ 199/199, typecheck clean, smoke **471/471** live |
 | Edge caching | ✅ live (`cf-cache-status: HIT`) |
 | KV 24h cache | ⏳ item 1 above |
+| YouTube /shortfilms | ⏳ item 1b above (page + API dormant, key unlocks it) |
 | WAF / bot fight / zone TLS | ⏳ item 2 above |
-| Search Console + sitemap | ⏳ item 3 above |
+| Search Console + sitemap | ⏳ item 3 above (76,069 URLs / 20 sub-sitemaps ready) |
 | Real ad rendering | ⏳ item 4 above (slots + contact live) |
 | Affiliate payouts | ⏳ item 5 above (mechanism ready) |
 
