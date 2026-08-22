@@ -437,6 +437,14 @@ try {
   ok(tv.includes("card--skeleton"), "TV: skeleton grid reserves results space (CLS)");
   ok(tv.includes(`<link rel="canonical" href="${PINNED_ORIGIN}/tv">`), "TV: canonical pinned to the SITE_URL origin");
   ok(tv.includes('<a href="/tv">TV</a>'), "TV: header nav carries the TV link (discoverable, never orphaned)");
+  // Vintage Records page: decade (1900s/1910s/1920s) + sort filters for shellac-era browsing.
+  const records = await (await request("GET", `/records?smoke=${Date.now()}`)).text();
+  ok(records.includes('id="decade"'), "Records: decade filter present (shellac-era browsing)");
+  ok(records.includes('id="sort"'), "Records: sort filter present");
+  ok(records.includes('<option value="1900">1900s</option>'), "Records: 1900s decade option present");
+  ok(records.includes('<option value="1910">1910s</option>'), "Records: 1910s decade option present");
+  ok(records.includes('<option value="1920">1920s</option>'), "Records: 1920s decade option present");
+  ok(records.includes('id="results-head"'), "Records: results heading carries the id for filter-aware titles");
   ok(browse.includes('id="count" role="status"'), "Browse: result count announces async updates (role=status)");
   ok(search.includes('id="count" role="status"'), "Search: result count announces async updates (role=status)");
   const movie = await (await request("GET", `/movie/it-1927?smoke=${Date.now()}`)).text();

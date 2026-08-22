@@ -1120,7 +1120,46 @@
   function initScience() { initDestination("science", "/science"); }
   function initGovFilms() { initDestination("govfilms", "/govfilms"); }
   function initAudiobooks() { initDestination("audiobooks", "/audiobooks"); }
-  function initRecords() { initDestination("records", "/records"); }
+  /* ---------- vintage records (decade + sort filters) ----------
+     The /records page (public/records.html, data-page="records"): a trimmed browse with
+     decade (1900s/1910s/1920s) and sort filters, scoped to the records pool. Mirrors the
+     browse page's filter wiring but self-contained — the other 17 pools stay on the
+     simpler initDestination pattern. */
+  function initRecords() {
+    const params = new URLSearchParams(window.location.search);
+    const decade = params.get("decade");
+    const sort = params.get("sort") || "newest";
+    const rawPage = parseInt(params.get("page") || "1", 10);
+    const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+
+    const decadeSel = $("#decade");
+    if (decadeSel && decade) decadeSel.value = decade;
+    const sortSel = $("#sort");
+    if (sortSel && sort) sortSel.value = sort;
+
+    // Wire decade/sort selects to navigation (same clean-URL pattern as /browse).
+    const applyFilters = () => {
+      const parts = ["records=1"];
+      if (decadeSel && decadeSel.value) parts.push(`decade=${decadeSel.value}`);
+      if (sortSel && sortSel.value !== "newest") parts.push(`sort=${sortSel.value}`);
+      window.location.href = `/records?${parts.join("&")}`;
+    };
+    if (decadeSel) decadeSel.addEventListener("change", applyFilters);
+    if (sortSel) sortSel.addEventListener("change", applyFilters);
+
+    const head = $("#results-head");
+    if (head) {
+      head.textContent = `Vintage records${decade ? ` · ${decade}s` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
+    }
+
+    const grid = $("#results");
+    const parts = ["records=1", `page=${page}`, `sort=${sort}`];
+    if (decade) parts.push(`decade=${decade}`);
+
+    apiFetch(`/api/browse?${parts.join("&")}`)
+      .then((data) => renderResults(grid, $("#count"), $("#pagination"), data, (p) => `/records?${parts.map((x) => x.startsWith("page=") ? `page=${p}` : x).join("&")}`))
+      .catch((err) => renderError(grid, err.message));
+  }
   function initEphemera() { initDestination("ephemera", "/ephemera"); }
   function initSpace() { initDestination("space", "/space"); }
   function initTed() { initDestination("ted", "/ted"); }
