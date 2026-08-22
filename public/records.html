@@ -97,13 +97,30 @@
       <p><a class="hero-surprise" href="/api/random">Surprise me — jump to a random title</a></p>
     </div>
   </section>
-  <div class="container">
-    <div class="genre">
+  <div class="container">      <div class="genre">
       <div class="genre-main">
         <p class="section-eyebrow">From the shellac era</p>
         <div class="section-head">
-          <h2>Vintage records, free</h2>
+          <h2 id="results-head">Vintage records, free</h2>
           <a class="see-all" href="/browse?records=1">See all &rarr;</a>
+        </div>
+        <div class="filters">
+          <div class="filter-selects">
+            <label class="visually-hidden" for="decade">Decade</label>
+            <select id="decade">
+              <option value="">All decades</option>
+              <option value="1900">1900s</option>
+              <option value="1910">1910s</option>
+              <option value="1920">1920s</option>
+            </select>
+            <label class="visually-hidden" for="sort">Sort</label>
+            <select id="sort">
+              <option value="newest" selected>Newest releases</option>
+              <option value="recent">Recently added</option>
+              <option value="title">Title A&ndash;Z</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </div>
         </div>
         <p class="count" id="count" role="status"></p>
         <div class="grid" id="results" aria-busy="true">
