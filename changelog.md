@@ -4,6 +4,16 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Footage decade chips + decade-bound bugfix (PR #47, deploy 7e44de56)
+
+- **Decade chips on `/footage`** (1910s-1960s) mirroring the TED pattern, each linking to
+  `/browse?footage=1&from=X&to=X` (decade-start bounds — the route maps to+9).
+- **Latent bug fixed:** the TED chips shipped in PR #45 used decade-END bounds (`to=2009`),
+  which the browse API rejects (bounds must be decade starts) — every TED decade chip 400'd.
+  The publictv golden-age feed (`to=1979`) was broken the same way. All corrected; smoke now
+  pins the class with 5 decade endpoints in the status matrix + decade-start href assertions.
+- Deployed `7e44de56`; **459/459 smoke checks pass** live.
+
 ## 2026-08-22 — Vintage Footage pool + Short Films page shipped (PR #46, deploy f0f2b3ae)
 
 - **Shipped via PR #46** (merge commit `851097e`): the Vintage Footage curated-view pool
