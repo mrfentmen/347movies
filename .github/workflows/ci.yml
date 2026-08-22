@@ -117,13 +117,27 @@ jobs:
           echo "$SCAN"
           SWEEP=$(node scripts/license-sweep.ts --json 2>&1)
           SWEEP_STATUS=$?
+          # Preview the sweep JSON (head is display-only; the structural check below parses
+          # the full document, so a truncated preview can't fail the gate).
           echo "$SWEEP" | head -c 400
           echo
           # Assert both executed against a real, populated catalog.
           echo "$SCAN" | grep -qE "catalog has [0-9]+ ids" || { echo "::error::scan-longtail did not report the catalog"; exit 1; }
           echo "$SCAN" | grep -qE "done: 1 checked" || { echo "::error::scan-longtail did not complete its check"; exit 1; }
-          echo "$SWEEP" | grep -qE '"pools"' || { echo "::error::license-sweep did not emit the pools report"; exit 1; }
-          echo "$SWEEP" | grep -qE '"pools": \[\{[^}]*"label"' || { echo "::error::license-sweep pools report is empty"; exit 1; }
+          # Structural JSON check: the sweep must emit a pools array (18 registered pools),
+          # an errors array, and the anyChange boolean — parsing the whole document, so a
+          # JSON formatting change or a pools report that silently stopped probing fails here.
+          echo "$SWEEP" | node -e '
+            let d = ""; process.stdin.on("data", (c) => (d += c));
+            process.stdin.on("end", () => {
+              let j;
+              try { j = JSON.parse(d); } catch { console.error("::error::license-sweep did not emit valid JSON"); process.exit(1); }
+              if (!Array.isArray(j.pools) || j.pools.length < 18) { console.error("::error::license-sweep pools report is incomplete (" + (Array.isArray(j.pools) ? j.pools.length : "none") + " pools)"); process.exit(1); }
+              if (!Array.isArray(j.errors)) { console.error("::error::license-sweep errors field missing"); process.exit(1); }
+              if (typeof j.anyChange !== "boolean") { console.error("::error::license-sweep anyChange field missing"); process.exit(1); }
+              console.log(`ok: license-sweep report parsed — ${j.pools.length} pools, ${j.errors.length} errors`);
+            });
+          '
           [ "$SCAN_STATUS" -eq 0 ] || { echo "::error::scan-longtail exited $SCAN_STATUS"; exit 1; }
           [ "$SWEEP_STATUS" -eq 0 ] || { echo "::error::license-sweep exited $SWEEP_STATUS"; exit 1; }
           echo "ok: both gate scripts executed against archive.org"
