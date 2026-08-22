@@ -4,6 +4,16 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Smoke pins the function-route CSP script-src too (guard +1, 470 checks)
+
+- Mirror of the static-header guard for the middleware CSP: while the ad gate is dormant a
+  function route must carry no external script host at all (the middleware's ad-host
+  relaxation is conditional on the gate being enabled — `adsenseConfig !== null`). A
+  regression that made that relaxation unconditional now fails CI instead of shipping
+  silently. Mutation-verified (a served foreign host on /api/health fails the guard);
+  production clean at **470/470**, CI live-smoke 470/470.
+- No deploy needed (smoke-script only). Commit `0f84c13`.
+
 ## 2026-08-22 — Smoke pins the static CSP script-src to the ad allowlist (guard +1, 469 checks)
 
 - The dormant proof counted third-party script tags in the DOM and asserted `script-src
