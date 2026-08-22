@@ -197,6 +197,16 @@ try {
   const res = await request("GET", "/api/health");
   const csp = res.headers.get("content-security-policy") || "";
   ok(csp.includes("script-src 'self'") && !csp.includes("unsafe-inline"), "function route CSP: no inline scripts");
+  // The middleware CSP gains the ad-network script host ONLY when the ad gate is enabled
+  // (adsenseConfig !== null). While dormant it must carry no external script host at all —
+  // a regression that makes the relaxation unconditional would otherwise ship silently.
+  const fScriptSrc = (csp.match(/script-src ([^;]+)/) || [])[1] || "";
+  const fScriptHosts = (fScriptSrc.match(/https?:\/\/[^ ]+/g) || []).map((h) => h.replace(/^https?:\/\//, "").replace(/\/$/, ""));
+  const fUnexpected = fScriptHosts.filter((h) => !AD_SANCTIONED_SCRIPT_HOSTS.has(h));
+  ok(
+    fUnexpected.length === 0,
+    `function-route CSP script-src hosts stay inside the ad allowlist (got ${fScriptHosts.join(", ") || "none"})`,
+  );
   ok(csp.includes("frame-src https://archive.org"), "function route CSP: archive.org framing only");
   ok((res.headers.get("strict-transport-security") || "").includes("preload"), "function route HSTS preload");
   ok(res.headers.get("x-content-type-options") === "nosniff", "function route nosniff");
