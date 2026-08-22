@@ -65,6 +65,8 @@ export const TV_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:classic_tv AND med
  * the content, so the films-only exclusion does not apply here.
  */
 export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND mediatype:movies AND year:[* TO 1974]`;
+// Overlap-measured 2026-08-21: 0 items also sit in the films union — fully disjoint,
+// so NO curated-view label (unlike shorts/silents).
 
 /**
  * Animation/cartoons catalog gate: the same license gate over `animationandcartoons`.
@@ -73,6 +75,8 @@ export const ANIME_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:anime AND media
  * Episodes ARE the content, so the films-only exclusion does not apply here.
  */
 export const CARTOONS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:animationandcartoons AND mediatype:movies`;
+// Overlap-measured 2026-08-21: 15 items also sit in the films union (1.1%) — 1,293
+// exclusive, so NO curated-view label (unlike shorts/silents which are 100% overlap).
 
 /**
  * Music & concert catalog gate: the same license gate over the live-music collections
@@ -183,6 +187,8 @@ export const AUDIOBOOKS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:librivoxau
  * later pressings. Items ARE the content, so the films-only exclusion does not apply.
  */
 export const RECORDS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:78rpm AND mediatype:audio AND year:[* TO 1926]`;
+// Overlap-measured 2026-08-21: 0 items also sit in the films union (different mediatype) —
+// fully disjoint, so NO curated-view label.
 
 /**
  * Ephemeral films catalog gate: the same license gate over AV Geeks' `avgeeks` collection
@@ -200,6 +206,8 @@ export const RECORDS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:78rpm AND med
  * `avgeeks` → ephemera for the same reason.
  */
 export const EPHEMERA_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:avgeeks AND mediatype:movies`;
+// Overlap-measured 2026-08-21: 1 item also sits in the films union (0.2%) — 411 exclusive,
+// so NO curated-view label (unlike shorts/silents which are 100% overlap).
 
 /**
  * Space & NASA catalog gate: the same license gate over archive.org's `nasa` collection
@@ -214,6 +222,8 @@ export const EPHEMERA_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:avgeeks AND 
  * player path is reserved for the otr/music/audiobooks/records pools.
  */
 export const SPACE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nasa AND mediatype:movies`;
+// Overlap-measured 2026-08-21: 0 items also sit in the films union — fully disjoint,
+// so NO curated-view label.
 
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
