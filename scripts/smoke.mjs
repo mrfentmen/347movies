@@ -146,6 +146,26 @@ for (const [method, path, expected] of CASES) {
   }
 }
 
+console.log("\n— captions proxy (/api/subtitle) —");
+try {
+  // The native player's captions track: same-origin WebVTT proxy (archive.org sends no
+  // CORS headers). A real captioned item (iron_mask carries .asr.srt) must serve valid
+  // WebVTT with the right content type; hostile file names must fail closed (400).
+  const sub = await request("GET", `/api/subtitle?identifier=iron_mask&file=iron_mask.asr.srt&smoke=${Date.now()}`);
+  const subText = await sub.text();
+  ok(sub.status === 200, `captions proxy: captioned item serves 200 (got ${sub.status})`);
+  ok((sub.headers.get("content-type") || "").includes("text/vtt"), "captions proxy: WebVTT content type");
+  ok(subText.startsWith("WEBVTT"), "captions proxy: .srt converted to WebVTT");
+  const bad = await request("GET", "/api/subtitle?identifier=iron_mask&file=..%2F..%2Fetc%2Fpasswd");
+  ok(bad.status === 400, `captions proxy: traversal filename fails closed (got ${bad.status})`);
+  const badId = await request("GET", "/api/subtitle?identifier=bad%20id&file=x.srt");
+  ok(badId.status === 400, `captions proxy: invalid identifier fails closed (got ${badId.status})`);
+} catch (err) {
+  failures += 1;
+  checks += 1;
+  console.error(`FAIL  captions proxy — ${err.message}`);
+}
+
 console.log("\n— HEAD parity (HEAD must match GET) —");
 for (const path of ["/api/health", "/api/search?q=noir", "/movie/it-1927", "/sitemap.xml", "/"]) {
   try {
@@ -164,7 +184,10 @@ try {
   const csp = res.headers.get("content-security-policy") || "";
   const hsts = res.headers.get("strict-transport-security") || "";
   ok(csp.includes("frame-src https://archive.org"), "CSP allows only archive.org framing");
-  ok(csp.includes("media-src https://archive.org"), "CSP: media loads only from archive.org (constitution §7 / vow 4 — $0 storage)");
+  // media-src 'self' is ONLY the native player's caption track (/api/subtitle — a
+  // same-origin text proxy; archive.org sends no CORS headers). Caption text is never
+  // stored media, so the constitution §7 / vow 4 "$0 storage" rule still holds.
+  ok(csp.includes("media-src 'self' https://archive.org"), "CSP: media-src 'self' only for the caption-track proxy (no media storage; constitution §7 / vow 4)");
   ok(csp.includes("connect-src 'self' https://archive.org"), "CSP: connect-src honors the archive.org preconnect (perf pass)");
   ok(csp.includes("script-src 'self'") && !csp.includes("unsafe-inline"), "CSP: no inline scripts");
   // The static _headers CSP pre-permits the AdSense script host while dormant (documented
@@ -208,6 +231,7 @@ try {
     `function-route CSP script-src hosts stay inside the ad allowlist (got ${fScriptHosts.join(", ") || "none"})`,
   );
   ok(csp.includes("frame-src https://archive.org"), "function route CSP: archive.org framing only");
+  ok(csp.includes("media-src 'self' https://archive.org"), "function route CSP: media-src 'self' only for the caption-track proxy");
   ok((res.headers.get("strict-transport-security") || "").includes("preload"), "function route HSTS preload");
   ok(res.headers.get("x-content-type-options") === "nosniff", "function route nosniff");
   ok(res.headers.get("x-frame-options") === "SAMEORIGIN", "function route frame options");
@@ -389,6 +413,8 @@ try {
   ok(js.includes("?ep="), "JS: continue-watching links preserve the episode (?ep=N deep link)");
   ok(js.includes("showUpNext"), "JS: up-next auto-advance wired (episode bundles)");
   ok(css.includes(".up-next"), "CSS: up-next affordance styled");
+  ok(js.includes('kind = "captions"'), "JS: native player attaches a captions track when the item carries subtitles");
+  ok(js.includes("/api/subtitle?identifier="), "JS: captions track served same-origin via the /api/subtitle proxy");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");

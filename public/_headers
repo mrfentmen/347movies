@@ -1,12 +1,15 @@
 /*
   # connect-src allows archive.org so the <link rel=preconnect> hint to the poster/player
   # host is honored; the page's own JS never fetches archive.org (server-side only).
+  # media-src 'self' is ONLY the native player's caption track: /api/subtitle is a
+  # same-origin text proxy (archive.org sends no CORS headers); it is caption text, never
+  # stored media, so the $0-storage vow still holds.
   # AdSense hosts (pagead2 loader, googleads/tpc ad iframes, gstatic creative images) are
   # permitted so the reserved slots can serve units when AD_NETWORK_SCRIPT + AD_SLOT_IDS are
   # configured (T4.5). Static pages can't branch on env, so the header is broader than the
   # dynamic middleware CSP — but the client never injects any ad script while the gate
   # reports disabled, so the permission is inert until the owner enables the network.
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://pagead2.googlesyndication.com; style-src 'self'; img-src 'self' data: https://archive.org https://*.archive.org https://*.googlesyndication.com https://*.gstatic.com https://i.ytimg.com; media-src https://archive.org https://*.archive.org; frame-src https://archive.org https://*.archive.org https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' https://archive.org https://*.archive.org https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://*.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://pagead2.googlesyndication.com; style-src 'self'; img-src 'self' data: https://archive.org https://*.archive.org https://*.googlesyndication.com https://*.gstatic.com https://i.ytimg.com; media-src 'self' https://archive.org https://*.archive.org; frame-src https://archive.org https://*.archive.org https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' https://archive.org https://*.archive.org https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://*.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN

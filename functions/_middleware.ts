@@ -22,7 +22,11 @@ function contentSecurityPolicy(env: Env): string {
   let csp =
     "default-src 'self'; script-src 'self'; style-src 'self'; " +
     "img-src 'self' data: https://archive.org https://*.archive.org; " +
-    "media-src https://archive.org https://*.archive.org; " +
+    // media-src gains 'self' ONLY for the native player's caption track: /api/subtitle is
+    // a same-origin text proxy (archive.org sends no CORS headers, so a cross-origin track
+    // can't render). It is archive.org-derived caption text — never stored media — so the
+    // constitution §7 / vow 4 "$0 storage" rule still holds. No self-hosted video/audio.
+    "media-src 'self' https://archive.org https://*.archive.org; " +
     "frame-src https://archive.org https://*.archive.org; " +
     // connect-src gains archive.org so the <link rel=preconnect> hint to the poster/player
     // host is honored (preconnect is subject to connect-src). The page's own JS never

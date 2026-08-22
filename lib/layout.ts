@@ -454,7 +454,13 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
   const dataEpisodes = episodeMode
     ? ` data-episodes="${escapeHtml(JSON.stringify(episodes.map((e) => ({ label: e.label, path: e.path, files: e.files.map((f) => ({ path: f.path, label: f.label })) }))))}"`
     : "";
-  const tools = `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(activeEp ? activeEp.path : (files[0]?.path ?? ""))}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}"${dataEpisodes}>
+  // The native player's captions: the item's preferred subtitle derivative (archive.org
+  // ASR .srt/.vtt) is named here so app.js attaches a real <track kind="captions"> (served
+  // same-origin via /api/subtitle — the download endpoint sends no CORS headers). Video
+  // items only; the empty string is the honest absence (no track, no toggle).
+  const dataSubtitle =
+    kind === "video" && record.subtitle ? ` data-subtitle="${escapeHtml(record.subtitle.name)}"` : "";
+  const tools = `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(activeEp ? activeEp.path : (files[0]?.path ?? ""))}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}"${dataEpisodes}${dataSubtitle}>
   ${quality}
   ${server}
 </div>`;

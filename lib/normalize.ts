@@ -41,6 +41,14 @@ export interface AudioFile {
   path: string;
 }
 
+/** One subtitle derivative (archive.org ASR .srt/.vtt) for the native player's <track>. */
+export interface SubtitleFile {
+  name: string;
+  /** URL-encoded path segment for the direct download URL. */
+  path: string;
+  kind: "srt" | "vtt";
+}
+
 /** One playable file group of a multi-episode item (see `episodesFrom`). */
 export interface EpisodeFile {
   /** Human label — the file stem with derivative markers and the extension removed. */
@@ -73,6 +81,10 @@ export interface MovieRecord {
    *  than one group exists the detail page renders an episode list instead of treating
    *  every file as a quality option. Populated on the detail path. */
   episodes: EpisodeFile[];
+  /** Preferred subtitle derivative (archive.org ASR .srt/.vtt) for the native player's
+   *  captions track — null when the item carries none (the honest "no captions" state).
+   *  Populated on the detail path; video items only. */
+  subtitle: SubtitleFile | null;
   /** True when the item's files include a playable audio derivative (Old Time Radio). */
   hasAudio: boolean;
   /** Playable audio derivatives (empty for search-index docs; populated on the detail path). */
@@ -420,6 +432,33 @@ export function episodesFrom(files: unknown, cap = 100): EpisodeFile[] {
   return out.slice(0, cap);
 }
 
+const SUBTITLE_FORMAT_HINTS = ["subrip", "web video text", "subtitle"];
+
+/**
+ * Pick the item's preferred subtitle derivative for the native player's captions track.
+ * Archive.org auto-generates ASR captions as `<name>.asr.srt` (reliably populated) and
+ * sometimes an empty `<name>.asr.vtt` sibling (verified live: `iron_mask.asr.vtt` is 0
+ * bytes while the .srt carries the cues), so a .srt is preferred and converted to WebVTT
+ * server-side. Returns null when the item has no subtitle files — the honest "no
+ * captions" state (the client only renders a track when this exists).
+ */
+export function pickSubtitle(files: unknown): SubtitleFile | null {
+  if (!Array.isArray(files)) return null;
+  let vtt: SubtitleFile | null = null;
+  for (const f of files) {
+    if (!f || typeof f !== "object") continue;
+    const rec = f as Record<string, unknown>;
+    const name = String(rec["name"] ?? "");
+    if (!name) continue;
+    const fmt = String(rec["format"] ?? "").toLowerCase();
+    if (!SUBTITLE_FORMAT_HINTS.some((h) => fmt.includes(h)) && !/\.(srt|vtt)$/i.test(name)) continue;
+    const kind = /\.srt$/i.test(name) ? "srt" : "vtt";
+    if (kind === "srt") return { name, path: encodeURIComponent(name), kind };
+    if (!vtt) vtt = { name, path: encodeURIComponent(name), kind };
+  }
+  return vtt;
+}
+
 const AUDIO_FORMAT_HINTS = ["mp3", "ogg vorbis", "vorbis"];
 
 /** True when a file entry is a playable audio derivative (mp3/ogg format hint or extension). */
@@ -570,6 +609,7 @@ export function normalizeSearchDoc(doc: Record<string, unknown>): MovieRecord {
     hasVideo: true,
     videoFiles: [],
     episodes: [],
+    subtitle: null,
     hasAudio: false,
     audioFiles: [],
     server: null,
@@ -611,6 +651,7 @@ export function normalizeMetadata(
     hasVideo: hasVideoFiles(files),
     videoFiles: videoFilesFrom(files),
     episodes: episodesFrom(files),
+    subtitle: pickSubtitle(files),
     hasAudio: hasAudioFiles(files),
     audioFiles: audioFilesFrom(files),
     server,

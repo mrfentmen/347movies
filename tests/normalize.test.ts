@@ -10,6 +10,7 @@ import {
   normalizeMetadata,
   normalizeSearchDoc,
   parseRuntimeSeconds,
+  pickSubtitle,
   poolFromCollections,
   stripHtml,
   toList,
@@ -190,6 +191,36 @@ test("episodesFrom caps the record and UI to a bounded list", () => {
   const files = Array.from({ length: 300 }, (_, i) => ({ name: `ep${i + 1}.mp4`, format: "h.264" }));
   assert.equal(episodesFrom(files).length, 100, "default cap");
   assert.equal(episodesFrom(files, 5).length, 5, "explicit smaller cap");
+});
+
+test("pickSubtitle prefers the .srt over a possibly-empty .vtt sibling", () => {
+  // Real archive.org ASR shape: `iron_mask` has iron_mask.asr.srt (populated) and often an
+  // EMPTY iron_mask.asr.vtt sibling (verified live: 0 bytes). The .srt must win.
+  const out = pickSubtitle([
+    { name: "iron_mask.asr.vtt", format: "Web Video Text Tracks" },
+    { name: "iron_mask.asr.srt", format: "SubRip" },
+  ]);
+  assert.deepEqual(out, { name: "iron_mask.asr.srt", path: "iron_mask.asr.srt", kind: "srt" });
+});
+
+test("pickSubtitle falls back to a .vtt when no .srt exists", () => {
+  const out = pickSubtitle([{ name: "film.en.vtt", format: "Web Video Text Tracks" }]);
+  assert.deepEqual(out, { name: "film.en.vtt", path: "film.en.vtt", kind: "vtt" });
+});
+
+test("pickSubtitle returns null for items without subtitles and non-arrays", () => {
+  assert.equal(pickSubtitle([{ name: "film.mp4", format: "h.264" }]), null);
+  assert.equal(pickSubtitle(null), null);
+  assert.equal(pickSubtitle("x"), null);
+  assert.equal(pickSubtitle([]), null);
+});
+
+test("normalizeMetadata records the picked subtitle on the detail path", () => {
+  const rec = normalizeMetadata(
+    { identifier: "iron_mask", title: "Iron Mask", collection: ["feature_films"] },
+    [{ name: "iron_mask.asr.srt", format: "SubRip" }],
+  );
+  assert.deepEqual(rec.subtitle, { name: "iron_mask.asr.srt", path: "iron_mask.asr.srt", kind: "srt" });
 });
 
 test("audioFilesFrom picks mp3/ogg, sorts MP3 first then largest, dedupes, encodes paths", () => {

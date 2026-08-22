@@ -24,6 +24,7 @@ const RECORD: MovieRecord = {
   hasVideo: true,
   videoFiles: [],
   episodes: [],
+  subtitle: null,
   hasAudio: false,
   audioFiles: [],
   server: null,
@@ -82,6 +83,24 @@ test("renderMoviePage renders an episode list for multi-episode bundles", () => 
 test("renderMoviePage renders no up-next element for a single film", () => {
   const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
   assert.ok(!html.includes('id="up-next"'), "single film must not render the up-next affordance");
+});
+
+test("renderMoviePage names the subtitle on player-tools when the item carries one", () => {
+  const withSub = {
+    ...RECORD,
+    videoFiles: [{ name: "it-1927.mp4", format: "h.264", label: "HD · h.264", size: 1, width: null, height: null, path: "it-1927.mp4" }],
+    subtitle: { name: "it-1927.asr.srt", path: "it-1927.asr.srt", kind: "srt" as const },
+  };
+  const html = renderMoviePage(withSub, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes('data-subtitle="it-1927.asr.srt"'), "captioned item carries data-subtitle");
+});
+
+test("renderMoviePage omits data-subtitle when the item has none or is audio", () => {
+  const plain = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
+  assert.ok(!plain.includes("data-subtitle"), "uncaptioned item has no data-subtitle");
+  const audio = { ...RECORD, hasVideo: false, hasAudio: true, pool: "otr" as const, subtitle: { name: "x.asr.srt", path: "x.asr.srt", kind: "srt" as const } };
+  const audioHtml = renderMoviePage(audio, "https://347movies.pages.dev", undefined);
+  assert.ok(!audioHtml.includes("data-subtitle"), "audio items never expose data-subtitle");
 });
 
 test("renderMoviePage renders a More-from-this-pool strip for a pooled item", () => {

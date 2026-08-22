@@ -793,6 +793,12 @@
     const title = tools.getAttribute("data-title") || "film";
     const poster = tools.getAttribute("data-poster") || "";
     let defaultPath = tools.getAttribute("data-path") || "";
+    // Captions: the item's subtitle derivative (archive.org ASR .srt/.vtt) when one exists.
+    // The native player attaches a real <track kind="captions"> served same-origin via
+    // /api/subtitle (the archive.org download endpoint sends no CORS headers, so a
+    // cross-origin track can't render). The browser's native CC control is the honest
+    // toggle — it appears only when this track exists; absent data-subtitle means no track.
+    const subtitleName = tools.getAttribute("data-subtitle") || "";
     const mirrorBase = server.getAttribute("data-mirror") || "";
     const origIframe = wrap.querySelector("iframe.player");
     // Multi-episode bundles: the server renders the episode list + a data-episodes JSON of
@@ -1002,6 +1008,21 @@
       el.playsInline = true;
       el.preload = "metadata";
       if (poster) el.poster = poster;
+      // The captions track must be a child BEFORE the media starts loading (the browser
+      // picks up tracks when the element begins loading); the track is re-attached on every
+      // server/quality/episode swap because apply() rebuilds the element. The viewer's CC
+      // state is preserved across swaps: `default` starts the new track in "showing", which
+      // also triggers the cue fetch (a plain disabled track is never loaded by the browser).
+      if (kind !== "audio" && subtitleName) {
+        const track = document.createElement("track");
+        track.kind = "captions";
+        track.label = "Captions (auto)";
+        track.srclang = "en";
+        track.src = `/api/subtitle?identifier=${encodeURIComponent(identifier)}&file=${encodeURIComponent(subtitleName)}`;
+        const prev = wrap.querySelector("video.player");
+        if (prev && prev.textTracks[0] && prev.textTracks[0].mode !== "disabled") track.default = true;
+        el.appendChild(track);
+      }
       el.src = srcFor(mode, path);
       el.setAttribute("aria-label", `${kind === "audio" ? "Listen to" : "Watch"} ${title}`);
       wrap.replaceChildren(el);
