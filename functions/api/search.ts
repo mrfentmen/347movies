@@ -39,10 +39,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const records = validateFlag(url.searchParams.get("records"));
     const ephemera = validateFlag(url.searchParams.get("ephemera"));
     const space = validateFlag(url.searchParams.get("space"));
-    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space.");
+    const footage = validateFlag(url.searchParams.get("footage"));
+    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : "films";
     const serialized = variant !== "films";
     const q = validateQuery(url.searchParams.get("q"), serialized);
     const page = validatePage(url.searchParams.get("page"));

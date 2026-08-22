@@ -430,6 +430,12 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   // must come BEFORE the films union (an avgeeks item in a films collection stays ephemera).
   [["avgeeks"], "ephemera"],
   [["nasa"], "space"],
+  // `stock_footage` / `home_movies` / `home_movie` / `prelingerhomemovies` map to the footage
+  // pool; every gated footage item also sits in `moviesandfilms` (measured 2026-08-22: 445 =
+  // 445), so the specific curated-view mapping must come BEFORE the films union, exactly like
+  // avgeeks → ephemera. `prelingerhomemovies` is included because those items also carry
+  // `prelinger` (a films-union collection) — without it they'd resolve to films.
+  [["stock_footage", "home_movies", "home_movie", "prelingerhomemovies"], "footage"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

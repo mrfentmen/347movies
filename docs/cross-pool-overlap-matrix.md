@@ -1,7 +1,7 @@
 # Cross-Pool Overlap Matrix
 
-**Date:** 2026-08-21
-**Method:** Each pool's exact gate clause (from `lib/archive.ts`) intersected with every other pool's clause via archive.org's Solr API (`advancedsearch.php`, `numFound`). 153 pairs (18 pools × 17 / 2).
+**Date:** 2026-08-21 (updated 2026-08-22 with the footage pool)
+**Method:** Each pool's exact gate clause (from `lib/archive.ts`) intersected with every other pool's clause via archive.org's Solr API (`advancedsearch.php`, `numFound`). 153 pairs for the original 18 pools (18 × 17 / 2); the footage pool (added 2026-08-22) was measured separately against the films union (445 = 445, 100%).
 
 ## Pool sizes (live, 2026-08-21)
 
@@ -32,6 +32,7 @@
 |---|---|---|---|---|---|
 | films | shorts | 1,858 | 10.1% | 100.0% | **Curated view** (shorts ⊂ films) |
 | films | silents | 729 | 3.9% | 100.0% | **Curated view** (silents ⊂ films) |
+| films | footage | 445 | 2.4% | 100.0% | **Curated view** (footage ⊂ films) — added 2026-08-22 |
 | documentaries | ted | 2,933 | 34.8% | 100.0% | **Curated view** (ted ⊂ documentaries) |
 | documentaries | science | 257 | 3.1% | 100.0% | **Curated view** (science ⊂ documentaries) — NEW finding |
 | films | tv | 6 | 0.0% | 0.2% | Negligible (cross-tagged uploads) |

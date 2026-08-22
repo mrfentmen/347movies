@@ -4,6 +4,52 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Short Films page: YouTube CC embeds (keyword-targeted shelf)
+
+- **New page: Short Films (`/shortfilms`).** A second content source beyond archive.org:
+  Creative Commons short films streamed **embedded from YouTube** (privacy-enhanced
+  `youtube-nocookie.com` player — the site still never hosts or stores video). The page
+  keyword-targets "short film / short films / small film / indie film / small films" in its
+  title, meta description, hero copy, and six keyword chips (each a deep link to
+  `/shortfilms?q=…`).
+- **License gate (YouTube equivalent of the archive gate).** The search is filtered
+  server-side to `videoLicense=creativeCommon` + `videoEmbeddable=true` + `type=video` +
+  `videoDuration=medium` (4–20 min) + `safeSearch=strict` (`lib/youtube.ts`), so every embed
+  is legally reusable content — never a pirated rip. Same trust model as the archive pools,
+  transplanted to YouTube.
+- **Dormant until configured** (same pattern as the ad network, Decision 001): `YOUTUBE_API_KEY`
+  is a server-side secret; until set, `/api/youtube` returns `{ enabled: false }` and the page
+  shows an honest pending note linking to the archive's shorts. CSP relaxations
+  (youtube-nocookie frame-src, i.ytimg img-src) are conditional on the key in the middleware
+  and inert in static `_headers`, exactly like the ad hosts.
+- **Wired end-to-end**: `/api/youtube` endpoint (validated + sanitized query, edge-cached
+  300s, rate-limited, noindex), embed-card CSS (16:9 iframe-as-poster), nav link on every
+  page, sitemap static path, views bucket, warmup + smoke coverage (endpoint 200, structure,
+  keyword-targeting assertions). 195/195 tests (3 new for the YouTube client: normalization,
+  upstream-failure → [], malformed JSON).
+
+## 2026-08-22 — Vintage Footage pool (pre-1970 archival film) — the last licensed content win
+
+- **New pool: Vintage Footage (`/footage`).** The seventh independent probe round for more
+  movies/TV found the licensed well dry again — every untapped collection either fails the
+  gate (0 marks), is already covered (gov.archives* = 99.9% inside FedFlix, gov.ntis* = 100%
+  inside FedFlix), or is a junk drawer. The one genuine addition: the **pre-1970 band** of
+  `stock_footage` + `home_movies`/`home_movie` — 445 license-marked movies of genuinely
+  archival content (Coney Island boardwalk crowd 1940, the Hindenburg over NYC 1937, 1939
+  NY World's Fair home movies, early street scenes). The modern slice of those collections
+  is royalty-free HD stock loops (Beachfront fireplaces/cookie clips) and contemporary home
+  video, so the year bound `[* TO 1969]` is the honest filter (same pattern as anime/records:
+  the yearless band ≈ modern uploads, excluded).
+- **Curated view of Films, disclosed.** Measured overlap 2026-08-22: ALL 445 items also sit
+  in `moviesandfilms` (the films union) — so footage is a curated view of /browse, carrying
+  the full disclosure treatment (hero note, meta description, JSON-LD `isPartOf`, sitemap
+  annotation, home-section + hub curated badges, smoke guards). Curated-view count 3 → 4.
+- **19th pool wired end-to-end**: gate + variant + normalize mapping (stock_footage /
+  home_movies / home_movie / prelingerhomemovies → footage, before the films union),
+  /api/browse + /api/search + /api/collections + /api/random flags, catalog index URL,
+  sitemap + views buckets, landing page, Collections hub card, home section, nav link on
+  every static page, warmup + smoke coverage.
+
 ## 2026-08-19 — Space & NASA pool — the second institutional-license research win
 
 - **New pool: Space & NASA (`/space`).** The institutional-probe round 2 found `nasa`, the

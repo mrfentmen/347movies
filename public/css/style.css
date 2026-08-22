@@ -2102,3 +2102,56 @@ input {
 .section-head h2 {
   text-wrap: balance;
 }
+
+/* ---------- YouTube short-film shelf (/shortfilms) ----------
+   The embed cards swap the 3:4 poster for a 16:9 iframe (the video IS the poster). The
+   card keeps the same surface/border language as the rest of the grid; the iframe never
+   has a visible chrome until the visitor plays it, so the shelf reads like a gallery. */
+.card--youtube {
+  aspect-ratio: 16 / 10;
+}
+
+.card__embed {
+  flex: 1;
+  min-height: 0;
+  background: var(--surface-2);
+}
+
+.card__embed iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+.card--youtube .card__title {
+  font-size: 0.88rem;
+}
+
+/* The page's own search box (short-film keyword search, distinct from the header search). */
+.shortfilm-search {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  max-width: 460px;
+}
+
+.shortfilm-search input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.shortfilm-search button {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #111;
+  font-weight: 600;
+  cursor: pointer;
+}

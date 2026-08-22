@@ -76,6 +76,21 @@ Registering it is a small, honest win — same gate, same trust model, no new bo
 the classic educational/sponsored-film canon to a pool that currently only reaches it
 secondhand through `moviesandfilms`. The 15-pool register is otherwise confirmed complete.
 
+## Update 2026-08-22 — footage pool (curated view of Films)
+
+Re-probe after the 2026-08-21 matrix confirmed the licensed well dry for new movies/TV. Two
+collections newly cleared the license gate but are NOT institutional: `stock_footage` (1,927
+licensed movies) and `home_movies` (495). Both are mixed bags — the modern slice is
+royalty-free HD stock loops (fireplaces, baking-cookie clips from Beachfront Productions) and
+contemporary home video, so a gate over the whole collection would be a junk drawer. But the
+**pre-1970 band is genuine archival footage**: 445 license-marked movies (year distribution:
+≤1909 = 25, 1910s = 2, 1920s = 19, 1930s = 117, 1940s = 94, 1950s = 81, 1960s = 107) —
+Coney Island boardwalk crowd 1940, Hindenburg over NYC 1937, 1939 NY World's Fair home
+movies, early 20th-century street scenes. Measured overlap: ALL 445 also sit in
+`moviesandfilms` (the films union) — so the footage pool is a **curated view of Films**
+(like shorts/silents), registered 2026-08-22 with the pre-1970 year bound (same pattern as
+anime/records: the yearless band ≈ modern uploads and is excluded).
+
 ## Re-verification 2026-08-21 (after PR #32)
 
 Re-probed ~120 candidate collections through the license gate (four rounds: wide sweep, film

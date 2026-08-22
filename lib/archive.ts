@@ -227,6 +227,23 @@ export const SPACE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nasa AND mediat
 // Overlap-measured 2026-08-21: 0 items also sit in the films union — fully disjoint,
 // so NO curated-view label.
 
+/**
+ * Vintage footage catalog gate: the same license gate over the pre-1970 archival slice of
+ * `stock_footage` + `home_movies`/`home_movie` (Coney Island 1940s, the Hindenburg over
+ * NYC 1937, 1939 World's Fair amateur films, early 20th-century street scenes). Measured
+ * live 2026-08-22: 445 license-marked movies in the pre-1970 band (year distribution:
+ * ≤1909 = 25, 1910s = 2, 1920s = 19, 1930s = 117, 1940s = 94, 1950s = 81, 1960s = 107).
+ * The year bound is the honest one — same pattern as anime/records: the collections carry
+ * ~2.4k license marks total, but the modern slice is royalty-free HD stock loops
+ * (fireplaces, baking-cookie clips from Beachfront Productions) and contemporary home
+ * video, and the yearless band is excluded for the same reason as the anime pool
+ * (yearless ≈ modern upload there). Overlap-measured 2026-08-22: ALL 445 items also sit
+ * in the films union (`moviesandfilms`) — this is a CURATED VIEW of Films, disclosed on
+ * the landing page (hero note, meta description, JSON-LD isPartOf) exactly like
+ * shorts/silents. Items ARE the content, so the films-only exclusion does not apply.
+ */
+export const FOOTAGE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND (collection:stock_footage OR collection:(home_movies OR home_movie)) AND mediatype:movies AND year:[* TO 1969]`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -246,7 +263,8 @@ export type IndexVariant =
   | "audiobooks"
   | "records"
   | "ephemera"
-  | "space";
+  | "space"
+  | "footage";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -289,6 +307,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return EPHEMERA_BASE_CLAUSE;
     case "space":
       return SPACE_BASE_CLAUSE;
+    case "footage":
+      return FOOTAGE_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

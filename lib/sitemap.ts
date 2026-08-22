@@ -67,6 +67,8 @@ export const STATIC_PATHS = [
   "/records",
   "/ephemera",
   "/space",
+  "/footage",
+  "/shortfilms",
   "/collections",
 ];
 
@@ -79,6 +81,7 @@ export const STATIC_PATHS = [
 const CURATED_VIEW_NOTE: Record<string, string> = {
   "/shorts": "curated view of /browse (Films): every title here also appears there",
   "/silents": "curated view of /browse (Films): every title here also appears there",
+  "/footage": "curated view of /browse (Films): every title here also appears there",
   "/ted": "curated view of /documentaries: every title here also appears there",
 };
 
