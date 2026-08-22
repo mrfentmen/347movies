@@ -118,3 +118,65 @@ registered 17 are complete.** Evidence:
 third time. Adding content beyond it requires either a new institutional archive.org
 collection appearing upstream (re-probe periodically) or relaxing the license gate, which
 the constitution forbids.
+
+## Re-verification 2026-08-22 (8th sweep, after the footage pool)
+
+Probed ~90 more candidates with the corrected license clause (the site's exact gate:
+`(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)`
+— a scheme-less `licenseurl:creativecommons.org*` returns 0 and silently invalidates
+any sweep; the first pass of this round hit that, caught by a known-good sanity check
+before trusting results). **No new movie/TV pools exist; the registered 18 are complete.**
+
+- **51 collection-name probes** (`featurefilms`, `cinema`, `classicmovies`, `broadcasting`,
+  `publicaccess`, `newsfilm`, `classroomfilms`, `ww2films`, `animationarchive`,
+  `radioarchive`, …): **all 0 licensed movies**.
+- **~35 more** (`prelingerarchives`, `silentcinema`, `kino`, `opencourseware`, `toons`, …):
+  **all 0**.
+- **Identifier-prefix probes — REJECTED as junk.** `identifier:disney*` (843), `identifier:loc*`
+  (294), `identifier:abc*` (241), `identifier:paramount*` (108) look large but are prefix
+  collisions with fan uploads: "loc*" → Lock Up episodes, "abc*" → ABC For Kids DVD rips,
+  "disney*" → promotional DVD compilations, "paramount*" → fan-made compilations
+  ("Down and Dirty Duck (Fanmad)"). Same self-declared-mark failure mode as
+  `opensource_movies`; the site's institutional trust model (curator-applied marks) rejects them.
+- **Pool growth re-measured: flat.** films 18,491 (matrix 18,487, +4 organic), tv 2,513,
+  documentaries 8,420, sports 3,625, shorts 1,858, silents 729, publictv 1,653, science 257,
+  govfilms 5,948, ephemera 413, space 719, footage 445, anime 24 — all identical to
+  registration within noise. The curated collections are not accumulating new license-marked
+  items.
+
+**Conclusion (4th confirmation): the catalog ceiling (~75k items / 18 pools) is complete.**
+Adding content requires either a new institutional collection appearing upstream (re-probe
+periodically) or relaxing the license gate, which the constitution forbids.
+
+## Re-verification 2026-08-22 (audio-side deep probe, after the 8th video sweep)
+
+Deep-probed the audio side (~110 candidates through the same legal gate, both
+`mediatype:audio` and `mediatype:etree`) since prior rounds focused on movies/TV.
+**No new audio pools exist; the four registered (otr, music, audiobooks, records) are
+complete.**
+
+- **~100 collection-name probes** (radio drama: `radioshows`, `radio_programs`,
+  `classicradio`, `radioplays`, `oldtime radio2`; music: `live_music`, `rockconcerts`,
+  `orchestral`, `swing`, `bigband`, `bluegrass`, `gospel`, `netlabels`; audiobooks:
+  `openaudiobooks`, `audio_books`, `publicdomainbooks`, `librivox`; records:
+  `78rpmrecords`, `shellac`, `gramophone`, `victor_records`, `edison_records`,
+  `cylinders`; podcasts/other): **all 0**.
+- **Institutional identifier probes** (bbc, npr, voa, rfi, cbc, nhk, deutschewelle,
+  ucla/berkeley/stanford/harvard/yale/mit/loc/congress, london_symphony, philharmonic,
+  metopera): **all 0** licensed audio.
+- **`radio` (21) — REJECTED.** Modern 2020 Spanish-language local radio programs with
+  public-domain marks; 21 items, no institutional provenance.
+- **`podcasts` (286,871) — REJECTED.** The self-declared-mark community flood: college
+  course lectures (BY-NC), MLK speeches, Mahabharata readings, Tagalog mass podcasts.
+  Same failure mode as `opensource_audio`; year data confirms modern uploads
+  (112,680 in 2010-2019 alone).
+- **`radioprograms` (185,539) — REJECTED, with a useful confirmation.** The curated OTR
+  pool (`oldtimeradio`, 2,309) is **100% inside** radioprograms — the existing pool already
+  captures the good curated subset. The remaining ~183k are fan-upload radio dramas
+  (Gunsmoke/Johnny Dollar/Suspense "single episodes" uploaded 2015-2020, BY-NC marks) plus
+  modern podcasts; no institutional provenance.
+- **`netlabels` (61,143) — REJECTED.** Modern free-music netlabel releases (BY-NC
+  electronic), the `opensource_audio` failure mode.
+
+**Conclusion (5th confirmation): the audio ceiling holds too (~27k audio items / 4 pools).**
+The catalog's ~76k-item total across 18 pools is complete on both the video and audio sides.

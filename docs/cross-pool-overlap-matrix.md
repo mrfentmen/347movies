@@ -81,5 +81,11 @@ These pairs share a tiny number of items due to archive.org cross-tagging (uploa
 
 ## Action items
 
-1. **science → curated view of documentaries:** The matrix revealed that all 257 science items also sit in `culturalandacademicfilms`. This is a 4th curated view (after shorts, silents, TED). The smoke curated-view count (currently 3) needs updating to 4, and the `/science` landing page needs the curated-view disclosure (hero badge, meta description, JSON-LD `isPartOf` → `/documentaries`, sitemap annotation).
+1. **science → curated view of documentaries:** ~~The matrix revealed that all 257 science
+   items also sit in `culturalandacademicfilms`. The `/science` landing page needs the
+   curated-view disclosure (hero note, meta description, JSON-LD `isPartOf` →
+   `/documentaries`, sitemap annotation, hub + home badges).~~ **DONE 2026-08-22:** science
+   now carries the full curated-view disclosure on all channels (hero note, meta, JSON-LD,
+   self-canonical, sitemap annotation, hub + home badges); smoke curated-view count is 5
+   (shorts, silents, footage, TED, science).
 2. **shorts ∩ silents (229 items):** This is a partial overlap (12.3% of shorts, 31.4% of silents) — short silent films that belong to both collections. Neither is a curated view of the other (both are curated views of films, not of each other). No action needed beyond documenting it here.

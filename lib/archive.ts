@@ -33,7 +33,7 @@ export const REQUEST_TIMEOUT_MS = 15000;
 const RETRY_BACKOFF_MS = 1000;
 const USER_AGENT = "347movies/1.0 (+https://347movies.pages.dev; catalog fetcher)";
 
-const LEGAL_CLAUSE = "(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)";
+export const LEGAL_CLAUSE = "(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)";
 const LEGAL_COLLECTIONS = "collection:(feature_films OR prelinger OR moviesandfilms)";
 const BASE_CLAUSE = `${LEGAL_CLAUSE} AND ${LEGAL_COLLECTIONS} AND mediatype:movies`;
 

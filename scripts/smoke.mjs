@@ -459,8 +459,17 @@ try {
   ok(records.includes('id="decade"'), "Records: decade filter present (shellac-era browsing)");
   ok(records.includes('id="sort"'), "Records: sort filter present");
   ok(records.includes('<option value="1900">1900s</option>'), "Records: 1900s decade option present");
+  ok(records.includes('<option value="1890">1890s</option>'), "Records: 1890s decade option present (49 shellac items, added 2026-08-22)");
   ok(records.includes('<option value="1910">1910s</option>'), "Records: 1910s decade option present");
   ok(records.includes('<option value="1920">1920s</option>'), "Records: 1920s decade option present");
+  // Ephemeral films page: decade chips for the golden age of the educational/industrial
+  // film (1940s-70s = 288 of 413 dated items; the yearless 95 are the same classic canon
+  // per the avgeeks research). Space/records comparisons documented in the audit — space
+  // is 60% yearless with no decade structure, so it deliberately gets no chips.
+  const ephemera = await (await request("GET", `/ephemera?smoke=${Date.now()}`)).text();
+  for (const [decade, d] of [["1940s", 1940], ["1950s", 1950], ["1960s", 1960], ["1970s", 1970]]) {
+    ok(ephemera.includes(`/browse?ephemera=1&from=${d}&to=${d}`), `Ephemera: ${decade} decade chip present (decade-start bound)`);
+  }
   ok(records.includes('id="results-head"'), "Records: results heading carries the id for filter-aware titles");
   // TED Talks page: decade-filtered chips for the golden age of ideas (2000s, 2010s).
   const ted = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
@@ -1025,11 +1034,11 @@ try {
   ok(footerNav.includes('<a href="/collections">Collections</a>'), "footer: Collections hub link present");
   ok(!/href="\/(tv|anime|cartoons|otr|music|documentaries|sports|shorts|silents)"/.test(footerNav), "footer: individual pool links consolidated into the hub");
   // Curated-view disclosure: shorts, silents, and vintage footage are 100% subsets of the
-  // films union (measured 2026-08-18 and 2026-08-22: 0 exclusive items), and tedtalks is a
-  // 100% subset of culturalandacademicfilms (measured 2026-08-21: 2,933 = 2,933), so all
-  // four must be labeled as curated views, never implied to be disjoint catalogs. Guard
-  // both the hub badges and the landing-page notes.
-  ok((collectionsHtml.match(/Curated view/g) || []).length === 4, "collections page badges shorts + silents + footage + TED as curated views");
+  // films union (measured 2026-08-18 and 2026-08-22: 0 exclusive items), and tedtalks and
+  // science are 100% subsets of culturalandacademicfilms (measured 2026-08-21: 2,933 =
+  // 2,933 and 257 = 257), so all five must be labeled as curated views, never implied to be
+  // disjoint catalogs. Guard both the hub badges and the landing-page notes.
+  ok((collectionsHtml.match(/Curated view/g) || []).length === 5, "collections page badges shorts + silents + footage + TED + science as curated views");
   // Disjoint pools: measured 2026-08-21 (cross-pool overlap matrix, docs/cross-pool-overlap-matrix.md)
   // — 8 pools have 0 overlap with any other pool. Each carries a "Unique" badge so visitors
   // know titles aren't duplicated elsewhere.
@@ -1037,7 +1046,7 @@ try {
   // The collections hub carries JSON-LD expressing the curated-view relationships so
   // structured-data consumers see the subset hierarchy from the hub itself.
   ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
-  ok((homeFooterPage.match(/Curated view/g) || []).length === 4, "home page badges the shorts + silents + footage + TED sections as curated views");
+  ok((homeFooterPage.match(/Curated view/g) || []).length === 5, "home page badges the shorts + silents + footage + TED + science sections as curated views");
   const shortsHtml = await (await request("GET", `/shorts?smoke=${Date.now()}`)).text();
   const silentsHtml = await (await request("GET", `/silents?smoke=${Date.now()}`)).text();
   ok(shortsHtml.includes("A curated view") && shortsHtml.includes('href="/browse"'), "shorts page discloses it is a curated view of Films");
@@ -1046,18 +1055,22 @@ try {
   ok(footageHtml.includes("A curated view") && footageHtml.includes('href="/browse"'), "footage page discloses it is a curated view of Films");
   const tedHtml = await (await request("GET", `/ted?smoke=${Date.now()}`)).text();
   ok(tedHtml.includes("A curated view") && tedHtml.includes('href="/documentaries"'), "ted page discloses it is a curated view of Documentaries");
+  const scienceHtml = await (await request("GET", `/science?smoke=${Date.now()}`)).text();
+  ok(scienceHtml.includes("A curated view") && scienceHtml.includes('href="/documentaries"'), "science page discloses it is a curated view of Documentaries");
   // The overlap must also be visible to search engines: the page meta description (what a
   // SERP shows) discloses the curated-view relationship, not just the visible hero note.
   ok(/<meta name="description"[^>]*curated view/i.test(shortsHtml), "shorts meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(silentsHtml), "silents meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(footageHtml), "footage meta description discloses the curated-view overlap");
   ok(/<meta name="description"[^>]*curated view/i.test(tedHtml), "ted meta description discloses the curated-view overlap");
+  ok(/<meta name="description"[^>]*curated view/i.test(scienceHtml), "science meta description discloses the curated-view overlap");
   // Same disclosure for structured-data consumers: the JSON-LD CollectionPage names the
   // parent Films catalog via isPartOf so crawlers see the subset relationship too.
   ok(shortsHtml.includes('"isPartOf"') && shortsHtml.includes('347movies.pages.dev/browse'), "shorts JSON-LD exposes isPartOf → /browse");
   ok(silentsHtml.includes('"isPartOf"') && silentsHtml.includes('347movies.pages.dev/browse'), "silents JSON-LD exposes isPartOf → /browse");
   ok(footageHtml.includes('"isPartOf"') && footageHtml.includes('347movies.pages.dev/browse'), "footage JSON-LD exposes isPartOf → /browse");
   ok(tedHtml.includes('"isPartOf"') && tedHtml.includes('347movies.pages.dev/documentaries'), "ted JSON-LD exposes isPartOf → /documentaries");
+  ok(scienceHtml.includes('"isPartOf"') && scienceHtml.includes('347movies.pages.dev/documentaries'), "science JSON-LD exposes isPartOf → /documentaries");
   // Canonical decision (docs/decisions/002): the pages stay SELF-canonical, never → /browse.
   // rel=canonical signals duplication ("same content, index only one"); shorts/silents are
   // distinct landing pages (own title/description/hero), and pointing them at /browse would
@@ -1066,6 +1079,7 @@ try {
   ok(silentsHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/silents">'), "silents stays self-canonical (not → /browse)");
   ok(footageHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/footage">'), "footage stays self-canonical (not → /browse)");
   ok(tedHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/ted">'), "ted stays self-canonical (not → /documentaries)");
+  ok(scienceHtml.includes('<link rel="canonical" href="https://347movies.pages.dev/science">'), "science stays self-canonical (not → /documentaries)");
 } catch (err) {
   failures += 1;
   checks += 1;
@@ -1130,11 +1144,11 @@ try {
   // go stale (2026-08-22: a hardcoded 25 broke when /footage + /shortfilms landed).
   ok(fresh.lastmods >= fresh.locs - fresh.staticLocs, `movie URLs carry <lastmod> (${fresh.lastmods} of ${fresh.locs} entries, ${fresh.staticLocs} static paths exempt)`);
   // Curated-view annotation: the static sub-sitemap documents that /shorts, /silents, and
-  // /footage are views of /browse and /ted is a view of /documentaries (protocol has no
-  // description field, so this is an XML comment — the SERP-visible disclosure is the page
-  // meta description). The footage annotation is pinned precisely: /footage's own <url> entry
-  // must carry the curated-view comment (added with the pool, 2026-08-22).
-  ok(fresh.curatedAnnotated, "sitemap annotates /shorts + /silents + /footage → /browse and /ted → /documentaries");
+  // /footage are views of /browse and /ted + /science are views of /documentaries (protocol
+  // has no description field, so this is an XML comment — the SERP-visible disclosure is the
+  // page meta description). The footage annotation is pinned precisely: /footage's own <url>
+  // entry must carry the curated-view comment (added with the pool, 2026-08-22).
+  ok(fresh.curatedAnnotated, "sitemap annotates /shorts + /silents + /footage → /browse and /ted + /science → /documentaries");
   // Canonical URL is what crawlers see. It can lag a deploy by the edge-cache TTL (3600s) —
   // a lag is a WARNING, not a failure, because it self-heals at TTL expiry.
   const canonical = await fetchSitemapTotals("/sitemap.xml");

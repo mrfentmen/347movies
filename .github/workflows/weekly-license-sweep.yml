@@ -1,0 +1,42 @@
+name: Weekly license-gate re-probe
+
+on:
+  schedule:
+    # Wednesdays 12:00 UTC — offset from the Monday new-arrivals run: checks whether any
+    # registered pool gained licensed items, or a candidate collection newly cleared the
+    # license gate (the only honest way the catalog can grow).
+    - cron: "0 12 * * 3"
+  workflow_dispatch: # also run manually: Actions → Weekly license-gate re-probe → Run workflow
+
+permissions:
+  contents: read
+  issues: write # opens the sweep report issue when pool growth / a new collection appeared
+
+jobs:
+  license-sweep:
+    name: Re-probe pools and candidates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Re-probe the license gate
+        id: sweep
+        run: |
+          # One script, two artifacts: JSON for the gate, markdown for the issue. The script
+          # exits 0 either way (a quiet week is a valid result); the issue only opens when
+          # something actually changed.
+          node scripts/license-sweep.ts --json --baseline-from=2026-08-22 --body-out=/tmp/license-sweep.md > /tmp/license-sweep.json
+          ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/license-sweep.json','utf8')).anyChange")
+          echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
+          echo "Re-probe complete (anyChange=$ANY)."
+      - name: Open the sweep report issue
+        if: steps.sweep.outputs.anyChange == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          WEEK=$(date -u +%Y-%m-%d)
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "License-gate sweep — week of $WEEK" \
+            --body "$(cat /tmp/license-sweep.md)"

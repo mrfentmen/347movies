@@ -14,6 +14,7 @@ import {
   fetchMetadata,
   fetchSearchDocByIdentifier,
   fetchSitemapCatalog,
+  LEGAL_CLAUSE,
   searchArchive,
 } from "../lib/archive.ts";
 import { FILMS_ONLY_SOLR_CLAUSE } from "../lib/film-policy.ts";
@@ -50,7 +51,7 @@ test("escapeSolr escapes double quotes and backslashes", () => {
   assert.equal(escapeSolr('say "hi" \\ ok'), 'say \\"hi\\" \\\\ ok');
 });
 
-test("searchArchive always pins the legal base clause", async () => {
+test("searchArchive always pins the legal base clause (the exact LEGAL_CLAUSE constant)", async () => {
   const calls: string[] = [];
   const fetchImpl = makeFetch({
     handler: (url) => {
@@ -60,8 +61,16 @@ test("searchArchive always pins the legal base clause", async () => {
   });
   await searchArchive({ page: 1, rows: 24 }, fetchImpl);
   const q = qOf(calls[0] as string);
+  // Pinning the constant itself (not a literal) means a refactor that renames the clause,
+  // drops the http:// arm, or swaps hosts fails here — and with it every pool gate and the
+  // weekly license sweep, which all build on this single source of truth.
+  assert.ok(q.includes(LEGAL_CLAUSE), "query embeds the exact LEGAL_CLAUSE constant");
+  assert.ok(
+    LEGAL_CLAUSE.includes("licenseurl:https://creativecommons.org*") &&
+      LEGAL_CLAUSE.includes("licenseurl:http://creativecommons.org*"),
+    "LEGAL_CLAUSE still gates both http and https declared marks",
+  );
   assert.ok(q.includes("mediatype:movies"), "mediatype:movies in the query");
-  assert.ok(q.includes("licenseurl:https://creativecommons.org*"), "license gate in the query");
   assert.ok(q.includes("collection:(feature_films OR prelinger OR moviesandfilms)"), "collections in the query");
 });
 

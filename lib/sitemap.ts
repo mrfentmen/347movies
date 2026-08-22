@@ -83,6 +83,7 @@ const CURATED_VIEW_NOTE: Record<string, string> = {
   "/silents": "curated view of /browse (Films): every title here also appears there",
   "/footage": "curated view of /browse (Films): every title here also appears there",
   "/ted": "curated view of /documentaries: every title here also appears there",
+  "/science": "curated view of /documentaries: every title here also appears there",
 };
 
 /** The static sub-sitemap's <url> lines (with the curated-view annotations). */

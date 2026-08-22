@@ -25,7 +25,8 @@
     "warmup": "node scripts/warmup.mjs",
     "new-arrivals": "node scripts/new-arrivals.ts",
     "deploy": "node scripts/deploy.ts",
-    "check:scripts": "node scripts/check-scripts.mjs"
+    "check:scripts": "node scripts/check-scripts.mjs",
+    "license-sweep": "node scripts/license-sweep.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260815.1",
