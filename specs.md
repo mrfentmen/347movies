@@ -120,7 +120,7 @@ Phase status detail:
 | 3 — Pages | Deployed & verified | Home/search/browse/detail/static pages render from real API data; It (1927) plays in the archive.org embed ad-free; 404 returns 404 live |
 | 4 — Monetization | Slots live; loader mechanism built + dormant; rendering pending a real network contract | Marked sidebar/leaderboard slots live (never over player) with a real advertiser contact (contactae2000@gmail.com) + `/about#advertise`; ad loader mechanism built + tested (lib/ad.ts + /api/ad-config + client bootstrap, Decision 001) and provably dormant — `enabled:false`, zero third-party scripts on every page; affiliate mechanism unit-tested; nothing fake renders (constitution §4) |
 | 5 — Hardening | Deployed & verified | 55/55 tests, `npm audit` 0, header/CSP audit, back-door grep sweep clean |
-| 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (18495 URLs — full catalog — rebuilt live 2026-08-15) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids |
+| 6 — SEO & polish | Deployed & Lighthouse-verified | Per-film OG/canonical verified live, sitemap.xml (75,821 URLs — full catalog — 19 sub-sitemaps under a sitemap index) + robots.txt live, `/api/*` carry `X-Robots-Tag: noindex`, structured data live (VideoObject+BreadcrumbList, WebSite/SearchAction, Organization, CollectionPage with `isPartOf` for curated views); Lighthouse green on every page type (see current status); the 0.72 CLS on browse/search was fixed with skeleton grids; curated-view canonical strategy documented (Decision 002) |
 | 7 — Production launch | **DEPLOYED & verified live** | `wrangler pages deploy` succeeded; live walkthrough: all routes 200, player embed present, headers verified, 404 works |
 
 **Catalog size (live, verified 2026-08-19):** seventeen pools, all under the same license gate:
@@ -131,5 +131,36 @@ documentaries (8,417) + sports (3,625) + shorts (1,858) + silents (729) + public
 `films=1` view (episodes + trailers + teasers + music videos + serial chapters/parts excluded
 — Solr-identical, verified 2026-08-16) serves **15,920 films**; 138 film-noir; 533 in the
 1920s decade. The sitemap deliberately lists every pool's items, split into one sub-sitemap per
-pool under a sitemap index (73,125 URLs — every playable legal page, including
+pool under a sitemap index (75,821 URLs — every playable legal page, including
 trailers/episodes reachable by direct URL, and each file under the 50k protocol ceiling).
+
+### Curated-view canonical strategy (Decision 002)
+
+Some pool landing pages are 100% subsets of another pool — every item in `/shorts` and
+`/silents` also appears in the films union (`/browse`), and every item in `/ted` also appears
+in `/documentaries`. These are **curated views**: distinct category landing pages that target
+different queries ("short films free", "silent films online", "TED talks free") but share
+their items with a parent catalog.
+
+**Canonical decision: stay self-canonical.** Curated-view pages keep
+`<link rel="canonical" href="…/shorts|silents|ted">` — they do **not** point canonical
+at their parent (`/browse` or `/documentaries`). Canonical means duplication, not
+hierarchy; pointing it at the parent would de-index the landing pages and kill their SERP
+rankings. The subset relationship is expressed on the correct channels instead:
+
+1. **JSON-LD `isPartOf`** → the parent catalog's `CollectionPage` (schema.org's vocabulary
+   for "curated view of that catalog" — machine-readable hierarchy, not duplication).
+2. **Visible hero note** — a "Curated view" badge on the landing page heading.
+3. **SERP meta description** — the disclosure appears in the search snippet.
+4. **Sitemap annotation** — the sub-sitemap carries the curated-view relationship.
+
+The smoke suite guards all four channels (the disclosure guard block asserts that the
+curated-view count is exactly 3 — shorts, silents, TED — and that each page's canonical
+points at itself, not at the parent).
+
+**Pools measured as fully disjoint** (documentaries, sports — 0 items also in the films
+union, re-verified 2026-08-21) carry no curated-view label; every title is unique to its
+own pool. The measurement is recorded at the gate definitions in `lib/archive.ts` so a
+future session won't re-measure or mislabel them.
+
+See `docs/decisions/002-curated-view-canonical.md` for the full decision record.
