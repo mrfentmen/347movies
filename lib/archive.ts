@@ -35,7 +35,10 @@ const USER_AGENT = "347movies/1.0 (+https://347movies.pages.dev; catalog fetcher
 
 export const LEGAL_CLAUSE = "(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)";
 const LEGAL_COLLECTIONS = "collection:(feature_films OR prelinger OR moviesandfilms)";
-const BASE_CLAUSE = `${LEGAL_CLAUSE} AND ${LEGAL_COLLECTIONS} AND mediatype:movies`;
+/** The films gate: legality + curated collections + movies mediatype. One home for the text
+ *  every films query embeds (search/browse, the catalog-index build, the sitemap scan, and
+ *  the founder's scan-longtail tool all use it) — never a hardcoded clone. */
+export const BASE_CLAUSE = `${LEGAL_CLAUSE} AND ${LEGAL_COLLECTIONS} AND mediatype:movies`;
 
 /**
  * Classic TV catalog gate: the same license gate applied to archive.org's curated classic-TV

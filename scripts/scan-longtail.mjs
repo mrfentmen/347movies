@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * 347movies — long-tail hanger scanner (dependency-free, Node 18+).
+ * 347movies — long-tail hanger scanner (dependency-free, Node 22+ — imports the TS gate
+ * constant via Node's type-stripping, same as scripts/license-sweep.ts).
  *
  * Scans catalog identifiers against archive.org's metadata endpoint with gentle pacing and
  * flags the items whose metadata does not respond in time — the known hanger class
@@ -22,11 +23,13 @@
  */
 
 import { readFileSync, appendFileSync, writeFileSync, existsSync } from "node:fs";
+import { BASE_CLAUSE } from "../lib/archive.ts";
 
 const DEFAULT_SRC = "https://archive.org/advancedsearch.php";
-const LEGAL_QUERY =
-  "(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*) " +
-  "AND collection:(feature_films OR prelinger OR moviesandfilms) AND mediatype:movies";
+// The films gate from the single exported constant — byte-identical to what the live search
+// and the catalog-index build query (lib/archive.ts BASE_CLAUSE), so this founder tool can
+// never drift from the site's own gate.
+const LEGAL_QUERY = BASE_CLAUSE;
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
