@@ -343,6 +343,7 @@ try {
   // preloaded in <head> so its fetch starts at parse time instead of body-parsing time.
   ok(!/<iframe[^>]+class="player"[^>]+loading="lazy"/.test(movieHtml), "movie page: player iframe is NOT lazy (eager LCP fetch)");
   ok(/<iframe[^>]+class="player"[^>]+fetchpriority="high"/.test(movieHtml), "movie page: player iframe is high fetch priority (LCP element)");
+  ok(movieHtml.includes('id="player-rate"') && movieHtml.includes('<option value="1" selected>1×</option>'), "movie page: speed selector present, default 1×");
   ok(/<link rel="preload" as="image" href="https:\/\/archive\.org\/services\/img\/it-1927" fetchpriority="high">/.test(movieHtml), "movie page: poster preloaded in head with fetchpriority=high (LCP fetch at parse time + priority)");
   ok(/<link rel="preload" href="\/fonts\/plex-mono-500\.woff2" as="font" type="font\/woff2" crossorigin>/.test(movieHtml), "movie page: Plex Mono 500 preloaded (used by eyebrows/chips; was fetched late)");
   // Canonicals must resolve to the SITE_URL pin in wrangler.jsonc (lib/site-url.ts: the
@@ -415,6 +416,8 @@ try {
   ok(css.includes(".up-next"), "CSS: up-next affordance styled");
   ok(js.includes('kind = "captions"'), "JS: native player attaches a captions track when the item carries subtitles");
   ok(js.includes("/api/subtitle?identifier="), "JS: captions track served same-origin via the /api/subtitle proxy");
+  ok(js.includes("parseFloat(rate.value)"), "JS: playback speed applies to the native player (rate survives player swaps)");
+  ok(js.includes(".player-rate"), "JS: playback speed selector wired");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
   ok(js.includes("/api/search?${catalog}=1&page=${page}"), "JS: serialized-pool search shortcut wired (empty query = pool newest-first)");

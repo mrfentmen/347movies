@@ -57,6 +57,9 @@ test("renderMoviePage renders quality + server playback controls when derivative
   assert.ok(html.includes('value="mirror"'), "mirror option present");
   assert.ok(html.includes('data-mirror="https://dn600208.us.archive.org/0/items/it-1927"'), "mirror base present");
   assert.ok(html.includes('data-path="It%20%20%281927%29.mp4"'), "default path present");
+  assert.ok(html.includes('id="player-rate"'), "speed select present");
+  assert.ok(html.includes('<option value="1" selected>1×</option>'), "speed defaults to 1×");
+  assert.ok(html.includes('<option value="0.5">0.5×</option>') && html.includes('<option value="2">2×</option>'), "speed range 0.5x–2x");
 });
 
 test("renderMoviePage renders an episode list for multi-episode bundles", () => {
@@ -152,6 +155,7 @@ test("renderMoviePage omits quality select for a single derivative and mirror wi
   assert.ok(!html.includes('id="player-quality"'), "no quality select for a single file");
   assert.ok(html.includes('id="player-server"'), "server select still present");
   assert.ok(!html.includes('value="mirror"'), "no mirror option without server/dir");
+  assert.ok(html.includes('id="player-rate"'), "speed select present even for a single derivative");
 });
 
 test("renderMoviePage renders no playback controls when there are no derivatives", () => {

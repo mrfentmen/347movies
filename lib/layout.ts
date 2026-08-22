@@ -435,6 +435,22 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
 </div>`
     : "";
 
+  // Playback speed: a small rate selector (0.5x–2x, default 1x) on the native player.
+  // Works for audio too (HTMLMediaElement.playbackRate). Like quality, it only takes
+  // effect in direct/mirror mode — the embed iframe is archive.org's own player — so
+  // app.js flips to direct when a rate is chosen from embed (same pattern as quality).
+  const rate = `<div class="player-tools__control">
+  <label for="player-rate">Speed</label>
+  <select id="player-rate" class="player-rate">
+    <option value="0.5">0.5×</option>
+    <option value="0.75">0.75×</option>
+    <option value="1" selected>1×</option>
+    <option value="1.25">1.25×</option>
+    <option value="1.5">1.5×</option>
+    <option value="2">2×</option>
+  </select>
+</div>`;
+
   const mirrorOption = mirrorBase
     ? `<option value="mirror">Mirror node</option>`
     : "";
@@ -462,6 +478,7 @@ function playbackTools(record: MovieRecord, kind: "video" | "audio"): string {
     kind === "video" && record.subtitle ? ` data-subtitle="${escapeHtml(record.subtitle.name)}"` : "";
   const tools = `<div class="player-tools" role="group" aria-label="Playback options" data-kind="${kind}" data-identifier="${escapeHtml(id)}" data-path="${escapeHtml(activeEp ? activeEp.path : (files[0]?.path ?? ""))}" data-title="${escapeHtml(title)}" data-poster="${escapeHtml(record.thumbnails.medium)}"${dataEpisodes}${dataSubtitle}>
   ${quality}
+  ${rate}
   ${server}
 </div>`;
   if (!episodeMode) return tools;

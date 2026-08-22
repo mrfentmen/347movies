@@ -788,6 +788,11 @@
     const server = tools.querySelector(".player-server");
     if (!wrap || !server) return;
     const quality = tools.querySelector(".player-quality");
+    // Playback speed: the select lives in player-tools (never rebuilt by apply(), which
+    // only replaces the media element inside player-wrap), so reading rate.value on every
+    // apply() carries the viewer's choice across server/quality/episode swaps for free —
+    // the same minimal state-carry pattern as the captions track.
+    const rate = tools.querySelector(".player-rate");
     const kind = tools.getAttribute("data-kind") === "audio" ? "audio" : "video";
     const identifier = tools.getAttribute("data-identifier") || "";
     const title = tools.getAttribute("data-title") || "film";
@@ -1024,6 +1029,9 @@
         el.appendChild(track);
       }
       el.src = srcFor(mode, path);
+      // The viewer's chosen speed applies to every new element (HTMLMediaElement
+      // playbackRate works for both <video> and <audio>; 1x default via the select).
+      if (rate) el.playbackRate = parseFloat(rate.value) || 1;
       el.setAttribute("aria-label", `${kind === "audio" ? "Listen to" : "Watch"} ${title}`);
       wrap.replaceChildren(el);
       track(el);
@@ -1047,6 +1055,14 @@
       quality.addEventListener("change", () => {
         // A quality choice only matters in direct mode; from embed, flip to direct so it
         // takes effect immediately instead of being silently ignored.
+        if (server.value === "embed") server.value = "cdn";
+        apply();
+      });
+    }
+    if (rate) {
+      rate.addEventListener("change", () => {
+        // Same contract as quality: the embed iframe is archive.org's own player and
+        // ignores playbackRate, so a rate chosen from embed flips to the native player.
         if (server.value === "embed") server.value = "cdn";
         apply();
       });
