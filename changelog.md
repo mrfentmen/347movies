@@ -4,6 +4,18 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Smoke pins the static CSP script-src to the ad allowlist (guard +1, 469 checks)
+
+- The dormant proof counted third-party script tags in the DOM and asserted `script-src
+  'self'`, but nothing checked which external hosts the static `_headers` CSP actually
+  permits. The AdSense script host is a documented pre-permission (inert while the gate is
+  disabled), but any OTHER third-party script host added to `script-src` would have shipped
+  silently. The smoke now extracts `script-src` from the served CSP and fails unless every
+  external host sits inside the sanctioned AdSense allowlist (`pagead2.googlesyndication.com`).
+- Mutation-verified both ways: a served CSP carrying a foreign host fails the guard; the
+  clean production run passes — canonical smoke now **469/469**, CI live-smoke 469/469.
+- No deploy needed (smoke-script only). Commit `f2828a8`.
+
 ## 2026-08-22 — Production-readiness verification pass (no code changed)
 
 AFK production sweep — verified the live site end-to-end and confirmed the content
