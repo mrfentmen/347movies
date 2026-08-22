@@ -4,6 +4,31 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-22 — Episode navigation for multi-episode catalog bundles (deploy 6c7e17f9, 475 checks)
+
+- **The last unshipped item from the features list, and a real defect:** one archive.org
+  item can hold an entire series (verified live: `fantomascompleto52ep_202112` bundles 52
+  episodes). Before this change every file was treated as a quality option and the 6-file
+  cap hid most episodes — a 52-episode compilation showed 6 random "qualities".
+- **Server** (`lib/normalize.ts` `episodesFrom`): groups the item's playable video files by
+  content stem, stripping archive.org derivative markers (`.ia`, `_512kb`, `_hq`, `_sd`, …)
+  so quality variants collapse into one episode — validated against live items (Detour film
+  → 1 group; Fantomas → 52; `electromagnetism` mp4/mpeg/ogv + `_512kb` → 1, no fake
+  episodes). Natural numeric ordering, capped at 100. Records gain `episodes` (KV-cache
+  additive; stale caches read `?? []`).
+- **SSR** (`lib/layout.ts`): episode mode renders an episode list + prev/next + live count,
+  each episode's own quality selector, and a `data-episodes` JSON driving the client swap.
+  Single films are untouched — the plain quality selector is byte-for-byte the same.
+- **Client** (`app.js`): clicking an episode swaps the player src, rebuilds the quality
+  selector from that episode's derivatives, updates aria-current + count + disabled states,
+  and skips the item-level resume seek so a new episode starts at 0. Keyboard-reachable.
+- **Verified:** browser check (system Chrome) on the live item — 52 buttons render, click
+  swaps src to episode 2 (`02 - Terror no Gelo .ia.mp4`), prev/next + keyboard work, and
+  `it-1927` (single film) renders no episode list and still plays. Unit tests pin the
+  grouping (204/204), dev + canonical smoke **475/475** on deploy `6c7e17f9` (verified
+  production); live page serves 52 `data-ep-index` buttons + "1 of 52", single film serves 0.
+  Commit `c1571a5`.
+
 ## 2026-08-22 — Catalog-index search autocomplete in the header (deploy 3c98ffc3, 473 checks)
 
 - The header search box on every page now suggests titles as you type (>=3 chars,
