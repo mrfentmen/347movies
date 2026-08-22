@@ -91,6 +91,43 @@ jobs:
           kill $SERVER_PID 2>/dev/null || true
           exit $STATUS
 
+  gate-scripts:
+    name: Gate scripts execute (scan-longtail + license-sweep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run both gate-building scripts against the real archive.org API
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          # The two scripts that build archive.org gate queries themselves (every other
+          # query flows through lib/archive.ts and is covered by the unit suite). A syntax
+          # error, a broken .ts import, or a gate change that stops resolving must fail
+          # here — before merge, not on the first Wednesday cron. Both hit the real API:
+          # scan-longtail fetches the legal catalog (limit 1) and checks one identifier;
+          # license-sweep probes all 18 pools + 16 candidates via LEGAL_CLAUSE.
+          set -o pipefail
+          SCAN=$(node scripts/scan-longtail.mjs --limit 1 --out /tmp/scan-longtail.jsonl --timeout 8 2>&1)
+          SCAN_STATUS=$?
+          echo "$SCAN"
+          SWEEP=$(node scripts/license-sweep.ts --json 2>&1)
+          SWEEP_STATUS=$?
+          echo "$SWEEP" | head -c 400
+          echo
+          # Assert both executed against a real, populated catalog.
+          echo "$SCAN" | grep -qE "catalog has [0-9]+ ids" || { echo "::error::scan-longtail did not report the catalog"; exit 1; }
+          echo "$SCAN" | grep -qE "done: 1 checked" || { echo "::error::scan-longtail did not complete its check"; exit 1; }
+          echo "$SWEEP" | grep -qE '"pools"' || { echo "::error::license-sweep did not emit the pools report"; exit 1; }
+          echo "$SWEEP" | grep -qE '"pools": \[\{[^}]*"label"' || { echo "::error::license-sweep pools report is empty"; exit 1; }
+          [ "$SCAN_STATUS" -eq 0 ] || { echo "::error::scan-longtail exited $SCAN_STATUS"; exit 1; }
+          [ "$SWEEP_STATUS" -eq 0 ] || { echo "::error::license-sweep exited $SWEEP_STATUS"; exit 1; }
+          echo "ok: both gate scripts executed against archive.org"
+
   browser-batteries:
     name: Browser battery (${{ matrix.target }})
     runs-on: ubuntu-latest
