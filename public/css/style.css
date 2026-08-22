@@ -1549,6 +1549,24 @@ body[data-page="tv"] .hero {
   line-height: 1.4;
 }
 
+/* "Unique" badge on hub cards whose pool is measured-disjoint (0 overlap with any other
+   pool — every title appears only here). Mirrors the curated-badge styling. */
+.unique-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
 /* ---------- search / browse ---------- */
 .page-head {
   padding: 44px 0 12px;
