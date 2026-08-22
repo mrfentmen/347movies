@@ -4,9 +4,13 @@
 `publictv`, Wellcome → `science`, FedFlix → `govfilms`, LibriVox → `audiobooks`, Great 78 →
 `records`), are there other archive.org collections where the license marks come from the
 institution/curator rather than self-declared uploaders — and are any worth registering?
-Method: the site's own license gate (`licenseurl:creativecommons.org*`) run against each
-candidate collection via the advancedsearch API, then item-level sampling (uploader, license,
-year, title) for every candidate that cleared the gate.
+Method: the site's own license gate — the `LEGAL_CLAUSE` constant in `lib/archive.ts`, which
+gates both declared-mark scheme arms (`licenseurl:https://creativecommons.org*` OR
+`licenseurl:http://creativecommons.org*`) — run against each candidate collection via the
+advancedsearch API, then item-level sampling (uploader, license, year, title) for every
+candidate that cleared the gate. (Note: a scheme-less `licenseurl:creativecommons.org*`
+returns 0 and silently invalidates any probe — always reference the constant, see the
+2026-08-22 update below.)
 
 ## Verdict
 
@@ -33,7 +37,8 @@ junk drawer of self-declared marks.
   films, 1950s PSAs) — **no year cutoff needed**, unlike anime/records.
 - **Fit:** pairs naturally with the documentaries/shorts pools; the honest label is
   "ephemeral & sponsored films" or "classic educational films".
-- **Suggested gate:** `licenseurl:creativecommons* AND collection:avgeeks AND mediatype:movies` —
+- **Suggested gate:** `LEGAL_CLAUSE AND collection:avgeeks AND mediatype:movies` (the
+  `lib/archive.ts` constant — never the scheme-less `licenseurl:creativecommons*` form) —
   exactly the films-pool trust model, no extra bounds.
 
 ### 2. `europeanlibraries` — NOT a fit (books)
@@ -121,11 +126,13 @@ the constitution forbids.
 
 ## Re-verification 2026-08-22 (8th sweep, after the footage pool)
 
-Probed ~90 more candidates with the corrected license clause (the site's exact gate:
-`(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)`
-— a scheme-less `licenseurl:creativecommons.org*` returns 0 and silently invalidates
-any sweep; the first pass of this round hit that, caught by a known-good sanity check
-before trusting results). **No new movie/TV pools exist; the registered 18 are complete.**
+Probed ~90 more candidates with the corrected license clause — the site's exact gate,
+mirroring the `LEGAL_CLAUSE` constant in `lib/archive.ts`
+(`(licenseurl:https://creativecommons.org* OR licenseurl:http://creativecommons.org*)`,
+the single source of truth — a scheme-less `licenseurl:creativecommons.org*` returns 0
+and silently invalidates any sweep; the first pass of this round hit that, caught by a
+known-good sanity check before trusting results). **No new movie/TV pools exist; the
+registered 18 are complete.**
 
 - **51 collection-name probes** (`featurefilms`, `cinema`, `classicmovies`, `broadcasting`,
   `publicaccess`, `newsfilm`, `classroomfilms`, `ww2films`, `animationarchive`,
