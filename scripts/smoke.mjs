@@ -333,7 +333,8 @@ try {
   ok(js.includes("/api/browse?science=1&sort=recent&page=1"), "JS: Science & medicine home feed wired");
   ok(js.includes("/api/browse?govfilms=1&sort=recent&page=1"), "JS: Government films home feed wired");
   ok(js.includes("/api/browse?audiobooks=1&sort=recent&page=1"), "JS: Audiobooks home feed wired");
-  ok(js.includes("/api/browse?records=1&sort=recent&page=1"), "JS: Vintage records home feed wired");
+  ok(js.includes("/api/browse?records=1&sort=newest&page=1"), "JS: Vintage records home feed wired (newest releases)");
+  ok(js.includes("/api/browse?records=1&sort=recent"), "JS: New records this week feed wired (recently added)");
   ok(js.includes("/api/browse?ephemera=1&sort=recent&page=1"), "JS: Ephemeral films home feed wired");
   ok(js.includes("/api/browse?space=1&sort=recent&page=1"), "JS: Space & NASA home feed wired");
   ok(js.includes("/api/browse?ted=1&sort=recent&page=1"), "JS: TED Talks home feed wired");
@@ -403,6 +404,7 @@ try {
   ok(home.includes('id="tvclassics"'), "Home: Classic TV section present (classic_tv feed)");
   ok(home.includes('id="tv1960s"'), "Home: 1960s TV showcase present");
   ok(home.includes('id="publictvgolden"'), "Home: Golden-age public broadcasting showcase present");
+  ok(home.includes('id="recordsnew"'), "Home: New records this week section present");
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
   ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
