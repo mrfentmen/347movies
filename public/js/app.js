@@ -781,6 +781,13 @@
      and quality control; the embed iframe remains the no-JS fallback and the embed option
      in the server selector. A visitor can always switch back to the embed if they prefer. */
   const SERVER_PREF_KEY = "347movies.serverPref";
+  // Playback speed preference: persists the viewer's chosen rate across reloads and
+  // repeat visits (the same localStorage pattern as the server preference above).
+  // First-time or cleared state falls back to the select's SSR default (1x). The select
+  // lives in player-tools (never rebuilt by apply(), which only replaces the media element
+  // inside player-wrap), so apply() reading rate.value carries the persisted rate across
+  // server/quality/episode swaps exactly like the in-session choice does.
+  const RATE_PREF_KEY = "347movies.ratePref";
   function initPlaybackTools() {
     const tools = $(".player-tools");
     if (!tools) return;
@@ -1047,6 +1054,15 @@
     if (pref === "mirror" && !mirrorBase) pref = "cdn";
     server.value = pref;
 
+    // Restore the persisted playback rate, validated against the select's own options so a
+    // corrupt or foreign value falls back to the SSR 1x default. Unavailable storage is fine.
+    if (rate) {
+      try {
+        const stored = localStorage.getItem(RATE_PREF_KEY);
+        if (stored !== null && [...rate.options].some((o) => o.value === stored)) rate.value = stored;
+      } catch { /* storage unavailable */ }
+    }
+
     server.addEventListener("change", () => {
       try { localStorage.setItem(SERVER_PREF_KEY, server.value); } catch { /* ignore */ }
       apply();
@@ -1064,6 +1080,8 @@
         // Same contract as quality: the embed iframe is archive.org's own player and
         // ignores playbackRate, so a rate chosen from embed flips to the native player.
         if (server.value === "embed") server.value = "cdn";
+        // Persist the choice (mirroring the server preference) so it survives reloads.
+        try { localStorage.setItem(RATE_PREF_KEY, rate.value); } catch { /* ignore */ }
         apply();
       });
     }

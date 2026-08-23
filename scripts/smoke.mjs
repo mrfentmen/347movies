@@ -419,6 +419,7 @@ try {
   ok(js.includes('kind = "captions"'), "JS: native player attaches a captions track when the item carries subtitles");
   ok(js.includes("/api/subtitle?identifier="), "JS: captions track served same-origin via the /api/subtitle proxy");
   ok(js.includes("parseFloat(rate.value)"), "JS: playback speed applies to the native player (rate survives player swaps)");
+  ok(js.includes("347movies.ratePref"), "JS: playback rate persists via localStorage (ratePref key present)");
   ok(js.includes(".player-rate"), "JS: playback speed selector wired");
   ok(js.includes("/api/browse?subject="), "JS: More-like-this row fetches by subject tag");
   ok(js.includes('serviceWorker.register("/sw.js")'), "JS: PWA service worker registered");
