@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "wrangler pages dev public --port 8787",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node scripts/check-scripts.mjs && node --test tests/*.test.ts",
+    "test": "node scripts/check-scripts.mjs && node scripts/check-secrets.ts && node --test tests/*.test.ts",
     "audit": "npm audit --audit-level=high",
     "smoke": "node scripts/smoke.mjs",
     "images": "node scripts/register-images.mjs",
@@ -26,7 +26,8 @@
     "new-arrivals": "node scripts/new-arrivals.ts",
     "deploy": "node scripts/deploy.ts",
     "check:scripts": "node scripts/check-scripts.mjs",
-    "license-sweep": "node scripts/license-sweep.ts"
+    "license-sweep": "node scripts/license-sweep.ts",
+    "postinstall": "node scripts/install-git-hooks.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260815.1",
