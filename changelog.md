@@ -4,7 +4,23 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Extend the pre-commit hook to run typecheck and the unit tests (no deploy — repo-side only)
+## 2026-08-23 — Docs-only fast path in the pre-commit hook (no deploy — repo-side only)
+
+- When every staged file is docs-only (.md/.markdown/.txt — changelog, ledger, checklists,
+  AGENTS.md), the hook skips the typecheck + unit-test gates so the frequent docs/ledger
+  commits stop paying the full battery; the secret scan ALWAYS runs, so a pasted token in
+  a .md still fails. Any staged non-docs file keeps the full battery exactly
+  (scan, then typecheck, then tests). Deleted/renamed docs count as docs (every staged
+  path is listed; the extension decides).
+- Installer marker moved from `npm run typecheck` to `docs_only` so the currently-installed
+  full-battery hook is upgraded in place (verified against the real installed hook).
+- **Verified end-to-end:** (A) a staged .md + .txt runs only the scan, skips the battery,
+  exits 0 in ~175ms (vs ~10s full); (B) a staged .md containing a `ghp_` token is blocked
+  by the scan with exit 1; (C) a staged .ts runs all three gates and passes (216/216).
+  This ledger commit itself is a docs-only commit, so the fast path runs on it for real.
+- Commit `f438e9d`.
+
+
 
 - The hook now gates every commit on the full battery: `scripts/check-secrets.ts`, then
   `npm run typecheck`, then `npm test` — a token paste or broken code never reaches the
