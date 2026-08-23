@@ -4,7 +4,27 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Pre-commit hook running the whole-tree secret scan (no deploy — repo-side only)
+## 2026-08-23 — Persisted playback rate (deploy edfd74fc, 493 checks)
+
+- The viewer's chosen speed now survives page reloads and repeat visits via the existing
+  localStorage preference pattern: a `347movies.ratePref` key mirroring
+  `347movies.serverPref`. Restored on load and validated against the select's own options
+  (corrupt/foreign value -> SSR 1x default; cleared storage = first visit). The change
+  handler persists the new value; the embed->direct flip semantics are byte-for-byte
+  unchanged (the flip never rewrites the stored server preference — verified in the
+  browser check). The persisted rate carries across server/quality/episode swaps for free:
+  the select lives in player-tools (never rebuilt by apply()) and apply() reads
+  rate.value on every element, so the restore applies to the first media element and every
+  subsequent one. Works for audio too (HTMLMediaElement.playbackRate).
+- **Verified:** typecheck clean, 216/216 tests, dev + canonical smoke 493/493 (new pin:
+  bundle carries `347movies.ratePref`), real-browser check (system Chrome): fresh/cleared
+  -> 1x; 1.5x persisted + applied; select restores 1.5x after reload and the reloaded
+  media plays at 1.5x; rate survives a quality swap after restore; corrupt `9.9` falls
+  back to 1x; embed->direct flip keeps the stored server pref and persists the new rate.
+- Commit `0029c2a`, deploy `edfd74fc` verified production; live bundle carries
+  `347movies.ratePref`.
+
+
 
 - The widened token-family scan (cfut_/ghp_/github_pat_/sk-/AKIA) now runs **before a
   paste can reach the tree**: `scripts/check-secrets.ts` is the single scan implementation
