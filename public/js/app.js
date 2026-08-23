@@ -788,6 +788,13 @@
   // inside player-wrap), so apply() reading rate.value carries the persisted rate across
   // server/quality/episode swaps exactly like the in-session choice does.
   const RATE_PREF_KEY = "347movies.ratePref";
+  // Volume preference: persists the viewer's volume LEVEL (not mute state) across reloads
+  // and repeat visits — the same localStorage pattern as the server/rate preferences,
+  // completing the player preference set (server, quality, captions, rate, volume). The
+  // media element is rebuilt by apply() on every server/quality/episode swap, so apply()
+  // sets el.volume on each new element exactly like the rate; the embed iframe (archive.org
+  // owns the player there) is untouched.
+  const VOLUME_PREF_KEY = "347movies.volumePref";
   function initPlaybackTools() {
     const tools = $(".player-tools");
     if (!tools) return;
@@ -895,6 +902,16 @@
         // event (a pause before the end never fires ended), never on the last episode, and
         // never for single films (episodes is empty — no up-next element is rendered).
         if (episodes.length > 1 && activeEp < episodes.length - 1) showUpNext();
+      });
+      // Volume persistence: the native controls fire volumechange when the visitor adjusts
+      // the level; save it (rounded) and carry it into future elements so server/quality/
+      // episode swaps keep the same volume. Only the LEVEL is persisted — the muted flag
+      // also fires volumechange but leaves el.volume unchanged, so muting is a no-op write
+      // of the same value (mute state is deliberately not remembered).
+      video.addEventListener("volumechange", () => {
+        const v = Number.isFinite(video.volume) ? video.volume : 1;
+        volumePref = Math.round(v * 1000) / 1000;
+        try { localStorage.setItem(VOLUME_PREF_KEY, String(volumePref)); } catch { /* ignore */ }
       });
     }
 
@@ -1039,6 +1056,10 @@
       // The viewer's chosen speed applies to every new element (HTMLMediaElement
       // playbackRate works for both <video> and <audio>; 1x default via the select).
       if (rate) el.playbackRate = parseFloat(rate.value) || 1;
+      // The persisted volume level applies to every new element (HTMLMediaElement.volume
+      // works for both <video> and <audio>; 1 = browser default). This set happens before
+      // track() attaches the volumechange listener, so it never re-persists on its own.
+      el.volume = volumePref;
       el.setAttribute("aria-label", `${kind === "audio" ? "Listen to" : "Watch"} ${title}`);
       wrap.replaceChildren(el);
       track(el);
@@ -1062,6 +1083,19 @@
         if (stored !== null && [...rate.options].some((o) => o.value === stored)) rate.value = stored;
       } catch { /* storage unavailable */ }
     }
+
+    // Restore the persisted volume LEVEL (scope: level only — mute state is deliberately
+    // not persisted). Validated to HTMLMediaElement's 0..1 range so a corrupt or foreign
+    // value falls back to the browser default (1); cleared storage = first visit. apply()
+    // sets el.volume on every rebuilt element, so the restored value carries across
+    // server/quality/episode swaps; the embed iframe (archive.org's own player) is
+    // untouched. The native controls fire volumechange when the visitor adjusts the level,
+    // which persists the new value (track()).
+    let volumePref = 1;
+    try {
+      const stored = parseFloat(localStorage.getItem(VOLUME_PREF_KEY) || "");
+      if (Number.isFinite(stored) && stored >= 0 && stored <= 1) volumePref = stored;
+    } catch { /* storage unavailable */ }
 
     server.addEventListener("change", () => {
       try { localStorage.setItem(SERVER_PREF_KEY, server.value); } catch { /* ignore */ }
