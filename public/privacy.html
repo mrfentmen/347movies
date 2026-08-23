@@ -91,6 +91,22 @@
   <p>Films play through the Internet Archive's embedded player. When you press play, archive.org's player, cookies, and privacy practices apply — the same as visiting archive.org directly.</p>
   <p>Affiliate links go to third-party retailers (such as Amazon); the retailer's privacy policy applies after you click.</p>
 
+  <h2>What the player remembers</h2>
+  <p>The native player keeps a few small preferences on your own device so your choices stick
+  between visits. They live in your browser's local storage, under keys prefixed
+  <code>347movies.</code> — the same storage your watchlist uses:</p>
+  <ul>
+    <li>Your <strong>server choice</strong> — the embedded archive.org player, a direct stream, or a mirror node (<code>347movies.serverPref</code>)</li>
+    <li>Your <strong>playback speed</strong> (<code>347movies.ratePref</code>)</li>
+    <li>Your <strong>volume level</strong> (<code>347movies.volumePref</code>)</li>
+    <li>Where you left off in a film or episode, for the “Continue watching” row (<code>347movies.progress.v1</code>)</li>
+    <li>Your light/dark theme choice (<code>347movies.theme.v1</code>)</li>
+  </ul>
+  <p>These preferences are stored <strong>only in your browser, on your device</strong>. They are
+  never transmitted to our servers or to archive.org, and they disappear when you clear your
+  browser's site data. Quality and captions are <strong>not</strong> stored — they reset to the
+  defaults on each visit.</p>
+
   <h2>The page-view counter</h2>
   <p>The <a href="/advertise">advertise page</a> shows approximate traffic numbers, and they come from a deliberately minimal first-party counter. Each page load reports its path to our own <code>/api/view</code>; the server adds one to an aggregate daily bucket — nothing more. We store no IP address, no browser or device details, no account, and no identifier; we set no cookie for it and read none; and the count can never be traced back to you.</p>
   <p>Counts are approximate by design: a view is a JavaScript-enabled page load (no-JS visitors and bots that don't run the page's script aren't counted), the numbers live in a short-lived edge cache (expiring after roughly a month, then the count starts again), and the client report is a single fire-and-forget request with no retries. The aggregate totals — never any individual's activity — are what the advertise page displays. We never sell or share the numbers, and we can't use them to identify anyone.</p>
@@ -116,7 +132,7 @@
 
   <h2>Changes</h2>
   <p>If this policy ever changes, this page will change first, with a dated entry. We will never start collecting data silently.</p>
-  <p>Last updated: August 17, 2026.</p>
+  <p>Last updated: August 23, 2026.</p>
 </main>
 <footer class="site-footer">
   <div class="container footer-inner">

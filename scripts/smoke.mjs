@@ -295,6 +295,7 @@ try {
   ok(freshHtml.includes("contactae2000@gmail.com"), "Organization carries the advertised contact email");
   const privacy = await (await request("GET", `/privacy?smoke=${Date.now()}`)).text();
   ok(privacy.includes("Advertising — the standing disclosure"), "privacy page carries the ad-network disclosure (constitution §5)");
+  ok(privacy.includes("What the player remembers"), "privacy page discloses the localStorage player preferences (constitution §5)");
   const advertise = await (await request("GET", `/advertise?smoke=${Date.now()}`)).text();
   ok(advertise.includes('id="advertise-form"'), "advertise page carries the inquiry form");
   ok(advertise.includes("rate-card") && advertise.includes("Starting rate"), "advertise page carries the rate card");
