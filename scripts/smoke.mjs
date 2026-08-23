@@ -205,6 +205,7 @@ try {
   ok(hsts.includes("preload"), "HSTS preload");
   ok(res.headers.get("x-content-type-options") === "nosniff", "nosniff");
   ok(res.headers.get("x-frame-options") === "SAMEORIGIN", "frame options");
+  ok(res.headers.get("cross-origin-opener-policy") === "same-origin", "COOP same-origin");
 } catch (err) {
   failures += 1;
   checks += 1;
@@ -235,6 +236,7 @@ try {
   ok((res.headers.get("strict-transport-security") || "").includes("preload"), "function route HSTS preload");
   ok(res.headers.get("x-content-type-options") === "nosniff", "function route nosniff");
   ok(res.headers.get("x-frame-options") === "SAMEORIGIN", "function route frame options");
+  ok(res.headers.get("cross-origin-opener-policy") === "same-origin", "function route COOP same-origin");
 } catch (err) {
   failures += 1;
   checks += 1;

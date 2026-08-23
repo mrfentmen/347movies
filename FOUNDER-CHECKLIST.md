@@ -25,6 +25,20 @@ deploys (the one in `.env` as `CLOUDFLARE_API_TOKEN`) and **Roll** (or delete + 
 4. Optionally purge the old value from history with `git filter-repo`/BFG + force-push
 (the branch tip is already clean; this is belt-and-braces once rotation is done).
 
+**2026-08-23 — also rotate anything pasted in chat sessions.** Two live credentials were
+pasted in plaintext into the agent chat (not into the repo — verified: neither value exists
+in git history or any tracked file): the **current Pages deploy token** (`cfut_IZLVL…` in
+`.env`) and a **GitHub PAT** (`ghp_qGSdr…`). Chat logs are an exposure vector on the same
+basis as git history: assume compromised, retire, recreate.
+
+1. Cloudflare: as above, roll the token currently in `.env` and update the file (stays
+   gitignored). Verify with `npm run deploy`.
+2. GitHub: https://github.com/settings/tokens → revoke the `ghp_qGSdr…` token (it is not
+   stored in this repo; nothing here needs it). If a repo-scoped fine-grained token is
+   needed later, create one with the minimum scope and never paste it into chat.
+3. Since 2026-08-23 the whole-tree CI secret scan also matches `ghp_`/`github_pat_`/`sk-`/
+   `AKIA` token families, so a re-paste into any file fails CI before it can ship.
+
 ---
 
 ## 1. KV cache (24h catalog cache) — needs a KV-scoped token

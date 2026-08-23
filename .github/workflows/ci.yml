@@ -34,10 +34,13 @@ jobs:
           # Whole-tree guard: the 2026-08-16 incident put a live Cloudflare deploy
           # token in tests/, outside the deploy scan's roots (public/functions/lib/
           # wrangler.jsonc). Anything token-shaped anywhere now fails CI. The only
-          # allowed occurrences are the three synthetic scanner fixtures in
+          # allowed occurrences are the synthetic scanner fixtures in
           # tests/deploy.test.ts, excluded verbatim below — a real token pasted into
-          # the same file still fails.
-          HITS=$(grep -rInE --exclude-dir=.git '\b(?:cfut_|CF_API_TOKEN|CLOUDFLARE_API_TOKEN)[A-Za-z0-9_=.-]{8,}\b' . || true)
+          # the same file still fails. 2026-08-23: widened past the cfut_/Cloudflare
+          # prefixes to the whole token family an agent or founder might paste into a
+          # file — GitHub PATs (ghp_), fine-grained (github_pat_), OpenAI (sk-), AWS
+          # (AKIA) — each branch is complete so a real key matches at full length.
+          HITS=$(grep -rInE --exclude-dir=.git '\b(?:cfut_[A-Za-z0-9_=.-]{8,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|CF_API_TOKEN[A-Za-z0-9_=.-]{8,}|CLOUDFLARE_API_TOKEN[A-Za-z0-9_=.-]{8,})\b' . || true)
           HITS=$(printf '%s\n' "$HITS" | grep -vF -e 'cfut_syntheticFixture00000000000000000000000000' -e 'cfut_ABCdef123XYZ456abcDEF789ghiJKL012mnoPQR345' || true)
           if [ -n "$HITS" ]; then
             echo "::error::token-shaped string found in the tree:"

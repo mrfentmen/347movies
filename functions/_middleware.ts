@@ -75,7 +75,14 @@ function securityHeaders(env: Env): Record<string, string> {
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "SAMEORIGIN",
-    "Referrer-Policy": "strict-origin-when-cross-origin",  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    // COOP same-origin: isolates this site's top-level browsing context from any
+    // cross-origin opener (no popup flows exist — all target=_blank links carry
+    // rel=noopener; the archive.org player is an iframe, unaffected). Hardens
+    // against cross-origin window tampering / Spectre-style side channels from a
+    // malicious opener and keeps window.name from being shared across origins.
+    "Cross-Origin-Opener-Policy": "same-origin",
 };
 }
 
