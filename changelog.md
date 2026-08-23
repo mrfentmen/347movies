@@ -4,7 +4,40 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-22 — Playback speed selector on the native player (deploy 39ec4d45, 490 checks)
+## 2026-08-23 — Security hardening pass: widened CI secret scan, COOP header, token-rotation docs (deploy df4b441d, 492 checks)
+
+- Audit first (no fixes needed for the headline concerns): **no API keys reach the
+  browser** — `YOUTUBE_API_KEY` is used only server-side in `functions/api/youtube.ts`
+  (never rendered; `/api/youtube` still honestly reports `enabled:false` because the key
+  is not configured); `/api/ad-config` serves only public-by-design values (AdSense loader
+  URL + slot ids, which appear in HTML once enabled); `.env` is gitignored and holds the
+  only secret; **no token-shaped string exists in git history or any tracked file**;
+  every server fetch is allowlisted (archive.org + the site's own origin — no SSRF);
+  `npm audit` 0 vulnerabilities (zero runtime deps). Verified the whole-tree CI scan and
+  the new pattern locally before shipping.
+- **Widened the whole-tree CI secret scan** past Cloudflare `cfut_` shapes to the whole
+  token family an agent or founder might paste into a file: GitHub PATs (`ghp_`),
+  fine-grained (`github_pat_`), OpenAI (`sk-`), AWS (`AKIA`) — each branch complete so a
+  real key matches at full length. Locally verified: all four classes match, the tracked
+  tree stays clean (the only hit is the gitignored `.env`, which CI never checks out).
+- **Added `Cross-Origin-Opener-Policy: same-origin`** to the middleware and static
+  `_headers` (no popup flows exist; every `target=_blank` carries `rel=noopener`; the
+  archive.org player is an iframe and unaffected). Two new smoke pins — verified live on
+  both `/` and `/api/health`.
+- **FOUNDER-CHECKLIST:** documented that the current deploy token (`cfut_IZLVL…` in
+  `.env`) and a GitHub PAT (`ghp_qGSdr…`) were pasted in plaintext chat sessions and must
+  be rotated (assume compromised; retire + recreate — the code paths need neither).
+- Content probe (the "more movies/TV/anime" ask): the licensed archive.org well remains
+  dry for new TV/anime collections — `ClassicAnime`, `JapaneseAnimation`,
+  `japanese_cartoons`, `oldtv`, `televisionarchives` all return **0 licensed items**
+  through the gate, and `anime` (1,743 licensed, 24 pre-1975) / `classic_tv` (2,514)
+  match the registered pool counts exactly. The weekly license-sweep workflow keeps
+  auto-watching; no new collection exists to register.
+- **Verified:** typecheck clean, 214/214 tests, dev + canonical smoke 492/492 (two new
+  COOP pins), live `cross-origin-opener-policy: same-origin` on `/` and `/api/health`.
+- Commit `3abb405`, deploy `df4b441d` verified production.
+
+
 
 - A small rate control (0.5x–2x, default 1x) on the player-tools row, consistent with the
   quality/server controls — same label+select markup, zero new CSS (`.player-tools` styles
