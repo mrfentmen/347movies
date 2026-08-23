@@ -4,7 +4,28 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Docs-only fast path in the pre-commit hook (no deploy — repo-side only)
+## 2026-08-23 — Persisted playback volume (deploy aea6caf3, 494 checks)
+
+- The viewer's volume LEVEL now survives reloads and repeat visits, completing the player
+  preference set (server, quality, captions, rate, volume) — a `347movies.volumePref` key
+  mirroring the rate pattern. Restored on load and validated to HTMLMediaElement's 0..1
+  range (corrupt/foreign values like `9.9` or `loud` fall back to the browser default 1;
+  cleared = first visit). Scope is the LEVEL only — mute state is deliberately not
+  persisted (muting fires volumechange but leaves the level, a no-op write of the same
+  value). The media element is rebuilt by apply() on every server/quality/episode swap, so
+  apply() sets el.volume on each new element (restore runs before the initial apply()); the
+  native controls' volumechange persists the level (rounded) and carries it into future
+  elements. Audio behaves identically (HTMLMediaElement.volume); the embed path is
+  archive.org's own player and is untouched.
+- **Verified:** typecheck clean, 216/216 tests, dev + canonical smoke 494/494 (new pin:
+  bundle carries `347movies.volumePref`), real-browser check (system Chrome): fresh/cleared
+  -> default 1; 0.4 persisted + applied; restores after reload and holds during playback;
+  survives a quality swap; corrupt `9.9` and non-numeric `loud` -> default 1; audio
+  persists + restores 0.7; mute leaves the stored level untouched; embed path untouched.
+- Commit `46f884c`, deploy `aea6caf3` verified production; live bundle carries
+  `347movies.volumePref`.
+
+
 
 - When every staged file is docs-only (.md/.markdown/.txt — changelog, ledger, checklists,
   AGENTS.md), the hook skips the typecheck + unit-test gates so the frequent docs/ledger
