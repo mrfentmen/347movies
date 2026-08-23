@@ -29,25 +29,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
       - name: Scan for token-shaped strings
         run: |
           # Whole-tree guard: the 2026-08-16 incident put a live Cloudflare deploy
           # token in tests/, outside the deploy scan's roots (public/functions/lib/
-          # wrangler.jsonc). Anything token-shaped anywhere now fails CI. The only
-          # allowed occurrences are the synthetic scanner fixtures in
-          # tests/deploy.test.ts, excluded verbatim below — a real token pasted into
-          # the same file still fails. 2026-08-23: widened past the cfut_/Cloudflare
-          # prefixes to the whole token family an agent or founder might paste into a
-          # file — GitHub PATs (ghp_), fine-grained (github_pat_), OpenAI (sk-), AWS
-          # (AKIA) — each branch is complete so a real key matches at full length.
-          HITS=$(grep -rInE --exclude-dir=.git '\b(?:cfut_[A-Za-z0-9_=.-]{8,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|CF_API_TOKEN[A-Za-z0-9_=.-]{8,}|CLOUDFLARE_API_TOKEN[A-Za-z0-9_=.-]{8,})\b' . || true)
-          HITS=$(printf '%s\n' "$HITS" | grep -vF -e 'cfut_syntheticFixture00000000000000000000000000' -e 'cfut_ABCdef123XYZ456abcDEF789ghiJKL012mnoPQR345' || true)
-          if [ -n "$HITS" ]; then
-            echo "::error::token-shaped string found in the tree:"
-            printf '%s\n' "$HITS"
+          # wrangler.jsonc). The single implementation (scripts/check-secrets.ts) is
+          # shared end-to-end — the pre-commit hook, npm test, and this job all run
+          # the same scan over git-tracked files, so the pattern can never drift
+          # between CI and the hook. The synthetic scanner fixtures in
+          # tests/deploy.test.ts are excluded inside the script. In CI the checkout
+          # is clean, so git-tracked == the whole tree (the old inline grep found
+          # nothing the script misses here).
+          if ! node scripts/check-secrets.ts; then
+            echo "::error::token-shaped string found in the tree (see script output above)"
             exit 1
           fi
-          echo "ok: no token-shaped strings outside the synthetic fixtures"
 
   smoke:
     name: Live smoke (local dev server)

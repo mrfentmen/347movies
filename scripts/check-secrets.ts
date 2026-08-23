@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
  * Whole-tree secret scan — the single implementation of the widened token-family scan,
- * shared by the pre-commit hook (scripts/install-git-hooks.mjs) and `npm test`.
+ * shared end-to-end by the pre-commit hook (scripts/install-git-hooks.mjs), `npm test`, and
+ * the CI secrets-scan job (.github/workflows/ci.yml calls this script directly), so the
+ * pattern can never drift between CI and the hook.
  *
- * Mirrors the CI secrets-scan grep semantics (.github/workflows/ci.yml — keep the pattern in
- * sync): any token-shaped string in any tracked file fails (exit 1), with the only allowed
+ * Any token-shaped string in any git-tracked file fails (exit 1), with the only allowed
  * occurrences being the synthetic scanner fixtures in tests/deploy.test.ts. The pattern
  * covers the token families an agent or founder might paste into a file: Cloudflare Pages
  * (cfut_), GitHub PATs (ghp_), fine-grained (github_pat_), OpenAI (sk-), AWS (AKIA) — each
