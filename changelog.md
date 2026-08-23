@@ -4,7 +4,23 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Security hardening pass: widened CI secret scan, COOP header, token-rotation docs (deploy df4b441d, 492 checks)
+## 2026-08-23 — Pre-commit hook running the whole-tree secret scan (no deploy — repo-side only)
+
+- The widened token-family scan (cfut_/ghp_/github_pat_/sk-/AKIA) now runs **before a
+  paste can reach the tree**: `scripts/check-secrets.ts` is the single scan implementation
+  (branch group byte-identical to the CI secrets-scan grep), `scripts/install-git-hooks.mjs`
+  wires it into `.git/hooks/pre-commit` via `npm postinstall` (idempotent; preserves an
+  existing custom hook; no-ops outside a git checkout), and `npm test` runs the scan first
+  so CI enforces the same pattern the hook uses.
+- **Drift guard:** `tests/check-secrets.test.ts` pins the scan — one full-length key per
+  token family must be flagged, the synthetic deploy fixtures and clean files must pass —
+  so a refactor that weakens the pattern fails CI.
+- **Verified:** hook installed + executable; clean tree passes; a staged `ghp_` token
+  blocked with exit 1 naming the file; the hook itself fired on this commit's `git commit`;
+  typecheck clean, **216/216** tests (214 + 2 new). No site code changed — no deploy.
+- Commit `a467f8e`.
+
+
 
 - Audit first (no fixes needed for the headline concerns): **no API keys reach the
   browser** — `YOUTUBE_API_KEY` is used only server-side in `functions/api/youtube.ts`
