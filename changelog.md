@@ -4,7 +4,26 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Unify the CI secrets-scan job on scripts/check-secrets.ts (no deploy — repo-side only)
+## 2026-08-23 — Extend the pre-commit hook to run typecheck and the unit tests (no deploy — repo-side only)
+
+- The hook now gates every commit on the full battery: `scripts/check-secrets.ts`, then
+  `npm run typecheck`, then `npm test` — a token paste or broken code never reaches the
+  tree. The installer upgrades a previously-generated hook (the secret-scan-only version)
+  in place — verified against the real installed hook — while still preserving any
+  genuinely custom hook.
+- **Correction to the commit message's claim:** the suite is NOT fully network-free —
+  `tests/archive.test.ts` deliberately runs live `[integration]` checks against the real
+  archive.org API (through `lib/archive.ts`; ~2s total, 216/216 currently passing). The
+  hook runs `npm test` exactly as CI does, so an archive.org outage or rate-limit would
+  block commits — fail-closed, which is the correct behavior for a site whose entire
+  catalog is archive.org. All other tests are mocked.
+- **Verified end-to-end:** hook passes on the clean tree (exit 0); a staged
+  `lib/tmp-broken.ts` type error blocks at typecheck (exit 1, exact TS2322 shown); a staged
+  failing test blocks at the test gate (exit 1, `not ok 189`); and the hook gated this very
+  commit's `git commit` through all three checks. Typecheck clean, 216/216 tests.
+- Commit `c5afdce`.
+
+
 
 - The whole-tree secret scan now has exactly **one implementation shared end-to-end**: the
   pre-commit hook, `npm test`, and the CI `secrets-scan` job all run
