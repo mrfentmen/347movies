@@ -19,7 +19,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   `/privacy` serves the section, deploy verified production via the Pages API.
 - Commit `41f6417`, deploy `e25d24db` verified production.
 
- (deploy aea6caf3, 494 checks)
+---
+
+## 2026-08-23 — Persisted playback volume (deploy aea6caf3, 494 checks)
 
 - The viewer's volume LEVEL now survives reloads and repeat visits, completing the player
   preference set (server, quality, captions, rate, volume) — a `347movies.volumePref` key
@@ -40,7 +42,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 - Commit `46f884c`, deploy `aea6caf3` verified production; live bundle carries
   `347movies.volumePref`.
 
+---
 
+## 2026-08-23 — Docs-only fast path in the pre-commit hook (no deploy — repo-side only)
 
 - When every staged file is docs-only (.md/.markdown/.txt — changelog, ledger, checklists,
   AGENTS.md), the hook skips the typecheck + unit-test gates so the frequent docs/ledger
@@ -56,7 +60,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   This ledger commit itself is a docs-only commit, so the fast path runs on it for real.
 - Commit `f438e9d`.
 
+---
 
+## 2026-08-23 — Extend the pre-commit hook to run typecheck and the unit tests (no deploy — repo-side only)
 
 - The hook now gates every commit on the full battery: `scripts/check-secrets.ts`, then
   `npm run typecheck`, then `npm test` — a token paste or broken code never reaches the
@@ -75,7 +81,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   commit's `git commit` through all three checks. Typecheck clean, 216/216 tests.
 - Commit `c5afdce`.
 
+---
 
+## 2026-08-23 — Unify the CI secrets-scan job on scripts/check-secrets.ts (no deploy — repo-side only)
 
 - The whole-tree secret scan now has exactly **one implementation shared end-to-end**: the
   pre-commit hook, `npm test`, and the CI `secrets-scan` job all run
@@ -89,7 +97,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   pushed commit (also validates the workflow YAML). No site code changed — no deploy.
 - Commit `d518d4b`.
 
+---
 
+## 2026-08-23 — Persisted playback rate (deploy edfd74fc, 493 checks)
 
 - The viewer's chosen speed now survives page reloads and repeat visits via the existing
   localStorage preference pattern: a `347movies.ratePref` key mirroring
@@ -109,7 +119,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 - Commit `0029c2a`, deploy `edfd74fc` verified production; live bundle carries
   `347movies.ratePref`.
 
+---
 
+## 2026-08-23 — Pre-commit hook running the whole-tree secret scan (no deploy — repo-side only)
 
 - The widened token-family scan (cfut_/ghp_/github_pat_/sk-/AKIA) now runs **before a
   paste can reach the tree**: `scripts/check-secrets.ts` is the single scan implementation
@@ -125,7 +137,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   typecheck clean, **216/216** tests (214 + 2 new). No site code changed — no deploy.
 - Commit `a467f8e`.
 
+---
 
+## 2026-08-23 — Security hardening pass: widened CI secret scan, COOP header, token-rotation docs (deploy df4b441d, 492 checks)
 
 - Audit first (no fixes needed for the headline concerns): **no API keys reach the
   browser** — `YOUTUBE_API_KEY` is used only server-side in `functions/api/youtube.ts`
@@ -158,7 +172,9 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
   COOP pins), live `cross-origin-opener-policy: same-origin` on `/` and `/api/health`.
 - Commit `3abb405`, deploy `df4b441d` verified production.
 
+---
 
+## 2026-08-22 — Playback speed selector on the native player (deploy 39ec4d45, 490 checks)
 
 - A small rate control (0.5x–2x, default 1x) on the player-tools row, consistent with the
   quality/server controls — same label+select markup, zero new CSS (`.player-tools` styles
