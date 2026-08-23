@@ -4,7 +4,21 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Persisted playback rate (deploy edfd74fc, 493 checks)
+## 2026-08-23 — Unify the CI secrets-scan job on scripts/check-secrets.ts (no deploy — repo-side only)
+
+- The whole-tree secret scan now has exactly **one implementation shared end-to-end**: the
+  pre-commit hook, `npm test`, and the CI `secrets-scan` job all run
+  `scripts/check-secrets.ts` over git-tracked files. The inline grep (duplicated regex +
+  fixture excludes) is gone from the workflow, so the pattern can never drift between CI
+  and the hook. The job gains `setup-node` (node 22 — the type-stripped .ts needs it) and
+  keeps the `::error::` annotation on failure. In CI the checkout is clean, so
+  git-tracked == the whole tree — nothing the old grep caught is missed.
+- **Verified:** script exit 0 on the clean tree and exit 1 naming a staged `ghp_` token
+  (the exact CI path); typecheck clean, 216/216 tests; CI `secrets-scan` job green on the
+  pushed commit (also validates the workflow YAML). No site code changed — no deploy.
+- Commit `d518d4b`.
+
+
 
 - The viewer's chosen speed now survives page reloads and repeat visits via the existing
   localStorage preference pattern: a `347movies.ratePref` key mirroring
