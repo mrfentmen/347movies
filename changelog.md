@@ -4,7 +4,22 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
-## 2026-08-23 — Persisted playback volume (deploy aea6caf3, 494 checks)
+## 2026-08-23 — Privacy page discloses the localStorage player preferences (deploy e25d24db, 495 checks)
+
+- The privacy page now has a plain-language "What the player remembers" section disclosing
+  the viewer preferences the native player persists in localStorage, under the existing
+  `347movies.` prefix: server choice (`serverPref`), playback speed (`ratePref`), volume
+  (`volumePref`), plus the pre-existing watchlist/progress/theme keys. It states accurately
+  that these live only in the viewer's own browser, are never transmitted to the server,
+  and disappear when site data is cleared. Scope is honest disclosure only: quality and
+  captions state are NOT persisted (session-only), so they are deliberately not claimed.
+- Smoke pin added next to the existing privacy guards (page carries "What the player
+  remembers").
+- **Verified:** dev smoke 495/495 (new pin), canonical smoke 495/495 on production, live
+  `/privacy` serves the section, deploy verified production via the Pages API.
+- Commit `41f6417`, deploy `e25d24db` verified production.
+
+ (deploy aea6caf3, 494 checks)
 
 - The viewer's volume LEVEL now survives reloads and repeat visits, completing the player
   preference set (server, quality, captions, rate, volume) — a `347movies.volumePref` key
