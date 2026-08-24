@@ -130,6 +130,22 @@ const KNOWN_CANDIDATES = new Set([
   // archive.org internal markers (not real subject collections):
   "geo_restricted",          // system collection for geo-restricted content
   "movie_trailers_unsorted", // internal staging (same pattern as feature_films_unsorted)
+  // 2026-08-24 aggregation-probe follow-up run — adjudicated by provenance sampling:
+  "newsandpublicaffairs",    // top-level subject mega-collection; gov subset already in usgovfilms
+  "ephemera",                // top-level subject mega-collection; 412 items already in avgeeks; real signal is its sub-collections
+  "classic_tv_1950s",        // self-declared marks on copyrighted TV (Bonanza, Beverly Hillbillies)
+  "classic_tv_1960s",        // self-declared marks on copyrighted TV
+  "television_inbox",        // archive.org TV ingest inbox (junk drawer)
+  "more_animation",          // mixed: genuine Blender CC films + self-declared PD on copyrighted Popeye
+  "anime_miscellaneous",     // pirated anime with fake publicdomain marks (worst class)
+  "classic_cartoons",        // 46 items, mixed marks (some genuine PD Betty Boop, one by-nc-nd)
+  "movie_trailers",          // 100% films-union overlap (curated view, not new content)
+  "prelingerhomemovies",     // 100% films-union overlap (curated view)
+  "computersandtechvideos",  // modern tech tutorials (self-declared marks)
+  "macmost",                 // modern Mac tutorials, by-nc-nd, off-theme
+  "cordkillersshow",         // modern podcast episodes (CC), off-theme
+  "IndiaCulture",            // Indian TV serials (Ramayan), CC-NC, off-theme for the golden-age catalog
+  "JaiGyan",                 // uploader account; identical content to IndiaCulture
 ]);
 
 /** Junk-drawer collection markers to strip before counting. */
@@ -316,7 +332,12 @@ async function runProbe(sampleSize: number): Promise<AggregationReport> {
   const newCollections: GatedCandidate[] = [];
 
   // Probe up to 15 candidates (keeps CI runtime reasonable; the top ones by
-  // sample count are the most interesting).
+  // sample count are the most interesting). NOTE: this top-15-by-sample-count
+  // cutoff is a first-pass signal, not the whole answer — the junk-drawer long
+  // tail (gamevideos, fringe, denveropenmedia, …) regenerates faster than it can
+  // be suppressed, and small institutional collections (e.g.
+  // nationalfilmpreservationfoundation, 185 films) rank below the junk and are
+  // only found by step-5 provenance drilling into subject mega-collections.
   for (const [name, sampleCount] of unknown.slice(0, 15)) {
     const gateRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND mediatype:movies`);
     if (gateRes.error) {
