@@ -248,3 +248,31 @@ complete.**
 
 **Conclusion (5th confirmation): the audio ceiling holds too (~27k audio items / 4 pools).**
 The catalog's ~76k-item total across 18 pools is complete on both the video and audio sides.
+
+## Re-verification 2026-08-24 (audio, aggregation method — the first non-name-guessing audio probe)
+
+Applied the aggregation method (sample top 10,000 licensed audio by downloads, aggregate
+`collection` fields) to `mediatype:audio`. **No new institutional audio collections exist —
+the four registered pools (otr, music, audiobooks, records) remain complete.** The method
+surfaced the collections name-guessing never saw, and they are all rejectable:
+
+- **`audio_bookspoetry` (22,479 gated)** — subject mega-collection; 18,358 (82%) already
+  inside `librivoxaudio`; the 4,121 "exclusive" remainder is still LibriVox community
+  content missing the `librivoxaudio` tag (Spanish covers, French/German literature).
+  Curated view + tagging noise, not a new source.
+- **`folksoundomy` (127,010)** — the community music/podcast junk drawer (Programming
+  Throwdown, Music Manumit, Radio Wolne Media, religious reuploads), self-declared marks.
+  Same failure mode as `opensource_audio`.
+- **`radioshowarchive` (50,923) / `radioshowinbox` (38,836)** — modern podcasts (El Salto
+  Radio, VOA) plus the archive.org ingest inbox.
+- **`hifidelity` (32,057) / `cratediggers` (15,193) / `audio_islamic` (9,222)** — modern
+  background music, Indonesian pop, mixed podcasts/religion.
+- **`theoldtimeradio` (246), `lumedwards` (594), and single-show OTR (`fibbermcgee` 20,
+  `suspenseradio` 32, `jackbennyradio` 21)** — 100% inside the existing `oldtimeradio` pool
+  (curated views of already-registered content).
+- **Netlabels** (`comfort_stand` 87, `clinicalarchives` 515, `dustedwaxkingdom` 394) —
+  modern CC music, off-theme for the golden-age catalog.
+
+**Conclusion (6th confirmation, now method-consistent with the video side): the audio
+ceiling holds (~27k audio items / 4 pools).** The name-guessing conclusion survives the
+aggregation method unchanged.
