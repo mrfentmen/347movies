@@ -47,15 +47,26 @@ jobs:
           ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/license-sweep.json','utf8')).anyChange")
           echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
           echo "Re-probe complete (anyChange=$ANY)."
-      - name: Aggregation-based collection probe
+      - name: Aggregation-based collection probe (movies + audio + etree)
         id: aggregation
         run: |
-          # The reverse of the name-guessing sweep: sample the licensed population by
-          # downloads and aggregate their real collection fields, surfacing collections
-          # no prior sweep named (documented in docs/institutional-collections-research.md).
-          # Exits 0 either way; a quiet week reports "No new collections found."
-          node scripts/aggregation-probe.ts --json --body-out=/tmp/aggregation-probe.md > /tmp/aggregation-probe.json
-          ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/aggregation-probe.json','utf8')).anyChange")
+          # The reverse of the name-guessing sweep, now across all three catalog
+          # mediatypes: sample the licensed population by downloads and aggregate
+          # their real collection fields, surfacing collections no prior sweep named
+          # (documented in docs/institutional-collections-research.md). Exits 0 either
+          # way; a quiet week reports "No new collections found." Curated views (100%
+          # inside a registered pool) are reported but do NOT set anyChange — only
+          # genuinely-new (disjoint) collections open an issue.
+          : > /tmp/aggregation-probe.md
+          ANY=false
+          for MT in movies audio etree; do
+            node scripts/aggregation-probe.ts --mediatype="$MT" --json --body-out="/tmp/agg-$MT.md" > "/tmp/agg-$MT.json"
+            MT_ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/agg-$MT.json','utf8')).anyChange")
+            cat "/tmp/agg-$MT.md" >> /tmp/aggregation-probe.md
+            printf '\n' >> /tmp/aggregation-probe.md
+            if [ "$MT_ANY" = "true" ]; then ANY=true; fi
+            echo "aggregation probe ($MT): anyChange=$MT_ANY"
+          done
           echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
           echo "Aggregation probe complete (anyChange=$ANY)."
       - name: Open the sweep report issue

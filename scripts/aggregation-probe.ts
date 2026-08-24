@@ -3,15 +3,16 @@
  * 347movies — aggregation-based collection probe (dependency-free, Node 22+).
  *
  * Instead of guessing collection names (the pre-2026-08-24 method), this script samples
- * the licensed-movie population by downloads and aggregates their real `collection`
- * fields — letting archive.org tell us which collections actually hold licensed content.
+ * the licensed population (movies, audio, or etree — see --mediatype) by downloads and
+ * aggregates their real `collection` fields — letting archive.org tell us which
+ * collections actually hold licensed content.
  * The method is documented in docs/institutional-collections-research.md (§ Method).
  *
- * It cross-references against the 26 already-registered pool collections and the ~50
+ * It cross-references against the already-registered pool collections and the
  * candidate/rejected collection names, then gate-checks any genuinely new collections
  * (never before seen by any sweep) to see whether they pass the license gate and are
- * disjoint from the films union. The output is a short JSON report for the workflow
- * and an optional markdown file for the issue body.
+ * disjoint from the already-registered pools of the same mediatype. The output is a
+ * short JSON report for the workflow and an optional markdown file for the issue body.
  *
  * Used by .github/workflows/weekly-license-sweep.yml — runs alongside the per-pool
  * baseline sweep so the weekly issue also surfaces genuinely new collections.
@@ -20,6 +21,7 @@
  *   node scripts/aggregation-probe.ts --json      # JSON report to stdout (workflow)
  *   node scripts/aggregation-probe.ts --body-out=/tmp/agg.md  # also write markdown
  *   node scripts/aggregation-probe.ts --limit=500 # smaller sample (PR CI smoke)
+ *   node scripts/aggregation-probe.ts --mediatype=audio # audio pools (also: etree)
  *
  * When a collection gets registered as a pool, add its name to KNOWN_COLLECTIONS below
  * (the aggregation method must know what's already handled — same maintenance model as
@@ -29,7 +31,7 @@
 import { ARCHIVE_SEARCH_URL, LEGAL_CLAUSE } from "../lib/archive.ts";
 
 const SITE_URL = "https://347movies.pages.dev";
-/** How many licensed movies to sample, sorted by downloads (paginated). */
+/** How many licensed items to sample, sorted by downloads (paginated). */
 const SAMPLE_SIZE = 10_000;
 const PAGE_SIZE = 500;
 /** Collections with fewer items than this are noise — skip the gate check. */
@@ -146,10 +148,80 @@ const KNOWN_CANDIDATES = new Set([
   "cordkillersshow",         // modern podcast episodes (CC), off-theme
   "IndiaCulture",            // Indian TV serials (Ramayan), CC-NC, off-theme for the golden-age catalog
   "JaiGyan",                 // uploader account; identical content to IndiaCulture
+  // 2026-08-24 audio aggregation-probe — adjudicated (see research doc, 6th confirmation):
+  "audio_bookspoetry",       // subject mega-collection; 82% already in librivoxaudio (curated view + tag noise)
+  "folksoundomy",            // community music/podcast junk drawer (self-declared marks)
+  "folksoundomy_music",      // sub-collection of the above
+  "folksoundomy_music_unsorted", // sub-collection of the above
+  "radioshowarchive",        // modern podcasts (self-declared marks)
+  "radioshowinbox",          // archive.org radio ingest inbox
+  "hifidelity",              // modern background music / pop (self-declared marks)
+  "hifidelity_potpourri",    // sub-collection of the above
+  "cratediggers",            // modern podcasts / religion (self-declared marks)
+  "audio_islamic",           // religious reuploads
+  "theoldtimeradio",         // 100% inside oldtimeradio (curated view)
+  "lumedwards",              // 100% inside oldtimeradio (curated view)
+  "fibbermcgee",             // single-show OTR fan collection, inside oldtimeradio
+  "suspenseradio",           // single-show OTR fan collection, inside oldtimeradio
+  "jackbennyradio",          // single-show OTR fan collection, inside oldtimeradio
+  "comfort_stand",           // modern CC netlabel
+  "clinicalarchives",        // modern CC netlabel
+  "dustedwaxkingdom",        // modern CC netlabel
+  "podcasts_miscellaneous",  // modern podcasts
+  "podcasts_compilations",   // modern podcast compilations
+  "audio_foreign",           // non-English misc
+  "livre_audio",             // non-English audiobooks (tag noise)
+  "ytjdradio",               // misc radio rips
+  "bad-panda",               // misc uploads
+  "free-music-charts",       // netlabel charts
+  "tornfleshrecords",        // netlabel
+  "labelnetlabel",           // netlabel
+  "freemusicarchive",        // modern free music (self-declared marks)
 ]);
 
 /** Junk-drawer collection markers to strip before counting. */
 const JUNK_MARKERS = new Set(["community", "ourmedia"]);
+
+/** Per-mediatype sampling + overlap configuration. */
+interface MediatypeConfig {
+  clause: string;       // the mediatype:X Solr clause
+  poolUnion: string;    // collection:(...) of the registered pools for this mediatype
+  overlapLabel: string; // human label for the overlap metric in the markdown report
+  noun: string;         // "movies" / "audio items" / "live-music recordings"
+}
+
+const MEDIATYPES: Record<string, MediatypeConfig> = {
+  movies: {
+    clause: "mediatype:movies",
+    // The films union is the historical overlap baseline (shorts/silents/footage are
+    // curated views of it). Other registered video pools (wwii, newsreels, govfilms, …)
+    // are already in KNOWN_COLLECTIONS, so they never reach the gate-check step.
+    poolUnion: "collection:(feature_films OR prelinger OR moviesandfilms)",
+    overlapLabel: "the films union",
+    noun: "movies",
+  },
+  audio: {
+    clause: "mediatype:audio",
+    poolUnion: "collection:(oldtimeradio OR librivoxaudio OR 78rpm)",
+    overlapLabel: "the registered audio pools",
+    noun: "audio items",
+  },
+  etree: {
+    clause: "mediatype:etree",
+    poolUnion: "collection:(GratefulDead OR etree)",
+    overlapLabel: "the registered music pool",
+    noun: "live-music recordings",
+  },
+};
+
+function mediatypeConfig(mediatype: string): MediatypeConfig {
+  const cfg = MEDIATYPES[mediatype];
+  if (!cfg) {
+    console.error(`ERROR: --mediatype must be one of ${Object.keys(MEDIATYPES).join(", ")}, got "${mediatype}".`);
+    process.exit(2);
+  }
+  return cfg;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -165,16 +237,18 @@ interface GatedCandidate {
   name: string;
   sampleCount: number;   // items in the sample
   gateCount: number;      // items passing the license gate
-  filmsOverlap: number;   // items also in the films union
-  exclusiveCount: number; // items NOT in the films union
-  error?: string;
+  poolOverlap: number;    // items also in the registered pools of this mediatype
+  exclusiveCount: number; // items NOT in the registered pools of this mediatype
 }
 
 interface AggregationReport {
   date: string;
+  mediatype: string;
   candidatesChecked: number;
-  newCollections: GatedCandidate[];
-  anyChange: boolean;
+  newCollections: GatedCandidate[];           // genuinely new: exclusiveCount > 0
+  curatedViews: GatedCandidate[];             // 100% overlap with the registered pools
+  errors: { name: string; error: string }[];  // candidates that failed to gate-check
+  anyChange: boolean;                         // newCollections.length > 0
   sampleSize: number;
 }
 
@@ -186,15 +260,16 @@ interface Args {
   json: boolean;
   bodyOut: string | null;
   limit: number;
+  mediatype: string;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { json: false, bodyOut: null, limit: SAMPLE_SIZE };
+  const args: Args = { json: false, bodyOut: null, limit: SAMPLE_SIZE, mediatype: "movies" };
   for (const arg of argv) {
     if (arg === "--json") args.json = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/aggregation-probe.ts [--json] [--body-out=FILE] [--limit=N]",
+        "Usage: node scripts/aggregation-probe.ts [--json] [--body-out=FILE] [--limit=N] [--mediatype=movies|audio|etree]",
       );
       process.exit(0);
     } else if (arg.startsWith("--body-out=")) {
@@ -206,6 +281,12 @@ function parseArgs(argv: string[]): Args {
         process.exit(2);
       }
       args.limit = n;
+    } else if (arg.startsWith("--mediatype=")) {
+      args.mediatype = arg.slice("--mediatype=".length);
+      if (!(args.mediatype in MEDIATYPES)) {
+        console.error(`ERROR: --mediatype must be one of ${Object.keys(MEDIATYPES).join(", ")}, got "${args.mediatype}".`);
+        process.exit(2);
+      }
     } else {
       console.error(`ERROR: unknown argument "${arg}". See --help.`);
       process.exit(2);
@@ -292,14 +373,15 @@ async function probeCount(query: string): Promise<{ numFound: number; error?: st
 // Core pipeline
 // ---------------------------------------------------------------------------
 
-async function runProbe(sampleSize: number): Promise<AggregationReport> {
+async function runProbe(sampleSize: number, mediatype: string): Promise<AggregationReport> {
   const date = new Date().toISOString().slice(0, 10);
+  const cfg = mediatypeConfig(mediatype);
 
   // 1. Sample the licensed population by downloads.
   const pages = Math.ceil(sampleSize / PAGE_SIZE);
   const allDocs: DocSample[] = [];
   for (let p = 1; p <= pages; p++) {
-    const docs = await fetchPage(`${LEGAL_CLAUSE} AND mediatype:movies`, p);
+    const docs = await fetchPage(`${LEGAL_CLAUSE} AND ${cfg.clause}`, p);
     allDocs.push(...docs);
     if (docs.length < PAGE_SIZE) break; // fewer results than page size = end of results
   }
@@ -324,44 +406,53 @@ async function runProbe(sampleSize: number): Promise<AggregationReport> {
     .sort((a, b) => b[1] - a[1]);
 
   if (unknown.length === 0) {
-    return { date, candidatesChecked: 0, newCollections: [], anyChange: false, sampleSize };
+    return { date, mediatype, candidatesChecked: 0, newCollections: [], curatedViews: [], errors: [], anyChange: false, sampleSize };
   }
 
-  // 4. Gate-check each unknown candidate — license gate + films-union overlap.
-  const filmsUnion = "collection:(feature_films OR prelinger OR moviesandfilms)";
+  // 4. Gate-check each unknown candidate — license gate + overlap with the
+  // already-registered pools of this mediatype. A candidate is "genuinely new"
+  // only when some of its items sit OUTSIDE the registered pools; a 100%-overlap
+  // candidate is a curated view of already-registered content (e.g. every etree
+  // band collection is inside the `etree` catch-all the music pool gates on).
   const newCollections: GatedCandidate[] = [];
+  const curatedViews: GatedCandidate[] = [];
+  const errors: { name: string; error: string }[] = [];
 
   // Probe up to 15 candidates (keeps CI runtime reasonable; the top ones by
   // sample count are the most interesting). NOTE: this top-15-by-sample-count
   // cutoff is a first-pass signal, not the whole answer — the junk-drawer long
-  // tail (gamevideos, fringe, denveropenmedia, …) regenerates faster than it can
-  // be suppressed, and small institutional collections (e.g.
-  // nationalfilmpreservationfoundation, 185 films) rank below the junk and are
-  // only found by step-5 provenance drilling into subject mega-collections.
+  // tail regenerates faster than it can be suppressed, and small institutional
+  // collections rank below the junk and are only found by step-5 provenance
+  // drilling into subject mega-collections.
   for (const [name, sampleCount] of unknown.slice(0, 15)) {
-    const gateRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND mediatype:movies`);
+    const gateRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND ${cfg.clause}`);
     if (gateRes.error) {
-      newCollections.push({ name, sampleCount, gateCount: -1, filmsOverlap: -1, exclusiveCount: -1, error: gateRes.error });
+      errors.push({ name, error: gateRes.error });
       continue;
     }
-    const overlapRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND ${filmsUnion} AND mediatype:movies`);
+    const overlapRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND ${cfg.poolUnion} AND ${cfg.clause}`);
     if (overlapRes.error) {
-      newCollections.push({ name, sampleCount, gateCount: gateRes.numFound, filmsOverlap: -1, exclusiveCount: -1, error: overlapRes.error });
+      errors.push({ name, error: overlapRes.error });
       continue;
     }
     const exclusiveCount = Math.max(0, gateRes.numFound - overlapRes.numFound);
-    newCollections.push({
+    const candidate: GatedCandidate = {
       name, sampleCount,
       gateCount: gateRes.numFound,
-      filmsOverlap: overlapRes.numFound,
+      poolOverlap: overlapRes.numFound,
       exclusiveCount,
-    });
+    };
+    if (exclusiveCount > 0) newCollections.push(candidate);
+    else curatedViews.push(candidate);
   }
 
   return {
     date,
+    mediatype,
     candidatesChecked: Math.min(unknown.length, 15),
     newCollections,
+    curatedViews,
+    errors,
     anyChange: newCollections.length > 0,
     sampleSize,
   };
@@ -372,29 +463,48 @@ async function runProbe(sampleSize: number): Promise<AggregationReport> {
 // ---------------------------------------------------------------------------
 
 function renderMarkdown(report: AggregationReport): string {
+  const cfg = mediatypeConfig(report.mediatype);
   const lines: string[] = [
-    "### 🔬 Aggregation-based probe",
+    `### 🔬 Aggregation-based probe — ${report.mediatype}`,
     "",
-    `Sampled the top ${report.sampleSize.toLocaleString()} licensed movies (sorted by downloads), aggregated their \`collection\` fields, and cross-referenced against **${KNOWN_COLLECTIONS.size}** registered pool collections and **${KNOWN_CANDIDATES.size}** previously-probed candidates.`,
+    `Sampled the top ${report.sampleSize.toLocaleString()} licensed ${cfg.noun} (sorted by downloads), aggregated their \`collection\` fields, and cross-referenced against **${KNOWN_COLLECTIONS.size}** registered pool collections and **${KNOWN_CANDIDATES.size}** previously-probed candidates.`,
     "",
   ];
 
-  if (!report.anyChange) {
+  if (!report.anyChange && report.curatedViews.length === 0 && report.errors.length === 0) {
     lines.push("**No new collections found.** Every collection in the sample is either already registered as a pool or a previously-probed candidate. The catalog ceiling holds.", "");
     return lines.join("\n").trimEnd();
   }
 
-  lines.push(`**${report.newCollections.length} collection(s) are worth reviewing:**`, "");
-  for (const c of report.newCollections) {
-    const archiveUrl = `https://archive.org/search?query=collection%3A${encodeURIComponent(c.name)}`;
-    lines.push(`- **\`${c.name}\`** — ${c.gateCount} license-marked movies (${c.exclusiveCount} exclusive of films union, ${c.filmsOverlap} overlap) — [browse archive.org](${archiveUrl})`);
-    if (c.error) lines.push(`  ⚠️ Probe error: ${c.error}`);
+  if (report.newCollections.length > 0) {
+    lines.push(`**${report.newCollections.length} genuinely-new collection(s) worth reviewing:**`, "");
+    for (const c of report.newCollections) {
+      const archiveUrl = `https://archive.org/search?query=collection%3A${encodeURIComponent(c.name)}`;
+      lines.push(`- **\`${c.name}\`** — ${c.gateCount} license-marked ${cfg.noun} (${c.exclusiveCount} exclusive of ${cfg.overlapLabel}, ${c.poolOverlap} overlap) — [browse archive.org](${archiveUrl})`);
+    }
+    lines.push(
+      "",
+      "**Next step:** sample provenance (item-level `fl=identifier,title,year,licenseurl`, downloads-desc) to confirm these are institutional/curator-applied marks, not self-declared junk. If clean, register them per the pool-wiring checklist.",
+      "",
+    );
   }
-  lines.push(
-    "",
-    "**Next step:** sample provenance (item-level `fl=identifier,title,year,licenseurl`, downloads-desc) to confirm these are institutional/curator-applied marks, not self-declared junk. If clean, register them per the pool-wiring checklist.",
-    "",
-  );
+
+  if (report.curatedViews.length > 0) {
+    lines.push(`**${report.curatedViews.length} curated-view collection(s)** — 100% inside the already-registered pools (${cfg.overlapLabel}), not new content:`, "");
+    for (const c of report.curatedViews) {
+      lines.push(`- \`${c.name}\` (${c.gateCount} license-marked ${cfg.noun}, all already in the registered pools)`);
+    }
+    lines.push("");
+  }
+
+  if (report.errors.length > 0) {
+    lines.push("**⚠️ Probe errors** (not counted — re-run or inspect):", "");
+    for (const e of report.errors) {
+      lines.push(`- \`${e.name}\`: ${e.error}`);
+    }
+    lines.push("");
+  }
+
   return lines.join("\n").trimEnd();
 }
 
@@ -404,13 +514,16 @@ function renderMarkdown(report: AggregationReport): string {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const report = await runProbe(args.limit);
+  const report = await runProbe(args.limit, args.mediatype);
 
   if (args.json) {
     const out = {
       date: report.date,
+      mediatype: report.mediatype,
       anyChange: report.anyChange,
       newCollections: report.newCollections,
+      curatedViews: report.curatedViews,
+      errors: report.errors,
       candidatesChecked: report.candidatesChecked,
       sampleSize: report.sampleSize,
     };

@@ -123,8 +123,13 @@ jobs:
           SWEEP_STATUS=$?
           # stdout only: the probe logs per-page fetch warnings to stderr (graceful
           # degradation), so 2>&1 here would corrupt the JSON the structural check parses.
-          AGG=$(node scripts/aggregation-probe.ts --limit=500 --json)
+          # limit=100 keeps the PR-CI sample fast; the weekly run uses the full 10,000.
+          AGG=$(node scripts/aggregation-probe.ts --limit=100 --json)
           AGG_STATUS=$?
+          AGGA=$(node scripts/aggregation-probe.ts --mediatype=audio --limit=100 --json)
+          AGGA_STATUS=$?
+          AGGE=$(node scripts/aggregation-probe.ts --mediatype=etree --limit=100 --json)
+          AGGE_STATUS=$?
           # Preview the sweep JSON (head is display-only; the structural check below parses
           # the full document, so a truncated preview can't fail the gate).
           echo "$SWEEP" | head -c 400
@@ -146,23 +151,31 @@ jobs:
               console.log(`ok: license-sweep report parsed — ${j.pools.length} pools, ${j.errors.length} errors`);
             });
           '
-          # Structural JSON check for the aggregation probe: must emit a newCollections
-          # array, a numeric candidatesChecked, and the anyChange boolean.
-          echo "$AGG" | node -e '
-            let d = ""; process.stdin.on("data", (c) => (d += c));
-            process.stdin.on("end", () => {
-              let j;
-              try { j = JSON.parse(d); } catch { console.error("::error::aggregation-probe did not emit valid JSON"); process.exit(1); }
-              if (!Array.isArray(j.newCollections)) { console.error("::error::aggregation-probe newCollections field missing"); process.exit(1); }
-              if (typeof j.candidatesChecked !== "number") { console.error("::error::aggregation-probe candidatesChecked field missing"); process.exit(1); }
-              if (typeof j.anyChange !== "boolean") { console.error("::error::aggregation-probe anyChange field missing"); process.exit(1); }
-              console.log(`ok: aggregation-probe report parsed — ${j.newCollections.length} new collections, ${j.candidatesChecked} checked`);
-            });
+          # Structural JSON check for each aggregation-probe mediatype: must emit a
+          # newCollections array, a curatedViews array, and the anyChange boolean.
+          check_probe() {
+            echo "$1" | node -e '
+              let d = ""; process.stdin.on("data", (c) => (d += c));
+              process.stdin.on("end", () => {
+                let j;
+                try { j = JSON.parse(d); } catch { console.error("::error::aggregation-probe did not emit valid JSON"); process.exit(1); }
+                if (!Array.isArray(j.newCollections)) { console.error("::error::aggregation-probe newCollections field missing"); process.exit(1); }
+                if (!Array.isArray(j.curatedViews)) { console.error("::error::aggregation-probe curatedViews field missing"); process.exit(1); }
+                if (typeof j.candidatesChecked !== "number") { console.error("::error::aggregation-probe candidatesChecked field missing"); process.exit(1); }
+                if (typeof j.anyChange !== "boolean") { console.error("::error::aggregation-probe anyChange field missing"); process.exit(1); }
+                console.log(`ok: aggregation-probe(${j.mediatype}) parsed — ${j.newCollections.length} new, ${j.curatedViews.length} curated, ${j.candidatesChecked} checked`);
+              });
           '
+          }
+          check_probe "$AGG"
+          check_probe "$AGGA"
+          check_probe "$AGGE"
           [ "$SCAN_STATUS" -eq 0 ] || { echo "::error::scan-longtail exited $SCAN_STATUS"; exit 1; }
           [ "$SWEEP_STATUS" -eq 0 ] || { echo "::error::license-sweep exited $SWEEP_STATUS"; exit 1; }
-          [ "$AGG_STATUS" -eq 0 ] || { echo "::error::aggregation-probe exited $AGG_STATUS"; exit 1; }
-          echo "ok: all three gate scripts executed against archive.org"
+          [ "$AGG_STATUS" -eq 0 ] || { echo "::error::aggregation-probe (movies) exited $AGG_STATUS"; exit 1; }
+          [ "$AGGA_STATUS" -eq 0 ] || { echo "::error::aggregation-probe (audio) exited $AGGA_STATUS"; exit 1; }
+          [ "$AGGE_STATUS" -eq 0 ] || { echo "::error::aggregation-probe (etree) exited $AGGE_STATUS"; exit 1; }
+          echo "ok: all three gate scripts executed against archive.org (movies + audio + etree)"
 
   browser-batteries:
     name: Browser battery (${{ matrix.target }})
