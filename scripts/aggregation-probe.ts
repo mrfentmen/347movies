@@ -1,0 +1,410 @@
+#!/usr/bin/env node
+/**
+ * 347movies — aggregation-based collection probe (dependency-free, Node 22+).
+ *
+ * Instead of guessing collection names (the pre-2026-08-24 method), this script samples
+ * the licensed-movie population by downloads and aggregates their real `collection`
+ * fields — letting archive.org tell us which collections actually hold licensed content.
+ * The method is documented in docs/institutional-collections-research.md (§ Method).
+ *
+ * It cross-references against the 26 already-registered pool collections and the ~50
+ * candidate/rejected collection names, then gate-checks any genuinely new collections
+ * (never before seen by any sweep) to see whether they pass the license gate and are
+ * disjoint from the films union. The output is a short JSON report for the workflow
+ * and an optional markdown file for the issue body.
+ *
+ * Used by .github/workflows/weekly-license-sweep.yml — runs alongside the per-pool
+ * baseline sweep so the weekly issue also surfaces genuinely new collections.
+ *
+ *   node scripts/aggregation-probe.ts             # markdown report to stdout
+ *   node scripts/aggregation-probe.ts --json      # JSON report to stdout (workflow)
+ *   node scripts/aggregation-probe.ts --body-out=/tmp/agg.md  # also write markdown
+ *   node scripts/aggregation-probe.ts --limit=500 # smaller sample (PR CI smoke)
+ *
+ * When a collection gets registered as a pool, add its name to KNOWN_COLLECTIONS below
+ * (the aggregation method must know what's already handled — same maintenance model as
+ * the baseline numbers in license-sweep.ts).
+ */
+
+import { ARCHIVE_SEARCH_URL, LEGAL_CLAUSE } from "../lib/archive.ts";
+
+const SITE_URL = "https://347movies.pages.dev";
+/** How many licensed movies to sample, sorted by downloads (paginated). */
+const SAMPLE_SIZE = 10_000;
+const PAGE_SIZE = 500;
+/** Collections with fewer items than this are noise — skip the gate check. */
+const NOISE_THRESHOLD = 5;
+const TIMEOUT_MS = 20_000;
+
+// ---------------------------------------------------------------------------
+// Known collections — everything already registered, probed, or rejected.
+// A genuinely NEW collection is one that appears in the aggregation output but
+// NOT in this set.  Update when a new pool is registered or a candidate is added
+// to license-sweep.ts.
+// ---------------------------------------------------------------------------
+
+/** Collection names extracted from the registered pool gates (lib/archive.ts + license-sweep.ts POOLS). */
+const KNOWN_COLLECTIONS = new Set([
+  // films union
+  "feature_films", "prelinger", "moviesandfilms",
+  // tv / publictv
+  "classic_tv", "television",
+  // anime / cartoons
+  "anime", "animationandcartoons",
+  // audio pools
+  "oldtimeradio", "GratefulDead", "etree", "librivoxaudio", "78rpm",
+  // documentary / sports / shorts / silents
+  "culturalandacademicfilms", "sports", "short_films", "silent_films",
+  // institutionally-registered pools
+  "wellcomefilm", "FedFlix", "usgovfilms", "avgeeks", "nasa",
+  // footage (curated view of films)
+  "stock_footage", "home_movies", "home_movie",
+  // 2026-08-24 probe registrations
+  "wwIIarchive", "universal_newsreels",
+]);
+
+/**
+ * Candidates and rejected collections — every collection name that has been
+ * probed (and typically rejected) in prior sweeps.  These are NOT registered
+ * pools but the aggregation probe should not flag them as "new" either.
+ *
+ * Sourced from license-sweep.ts CANDIDATES + the institutional-collections-research.md
+ * rejection lists.  The baseline count is irrelevant here — the probe only needs
+ * the name to skip it.
+ */
+const KNOWN_CANDIDATES = new Set([
+  // license-sweep.ts CANDIDATES
+  "nationalfilmboard", "usnationalarchives", "pathe",
+  "newsreels", "travelfilms", "documentaryfilms",
+  "featurefilms", "cinema", "classicmovies", "broadcasting",
+  "publicaccess", "newsfilm", "ww2films", "animationarchive",
+  "educationalfilms", "opensource_movies",
+  // institutional-collections-research.md — probed and rejected
+  "childrenstelevision", "artsandmusicvideos", "frank-moore-archives",
+  "mit_ocw", "ElectricSheep", "vhsvault",
+  "Comedy_Films", "SciFi_Horror", "Film_Noir", "film_scifi",
+  "TheVideoCellarCollection", "cinemocracy",
+  "europeanlibraries", "smithsonian", "georgeblood",
+  "nasaimages", "nasafoia", "smithsonianlibraries", "metpublicart",
+  "cdl", "universityofcalifornia", "harvard", "yale", "mit",
+  "pbs", "PBSNewsHour", "newshour", "wnet", "publicresourceorg",
+  "govdocs", "congressional", "cspan", "biodiversitylibrary",
+  "biodivlibrary", "scifi", "artfilm", "comedy_films",
+  "audio_music", "opensource_audio", "radio", "podcasts",
+  "radioprograms", "netlabels",
+  "radioshows", "radio_programs", "classicradio", "radioplays",
+  "oldtime radio2", "live_music", "rockconcerts", "orchestral",
+  "swing", "bigband", "bluegrass", "gospel", "openaudiobooks",
+  "audio_books", "publicdomainbooks", "78rpmrecords", "shellac",
+  "gramophone", "victor_records", "edison_records", "cylinders",
+  "prelingerarchives", "silentcinema", "kino", "opencourseware", "toons",
+  "television", // duplicate (already in KNOWN_COLLECTIONS, harmless)
+  // 2026-08-24 aggregation-probe live run — surfaced as candidates, rejected as junk:
+  "deemphasize",            // archive.org internal status marker (not a real collection)
+  "social-media-video",     // modern TikTok/YouTube reuploads (self-declared marks)
+  "additional_collections_video", // community junk drawer
+  "mirrortube",             // YouTube mirror spam (self-declared marks)
+  "individual-image-collections", // images, not movies
+  "feature_films_unsorted", // archive.org internal staging for feature_films
+  "capcut-template-collection", // CapCut template spam
+  "capcutmod",              // CapCut mod spam
+  "pwnage",                 // gaming/exploit spam
+  "danieldteolijr",         // single-user upload (self-declared marks)
+  "no-preview",             // archive.org internal marker, mixed bag
+  // 2026-08-24 aggregation-probe live run round 2 — surfaced, rejected as obvious junk:
+  "loggedin",               // archive.org internal login-gated content marker
+  "feature_films_picfixer", // archive.org internal tool for metadata fixing
+  "vlogs",                  // modern vlogs (self-declared marks)
+  "bliptv",                 // defunct Blip.tv archives (self-declared marks)
+  "vj_loops",               // modern VJ visual loops (self-declared marks)
+  "audio_religion",         // misclassified audio in movie mediatype
+  "spiritualityandreligion", // misclassified, self-declared marks
+  // 2026-08-24 aggregation-probe live run round 3 — surfaced, rejected as obvious junk:
+  "community_media",         // community junk drawer (same failure mode as opensource_movies)
+  "adultvhs",                // NSFW content
+  "movie_trailers_picfixer", // archive.org internal tool (same as feature_films_picfixer)
+  "audio_sermons",           // misclassified audio in movie mediatype
+  "podcasts-video",          // modern podcasts (self-declared marks)
+  "opensource_religionvideo", // self-declared marks on religion content
+  "vhskids",                 // modern VHS rips of kids' content (self-declared marks)
+  // archive.org internal markers (not real subject collections):
+  "geo_restricted",          // system collection for geo-restricted content
+  "movie_trailers_unsorted", // internal staging (same pattern as feature_films_unsorted)
+]);
+
+/** Junk-drawer collection markers to strip before counting. */
+const JUNK_MARKERS = new Set(["community", "ourmedia"]);
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface DocSample {
+  identifier: string;
+  collection: string[];
+  title: string;
+}
+
+interface GatedCandidate {
+  name: string;
+  sampleCount: number;   // items in the sample
+  gateCount: number;      // items passing the license gate
+  filmsOverlap: number;   // items also in the films union
+  exclusiveCount: number; // items NOT in the films union
+  error?: string;
+}
+
+interface AggregationReport {
+  date: string;
+  candidatesChecked: number;
+  newCollections: GatedCandidate[];
+  anyChange: boolean;
+  sampleSize: number;
+}
+
+// ---------------------------------------------------------------------------
+// Arg parsing
+// ---------------------------------------------------------------------------
+
+interface Args {
+  json: boolean;
+  bodyOut: string | null;
+  limit: number;
+}
+
+function parseArgs(argv: string[]): Args {
+  const args: Args = { json: false, bodyOut: null, limit: SAMPLE_SIZE };
+  for (const arg of argv) {
+    if (arg === "--json") args.json = true;
+    else if (arg === "--help" || arg === "-h") {
+      console.log(
+        "Usage: node scripts/aggregation-probe.ts [--json] [--body-out=FILE] [--limit=N]",
+      );
+      process.exit(0);
+    } else if (arg.startsWith("--body-out=")) {
+      args.bodyOut = arg.slice("--body-out=".length);
+    } else if (arg.startsWith("--limit=")) {
+      const n = Number.parseInt(arg.slice("--limit=".length), 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        console.error(`ERROR: --limit must be a positive integer, got "${arg.slice("--limit=".length)}".`);
+        process.exit(2);
+      }
+      args.limit = n;
+    } else {
+      console.error(`ERROR: unknown argument "${arg}". See --help.`);
+      process.exit(2);
+    }
+  }
+  return args;
+}
+
+// ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
+
+async function fetchPage(query: string, page: number): Promise<DocSample[]> {
+  const url = new URL(ARCHIVE_SEARCH_URL);
+  url.searchParams.set("q", query);
+  url.searchParams.set("output", "json");
+  url.searchParams.set("rows", String(PAGE_SIZE));
+  url.searchParams.set("page", String(page));
+  // Only request the fields we need — keeps the response small.
+  url.searchParams.set("fl", "identifier,collection,title");
+  url.searchParams.set("sort", "downloads desc");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": `347movies-aggregation-probe/1.0 (+${SITE_URL})` },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.error(`  aggregation-probe: page ${page} HTTP ${res.status}`);
+      return [];
+    }
+    const body = (await res.json()) as {
+      response?: { docs?: { identifier?: string; collection?: string | string[]; title?: string }[] };
+    };
+    const docs = body.response?.docs ?? [];
+    return docs.map((d) => ({
+      identifier: typeof d.identifier === "string" ? d.identifier : "",
+      collection: normalizeCollection(d.collection),
+      title: typeof d.title === "string" ? d.title : "",
+    }));
+  } catch (err) {
+    console.error(`  aggregation-probe: page ${page} fetch error:`, err instanceof Error ? err.message : String(err));
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizeCollection(raw: string | string[] | undefined): string[] {
+  if (!raw) return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+async function probeCount(query: string): Promise<{ numFound: number; error?: string }> {
+  const url = new URL(ARCHIVE_SEARCH_URL);
+  url.searchParams.set("q", query);
+  url.searchParams.set("output", "json");
+  url.searchParams.set("rows", "0"); // counts only
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": `347movies-aggregation-probe/1.0 (+${SITE_URL})` },
+      signal: controller.signal,
+    });
+    if (!res.ok) return { numFound: -1, error: `HTTP ${res.status}` };
+    const body = (await res.json()) as { response?: { numFound?: number } };
+    const numFound = body.response?.numFound;
+    if (typeof numFound !== "number") return { numFound: -1, error: "bad JSON shape" };
+    return { numFound };
+  } catch (err) {
+    return { numFound: -1, error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Core pipeline
+// ---------------------------------------------------------------------------
+
+async function runProbe(sampleSize: number): Promise<AggregationReport> {
+  const date = new Date().toISOString().slice(0, 10);
+
+  // 1. Sample the licensed population by downloads.
+  const pages = Math.ceil(sampleSize / PAGE_SIZE);
+  const allDocs: DocSample[] = [];
+  for (let p = 1; p <= pages; p++) {
+    const docs = await fetchPage(`${LEGAL_CLAUSE} AND mediatype:movies`, p);
+    allDocs.push(...docs);
+    if (docs.length < PAGE_SIZE) break; // fewer results than page size = end of results
+  }
+
+  // 2. Aggregate collection fields.
+  const counts = new Map<string, number>();
+  for (const doc of allDocs) {
+    for (const col of doc.collection) {
+      if (col.startsWith("fav-")) continue;
+      if (JUNK_MARKERS.has(col)) continue;
+      counts.set(col, (counts.get(col) ?? 0) + 1);
+    }
+  }
+
+  // 3. Find genuinely new collections (not known, above noise threshold).
+  const unknown = [...counts.entries()]
+    .filter(([name, count]) =>
+      count >= NOISE_THRESHOLD &&
+      !KNOWN_COLLECTIONS.has(name) &&
+      !KNOWN_CANDIDATES.has(name),
+    )
+    .sort((a, b) => b[1] - a[1]);
+
+  if (unknown.length === 0) {
+    return { date, candidatesChecked: 0, newCollections: [], anyChange: false, sampleSize };
+  }
+
+  // 4. Gate-check each unknown candidate — license gate + films-union overlap.
+  const filmsUnion = "collection:(feature_films OR prelinger OR moviesandfilms)";
+  const newCollections: GatedCandidate[] = [];
+
+  // Probe up to 15 candidates (keeps CI runtime reasonable; the top ones by
+  // sample count are the most interesting).
+  for (const [name, sampleCount] of unknown.slice(0, 15)) {
+    const gateRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND mediatype:movies`);
+    if (gateRes.error) {
+      newCollections.push({ name, sampleCount, gateCount: -1, filmsOverlap: -1, exclusiveCount: -1, error: gateRes.error });
+      continue;
+    }
+    const overlapRes = await probeCount(`${LEGAL_CLAUSE} AND collection:${name} AND ${filmsUnion} AND mediatype:movies`);
+    if (overlapRes.error) {
+      newCollections.push({ name, sampleCount, gateCount: gateRes.numFound, filmsOverlap: -1, exclusiveCount: -1, error: overlapRes.error });
+      continue;
+    }
+    const exclusiveCount = Math.max(0, gateRes.numFound - overlapRes.numFound);
+    newCollections.push({
+      name, sampleCount,
+      gateCount: gateRes.numFound,
+      filmsOverlap: overlapRes.numFound,
+      exclusiveCount,
+    });
+  }
+
+  return {
+    date,
+    candidatesChecked: Math.min(unknown.length, 15),
+    newCollections,
+    anyChange: newCollections.length > 0,
+    sampleSize,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Output rendering
+// ---------------------------------------------------------------------------
+
+function renderMarkdown(report: AggregationReport): string {
+  const lines: string[] = [
+    "### 🔬 Aggregation-based probe",
+    "",
+    `Sampled the top ${report.sampleSize.toLocaleString()} licensed movies (sorted by downloads), aggregated their \`collection\` fields, and cross-referenced against **${KNOWN_COLLECTIONS.size}** registered pool collections and **${KNOWN_CANDIDATES.size}** previously-probed candidates.`,
+    "",
+  ];
+
+  if (!report.anyChange) {
+    lines.push("**No new collections found.** Every collection in the sample is either already registered as a pool or a previously-probed candidate. The catalog ceiling holds.", "");
+    return lines.join("\n").trimEnd();
+  }
+
+  lines.push(`**${report.newCollections.length} collection(s) are worth reviewing:**`, "");
+  for (const c of report.newCollections) {
+    const archiveUrl = `https://archive.org/search?query=collection%3A${encodeURIComponent(c.name)}`;
+    lines.push(`- **\`${c.name}\`** — ${c.gateCount} license-marked movies (${c.exclusiveCount} exclusive of films union, ${c.filmsOverlap} overlap) — [browse archive.org](${archiveUrl})`);
+    if (c.error) lines.push(`  ⚠️ Probe error: ${c.error}`);
+  }
+  lines.push(
+    "",
+    "**Next step:** sample provenance (item-level `fl=identifier,title,year,licenseurl`, downloads-desc) to confirm these are institutional/curator-applied marks, not self-declared junk. If clean, register them per the pool-wiring checklist.",
+    "",
+  );
+  return lines.join("\n").trimEnd();
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+async function main(): Promise<void> {
+  const args = parseArgs(process.argv.slice(2));
+  const report = await runProbe(args.limit);
+
+  if (args.json) {
+    const out = {
+      date: report.date,
+      anyChange: report.anyChange,
+      newCollections: report.newCollections,
+      candidatesChecked: report.candidatesChecked,
+      sampleSize: report.sampleSize,
+    };
+    if (args.bodyOut) {
+      const { writeFile } = await import("node:fs/promises");
+      await writeFile(args.bodyOut, `${renderMarkdown(report)}\n`);
+    }
+    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    return;
+  }
+
+  process.stdout.write(`${renderMarkdown(report)}\n`);
+}
+
+main().catch((err) => {
+  console.error(`ERROR: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(1);
+});

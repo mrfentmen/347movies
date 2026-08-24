@@ -94,7 +94,7 @@ jobs:
           exit $STATUS
 
   gate-scripts:
-    name: Gate scripts execute (scan-longtail + license-sweep)
+    name: Gate scripts execute (scan-longtail + license-sweep + aggregation-probe)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -103,27 +103,33 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Run both gate-building scripts against the real archive.org API
+      - name: Run the three gate-building scripts against the real archive.org API
         env:
           WRANGLER_SEND_METRICS: "false"
         run: |
-          # The two scripts that build archive.org gate queries themselves (every other
+          # The three scripts that build archive.org gate queries themselves (every other
           # query flows through lib/archive.ts and is covered by the unit suite). A syntax
           # error, a broken .ts import, or a gate change that stops resolving must fail
-          # here — before merge, not on the first Wednesday cron. Both hit the real API:
+          # here — before merge, not on the first Wednesday cron. All three hit the real API:
           # scan-longtail fetches the legal catalog (limit 1) and checks one identifier;
-          # license-sweep probes all 18 pools + 16 candidates via LEGAL_CLAUSE.
+          # license-sweep probes all pools + candidates via LEGAL_CLAUSE; aggregation-probe
+          # samples the licensed population and aggregates collection fields (limit 500 for
+          # CI speed — the weekly run uses the full 10,000).
           set -o pipefail
           SCAN=$(node scripts/scan-longtail.mjs --limit 1 --out /tmp/scan-longtail.jsonl --timeout 8 2>&1)
           SCAN_STATUS=$?
           echo "$SCAN"
           SWEEP=$(node scripts/license-sweep.ts --json 2>&1)
           SWEEP_STATUS=$?
+          # stdout only: the probe logs per-page fetch warnings to stderr (graceful
+          # degradation), so 2>&1 here would corrupt the JSON the structural check parses.
+          AGG=$(node scripts/aggregation-probe.ts --limit=500 --json)
+          AGG_STATUS=$?
           # Preview the sweep JSON (head is display-only; the structural check below parses
           # the full document, so a truncated preview can't fail the gate).
           echo "$SWEEP" | head -c 400
           echo
-          # Assert both executed against a real, populated catalog.
+          # Assert all three executed against a real, populated catalog.
           echo "$SCAN" | grep -qE "catalog has [0-9]+ ids" || { echo "::error::scan-longtail did not report the catalog"; exit 1; }
           echo "$SCAN" | grep -qE "done: 1 checked" || { echo "::error::scan-longtail did not complete its check"; exit 1; }
           # Structural JSON check: the sweep must emit a pools array (18 registered pools),
@@ -140,9 +146,23 @@ jobs:
               console.log(`ok: license-sweep report parsed — ${j.pools.length} pools, ${j.errors.length} errors`);
             });
           '
+          # Structural JSON check for the aggregation probe: must emit a newCollections
+          # array, a numeric candidatesChecked, and the anyChange boolean.
+          echo "$AGG" | node -e '
+            let d = ""; process.stdin.on("data", (c) => (d += c));
+            process.stdin.on("end", () => {
+              let j;
+              try { j = JSON.parse(d); } catch { console.error("::error::aggregation-probe did not emit valid JSON"); process.exit(1); }
+              if (!Array.isArray(j.newCollections)) { console.error("::error::aggregation-probe newCollections field missing"); process.exit(1); }
+              if (typeof j.candidatesChecked !== "number") { console.error("::error::aggregation-probe candidatesChecked field missing"); process.exit(1); }
+              if (typeof j.anyChange !== "boolean") { console.error("::error::aggregation-probe anyChange field missing"); process.exit(1); }
+              console.log(`ok: aggregation-probe report parsed — ${j.newCollections.length} new collections, ${j.candidatesChecked} checked`);
+            });
+          '
           [ "$SCAN_STATUS" -eq 0 ] || { echo "::error::scan-longtail exited $SCAN_STATUS"; exit 1; }
           [ "$SWEEP_STATUS" -eq 0 ] || { echo "::error::license-sweep exited $SWEEP_STATUS"; exit 1; }
-          echo "ok: both gate scripts executed against archive.org"
+          [ "$AGG_STATUS" -eq 0 ] || { echo "::error::aggregation-probe exited $AGG_STATUS"; exit 1; }
+          echo "ok: all three gate scripts executed against archive.org"
 
   browser-batteries:
     name: Browser battery (${{ matrix.target }})

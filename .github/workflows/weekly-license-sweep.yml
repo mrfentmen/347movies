@@ -47,12 +47,24 @@ jobs:
           ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/license-sweep.json','utf8')).anyChange")
           echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
           echo "Re-probe complete (anyChange=$ANY)."
+      - name: Aggregation-based collection probe
+        id: aggregation
+        run: |
+          # The reverse of the name-guessing sweep: sample the licensed population by
+          # downloads and aggregate their real collection fields, surfacing collections
+          # no prior sweep named (documented in docs/institutional-collections-research.md).
+          # Exits 0 either way; a quiet week reports "No new collections found."
+          node scripts/aggregation-probe.ts --json --body-out=/tmp/aggregation-probe.md > /tmp/aggregation-probe.json
+          ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/aggregation-probe.json','utf8')).anyChange")
+          echo "anyChange=$ANY" >> "$GITHUB_OUTPUT"
+          echo "Aggregation probe complete (anyChange=$ANY)."
       - name: Open the sweep report issue
-        if: steps.sweep.outputs.anyChange == 'true'
+        if: steps.sweep.outputs.anyChange == 'true' || steps.aggregation.outputs.anyChange == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           WEEK=$(date -u +%Y-%m-%d)
+          { cat /tmp/license-sweep.md; echo; echo; cat /tmp/aggregation-probe.md; } > /tmp/sweep-report.md
           gh issue create --repo "$GITHUB_REPOSITORY" \
             --title "License-gate sweep — week of $WEEK" \
-            --body "$(cat /tmp/license-sweep.md)"
+            --body "$(cat /tmp/sweep-report.md)"
