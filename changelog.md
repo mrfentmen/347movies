@@ -4,6 +4,38 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-24 — WWII + Newsreels pools and a widened government films gate (deploy 1e822afd, 503 checks)
+
+- **Two new pools registered** from archive.org collections the prior name-guessing sweeps
+  missed (surfaced by aggregating real collection membership from the top-10k-by-downloads
+  sample instead of guessing collection names — see docs/institutional-collections-research.md):
+  - **`wwIIarchive` (2,821 gated movies) → `/wwii`**: US government WWII films (The Last
+    Bomb 1945, Education for Death 1943, The New Spirit 1942), all
+    `publicdomain/mark/1.0` institutional marks, year range 1936–1986, fully disjoint from
+    the films union. NOTE: Solr collection names are case-sensitive — `collection:wwIIarchive`
+    is correct (`collection:wwiiarchive` returns 0).
+  - **`universal_newsreels` (595 gated movies) → `/newsreels`**: Universal Newsreels
+    1933–1967, all `publicdomain` marks, disjoint from films (a distinct population from the
+    home page's old Prelinger keyword feed).
+- **Government films gate widened** `collection:FedFlix` → `collection:(FedFlix OR usgovfilms)`
+  (5,947 → 12,583): FedFlix is 100% inside usgovfilms; the 6,636-item remainder is
+  institutional (House/Senate floor proceedings, NRC hearings, FDA films). The index cache
+  key was bumped to `govfilms-index-v2` — without it production would have served the stale
+  5,947-item index for up to 24h (the anime pool's -v2 precedent).
+- Full wiring: gate constants + `IndexVariant` + `baseClauseFor`, index cache keys + random
+  variants, normalize pool mapping, `POOL_LANDING` + nav (layout.ts + 30 static pages),
+  sitemap pools + static paths, browse/collections flags, app.js dispatchers/search/browse/
+  home feeds, two landing pages, home WWII/newsreels sections (the newsreels section
+  repointed from the Prelinger keyword feed to the new pool), warmup, license-sweep
+  baselines, smoke pins, and drift-guard tests.
+- **Verified:** typecheck clean, 218/218 tests, dev smoke **503/503**, canonical smoke
+  **503/503** on production, deploy `1e822afd` verified production via the Pages API, live
+  proof (govfilms=12,583, wwii=2,821, newsreels=595 on the live bundle; `/wwii` + `/newsreels`
+  serve with the right `data-page`; home WWII section present).
+- Commit `43044b5`, deploy `1e822afd` verified production.
+
+---
+
 ## 2026-08-23 — Privacy page discloses the localStorage player preferences (deploy e25d24db, 495 checks)
 
 - The privacy page now has a plain-language "What the player remembers" section disclosing
