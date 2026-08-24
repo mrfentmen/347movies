@@ -12,6 +12,7 @@ This file defines the non-negotiable rules for any AI agent working on the 347mo
 - Every film must trace to a verified legal source, with the Internet Archive as the primary host.
 - A film's legal status is checked at catalog-ingestion time (archive.org license and rights metadata) and recorded on the film record.
 - If a film's legal status cannot be verified, it is **excluded**, never included on a guess.
+- Adding any new content source is governed by `docs/content-sourcing-policy.md` — every source must be expressible as a license gate; never pull from unlicensed sites.
 
 ## 2. Verification over self-reporting
 
