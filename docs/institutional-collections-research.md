@@ -26,6 +26,39 @@ by-nc-nd), `mit_ocw` (463 coursework), `ElectricSheep` (819 generative art), `vh
 `film_scifi`/`TheVideoCellarCollection`/`cinemocracy` are 100% films-union overlap (genre
 views, not new content).
 
+## Method: aggregation-based probing (use this instead of guessing names)
+
+Every pre-2026-08-24 sweep worked by *naming* candidate collections
+(`collection:oldtv`, `collection:newsreels`, …) and asking "how many licensed movies does
+THIS one hold?" — which repeatedly returned 0 because the interesting collections weren't
+on the guessed list. The reliable method is the reverse: enumerate the licensed population
+and let archive.org tell you which collections actually hold it.
+
+1. **Sample the licensed population, not a guess list.** Fetch the site's legal gate
+   (`LEGAL_CLAUSE` + `mediatype:movies`) sorted by `downloads desc`, `rows=10000`, several
+   pages deep (downloads-desc surfaces the collections real viewers use, unlike an
+   arbitrary guess). Request `fl=identifier,collection,title`.
+2. **Aggregate the `collection` field** across the sampled docs. It is multi-valued and
+   polluted with `fav-*` favorites noise — drop any value starting `fav-` plus the
+   `community`/`ourmedia` junk-drawer markers before counting.
+3. **Rank the result.** The collections nobody guessed (e.g. `wwIIarchive`, `universal_newsreels`,
+   `usgovfilms`) rise to the top by their real item count.
+4. **Gate + overlap-check each candidate** with three exact counts: the gate alone
+   (`LEGAL_CLAUSE AND collection:X AND mediatype:movies`), the films-union overlap (add
+   `AND collection:(feature_films OR prelinger OR moviesandfilms)`), and the exclusive
+   remainder. 100% overlap = a curated/genre view of an existing pool, not new content;
+   disjoint = genuinely new.
+5. **Sample provenance before registering.** Item-level `fl=identifier,title,year,licenseurl`
+   (downloads-desc) distinguishes institutional/curator marks (NARA, FedFlix, AAPB, the
+   `wwIIarchive` `publicdomain/mark/1.0` set) from self-declared-mark junk (`childrenstelevision`,
+   `opensource_movies`). Reject the latter regardless of count.
+
+Two gotchas this method exposed: (a) **Solr collection names are case-sensitive**
+(`collection:wwIIarchive` = 2,821 vs `collection:wwiiarchive` = 0) — always copy the exact
+name from the aggregation output, never normalize it; (b) the `advancedsearch` `facets[]`
+parameter is not supported (returns `UNSUPPORTED_VALUE`) — aggregate client-side from a
+sample instead.
+
 ---
 
 **Researched 2026-08-19.** Question: beyond the already-registered institutional pools (AAPB →
