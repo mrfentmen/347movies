@@ -67,6 +67,8 @@ const CASES = [
   ["GET", "/api/browse?ephemera=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?space=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?footage=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?wwii=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?newsreels=1&sort=recent&page=1", 200],
   // Decade chips link to decade-START bounds (from/to must end in 0; the route maps to+9).
   // Each of these 200s; a chip pointing at to=1969-style bounds 400s — the TED-chip bug
   // (PR #45 shipped to=2009) is exactly the class this pins.
@@ -87,6 +89,8 @@ const CASES = [
   ["GET", "/audiobooks", 200],
   ["GET", "/records", 200],
   ["GET", "/footage", 200],
+  ["GET", "/wwii", 200],
+  ["GET", "/newsreels", 200],
   ["GET", "/shortfilms", 200],
   ["GET", "/ephemera", 200],
   ["GET", "/space", 200],
@@ -319,7 +323,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/shortfilms", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/wwii", "/newsreels", "/shortfilms", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -404,11 +408,13 @@ try {
   ok(js.includes("/api/browse?ephemera=1&sort=recent&page=1"), "JS: Ephemeral films home feed wired");
   ok(js.includes("/api/browse?space=1&sort=recent&page=1"), "JS: Space & NASA home feed wired");
   ok(js.includes("/api/browse?footage=1&sort=recent&page=1"), "JS: Vintage footage home feed wired");
+  ok(js.includes("/api/browse?wwii=1&sort=recent&page=1"), "JS: World War II home feed wired");
+  ok(js.includes("/api/browse?newsreels=1&sort=recent&page=1"), "JS: Newsreels home feed wired (Universal Newsreels pool)");
   ok(js.includes("/api/youtube?q="), "JS: Short films page wired to the CC-filtered YouTube search");
   ok(js.includes("/api/browse?ted=1&sort=recent&page=1"), "JS: TED Talks home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
   ok(js.includes("episodeCount"), "JS: card reads the server-provided episode count");
-  ok(js.includes("/api/browse?q=newsreel&sort=recent&page=1"), "JS: Newsreels home feed wired (Prelinger subset)");
+
   ok(js.includes("initSearchSuggest"), "JS: header search autocomplete wired (catalog index)");
   ok(js.includes('"role", "listbox"'), "JS: autocomplete panel uses listbox semantics (a11y)");
   ok(js.includes("data-episodes"), "JS: multi-episode player swap wired (episode bundles)");
@@ -488,13 +494,14 @@ try {
   ok(home.includes('id="publictvgolden"'), "Home: Golden-age public broadcasting showcase present");
   ok(home.includes('id="recordsnew"'), "Home: New records this week section present");
   ok(home.includes('id="footage"'), "Home: Vintage footage section present (archival pre-1970 feed)");
+  ok(home.includes('id="wwii"'), "Home: World War II section present (wwIIarchive pool)");
   ok(home.includes("/search?tv=1"), "Home: Search TV shows shortcut present");
   ok(home.includes('id="continue-section"'), "Home: Continue watching section present (hidden until there is a saved position)");
   ok(home.includes("Continue watching"), "Home: Continue watching heading present");
   ok(home.includes('id="otr"'), "Home: Old Time Radio section present (audio feed)");
   ok(home.includes("/search?otr=1"), "Home: Search radio shortcut present");
   ok(home.includes('id="music"'), "Home: Music & Concerts section present (audio feed)");
-  ok(home.includes('id="newsreels"'), "Home: Newsreels section present (Prelinger subset)");
+  ok(home.includes('id="newsreels"'), "Home: Newsreels section present (Universal Newsreels pool)");
   ok(home.includes('rel="alternate" type="application/rss+xml"'), "Home: RSS feed alternate link present");
   ok(home.includes('rel="manifest" href="/manifest.webmanifest"'), "Home: PWA manifest linked");
   ok(home.includes('class="ad-slot__cta"'), "Home: ad slots carry an email inquiry CTA");
@@ -1092,7 +1099,7 @@ try {
   ok(allCounted, `collections API returns all pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 19, "collections page carries nineteen pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 21, "collections page carries twenty-one pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -1111,9 +1118,10 @@ try {
   // disjoint catalogs. Guard both the hub badges and the landing-page notes.
   ok((collectionsHtml.match(/Curated view/g) || []).length === 5, "collections page badges shorts + silents + footage + TED + science as curated views");
   // Disjoint pools: measured 2026-08-21 (cross-pool overlap matrix, docs/cross-pool-overlap-matrix.md)
-  // — 8 pools have 0 overlap with any other pool. Each carries a "Unique" badge so visitors
-  // know titles aren't duplicated elsewhere.
-  ok((collectionsHtml.match(/Unique/g) || []).length === 8, "collections page badges 8 disjoint pools as Unique");
+  // — 10 pools have 0 overlap with any other pool (wwii + newsreels added 2026-08-24, both
+  // measured fully disjoint). Each carries a "Unique" badge so visitors know titles aren't
+  // duplicated elsewhere.
+  ok((collectionsHtml.match(/Unique/g) || []).length === 10, "collections page badges 10 disjoint pools as Unique");
   // The collections hub carries JSON-LD expressing the curated-view relationships so
   // structured-data consumers see the subset hierarchy from the hub itself.
   ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
@@ -1218,12 +1226,12 @@ try {
   ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
-  // Every pool gets its own sub-sitemap: static + 19 pools (films union + tv, anime,
+  // Every pool gets its own sub-sitemap: static + 21 pools (films union + tv, anime,
   // cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science,
-  // govfilms, audiobooks, records, ephemera, space, footage). The count is pinned exactly —
-  // a pool added to the catalog but not to SITEMAP_POOLS (the footage gap, 2026-08-22)
-  // would shrink the index and must fail.
-  ok(fresh.subs === 20, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 20)`);
+  // govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels). The count is
+  // pinned exactly — a pool added to the catalog but not to SITEMAP_POOLS (the footage gap,
+  // 2026-08-22) would shrink the index and must fail.
+  ok(fresh.subs === 22, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 22)`);
   ok(fresh.subFailures === 0, `every listed sub-sitemap serves 200 (failed: ${fresh.failedSubs.join(", ") || "none"})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, /footage, /shortfilms, …) carry no lastmod; every

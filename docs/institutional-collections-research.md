@@ -1,5 +1,33 @@
 # 347movies — institutional-licensed archive.org collections beyond the mark flood (research)
 
+**Update 2026-08-24 — aggregation method broke the "ceiling is dry" conclusion.** Prior
+sweeps guessed collection NAMES and repeatedly hit 0; this round instead sampled the top
+10,000 licensed movies by downloads and aggregated their real `collection` fields, surfacing
+collections nobody had named. Three registrations followed:
+
+- **`wwIIarchive` (2,821 gated movies) — REGISTERED as the `wwii` pool.** US government WWII
+  films (The Last Bomb 1945, Education for Death 1943, The New Spirit 1942), all
+  `publicdomain/mark/1.0` institutional marks, year range 1936–1986, fully disjoint from the
+  films union. NOTE: Solr collection names are case-sensitive — `collection:wwIIarchive`
+  returns 2,821 while `collection:wwiiarchive` returns 0.
+- **`universal_newsreels` (595 gated movies) — REGISTERED as the `newsreels` pool.**
+  Universal Newsreels 1933–1967, all `publicdomain` marks, disjoint from films (distinct from
+  the home page's Prelinger keyword feed).
+- **`usgovfilms` (12,583 gated movies) — the `govfilms` gate WIDENED** from
+  `collection:FedFlix` to `collection:(FedFlix OR usgovfilms)`. FedFlix (5,947) is 100%
+  inside usgovfilms; the 6,636-item remainder is institutional (House/Senate floor
+  proceedings, NRC hearings, FDA films). Index cache key bumped to `govfilms-index-v2` to
+  force a rebuild past the 24h edge TTL.
+
+Still rejected: `childrenstelevision` (1,616 — self-declared marks on Blue's Clues/Wild
+Kratts "Full Series"), `artsandmusicvideos` (6,002), `frank-moore-archives` (1,502 NSFW
+by-nc-nd), `mit_ocw` (463 coursework), `ElectricSheep` (819 generative art), `vhsvault`
+(12,382 VHS rips), and the junk drawers. `Comedy_Films`/`SciFi_Horror`/`Film_Noir`/
+`film_scifi`/`TheVideoCellarCollection`/`cinemocracy` are 100% films-union overlap (genre
+views, not new content).
+
+---
+
 **Researched 2026-08-19.** Question: beyond the already-registered institutional pools (AAPB →
 `publictv`, Wellcome → `science`, FedFlix → `govfilms`, LibriVox → `audiobooks`, Great 78 →
 `records`), are there other archive.org collections where the license marks come from the

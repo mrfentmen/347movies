@@ -315,6 +315,9 @@ test("poolFromCollections maps archive.org collections to the specific pool, fil
   assert.equal(poolFromCollections(["classic_tv", "television"]), "tv"); // classic_tv wins over the broad television collection
   assert.equal(poolFromCollections(["wellcomefilm"]), "science");
   assert.equal(poolFromCollections(["FedFlix", "usgovfilms"]), "govfilms");
+  assert.equal(poolFromCollections(["usgovfilms"]), "govfilms"); // the widened govfilms gate (FedFlix is 100% inside usgovfilms)
+  assert.equal(poolFromCollections(["wwIIarchive"]), "wwii"); // case-insensitive: metadata carries the mixed-case collection name
+  assert.equal(poolFromCollections(["universal_newsreels"]), "newsreels");
   assert.equal(poolFromCollections(["librivoxaudio"]), "audiobooks");
   assert.equal(poolFromCollections(["78rpm"]), "records");
   assert.equal(poolFromCollections(["avgeeks"]), "ephemera");

@@ -553,7 +553,9 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["short_films"], "shorts"],
   [["silent_films"], "silents"],
   [["wellcomefilm"], "science"],
-  [["fedflix"], "govfilms"],
+  // `usgovfilms` maps to the govfilms pool alongside `fedflix` (the 2026-08-24 gate widening:
+  // FedFlix is 100% inside usgovfilms). Both are US-government public-domain collections.
+  [["fedflix", "usgovfilms"], "govfilms"],
   [["librivoxaudio"], "audiobooks"],
   [["78rpm"], "records"],
   // `avgeeks` maps to the ephemera pool; the broad `ephemera` collection is deliberately NOT
@@ -568,6 +570,11 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   // avgeeks → ephemera. `prelingerhomemovies` is included because those items also carry
   // `prelinger` (a films-union collection) — without it they'd resolve to films.
   [["stock_footage", "home_movies", "home_movie", "prelingerhomemovies"], "footage"],
+  // wwIIarchive + universal_newsreels map to their own pools (both measured 2026-08-24 fully
+  // disjoint from the films union, so order is not load-bearing — but they sit before the
+  // films union for consistency with the other specific-pool mappings).
+  [["wwiiarchive"], "wwii"],
+  [["universal_newsreels"], "newsreels"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

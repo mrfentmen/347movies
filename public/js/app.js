@@ -630,9 +630,9 @@
     // cartoons 1930s–40s (185 items), newest release years first.
     loadHomeSection("animegolden", "/api/browse?anime=1&from=1950&to=1970&sort=newest&page=1");
     loadHomeSection("cartoonsgolden", "/api/browse?cartoons=1&from=1930&to=1940&sort=newest&page=1");
-    // Newsreels: the Prelinger newsreel subset (measured live 2026-08-17: 52 title-matched
-    // items) — already inside the legal films pool, surfaced by title keyword.
-    loadHomeSection("newsreels", "/api/browse?q=newsreel&sort=recent&page=1");
+    // Newsreels: the Universal Newsreels pool (universal_newsreels collection, 595 gated
+    // items, measured 2026-08-24) — a dedicated pool, superseding the old Prelinger keyword feed.
+    loadHomeSection("newsreels", "/api/browse?newsreels=1&sort=recent&page=1");
     loadHomeSection("recent", "/api/browse?sort=recent&films=1&page=1");
     loadHomeSection("noir", "/api/browse?genre=film-noir&sort=recent&page=1");
     loadHomeSection("silents", "/api/browse?decade=1920&sort=recent&page=1");
@@ -664,6 +664,9 @@
     // 2026-08-22: vintage footage — pre-1970 archival film (Coney Island 1940s, Hindenburg
     // over NYC 1937, 1939 World's Fair) — a curated view of Films.
     loadHomeSection("footage", "/api/browse?footage=1&sort=recent&page=1");
+    // 2026-08-24: World War II — the wwIIarchive collection (2,821 gated US-government WWII
+    // films), fully disjoint from the films union.
+    loadHomeSection("wwii", "/api/browse?wwii=1&sort=recent&page=1");
   }
 
   /* ---------- search ---------- */
@@ -688,7 +691,9 @@
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
     const footage = params.get("footage") === "1";
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : null;
+    const wwii = params.get("wwii") === "1";
+    const newsreels = params.get("newsreels") === "1";
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : wwii ? "wwii" : newsreels ? "newsreels" : null;
     // Per-pool display vocabulary (label + noun) for the search landing/result copy.
     const CATALOG_META = {
       tv: { label: "Classic TV", noun: "show" },
@@ -709,6 +714,8 @@
       ephemera: { label: "Ephemeral Films", noun: "film" },
       space: { label: "Space & NASA", noun: "film" },
       footage: { label: "Vintage Footage", noun: "film" },
+      wwii: { label: "World War II", noun: "film" },
+      newsreels: { label: "Newsreels", noun: "newsreel" },
     };
     const meta = catalog ? CATALOG_META[catalog] : null;
     const rawPage = parseInt(params.get("page") || "1", 10);
@@ -1443,6 +1450,8 @@
   function initSpace() { initDestination("space", "/space"); }
   function initTed() { initDestination("ted", "/ted"); }
   function initFootage() { initDestination("footage", "/footage"); }
+  function initWWII() { initDestination("wwii", "/wwii"); }
+  function initNewsreels() { initDestination("newsreels", "/newsreels"); }
 
   /* ---------- short films (YouTube) ----------
      The /shortfilms page (public/shortfilms.html, data-page="shortfilms"): a shelf of
@@ -1585,8 +1594,10 @@
     const ephemera = params.get("ephemera") === "1";
     const space = params.get("space") === "1";
     const footage = params.get("footage") === "1";
+    const wwii = params.get("wwii") === "1";
+    const newsreels = params.get("newsreels") === "1";
     // Which serialized pool this browse view serves.
-    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : null;
+    const catalog = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : wwii ? "wwii" : newsreels ? "newsreels" : null;
     // Newest releases is the browse default: the newest films in the catalog lead by
     // default, with Recently added / A–Z / Oldest one click away.
     const sort = params.get("sort") || "newest";
@@ -1641,7 +1652,7 @@
 
     const head = $("#results-head");
     if (head) {
-      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "ted" ? "TED Talks" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : catalog === "footage" ? "Vintage Footage" : (genre && GENRE_LABELS[genre]) || "All films";
+      const label = catalog === "tv" ? "Classic TV" : catalog === "anime" ? "Anime" : catalog === "cartoons" ? "Cartoons" : catalog === "otr" ? "Old Time Radio" : catalog === "music" ? "Music & Concerts" : catalog === "documentaries" ? "Documentaries" : catalog === "ted" ? "TED Talks" : catalog === "sports" ? "Sports" : catalog === "shorts" ? "Shorts" : catalog === "silents" ? "Silent films" : catalog === "publictv" ? "Public Broadcasting" : catalog === "science" ? "Science & Medicine" : catalog === "govfilms" ? "Government Films" : catalog === "audiobooks" ? "Audiobooks" : catalog === "records" ? "Vintage Records" : catalog === "ephemera" ? "Ephemeral Films" : catalog === "space" ? "Space & NASA" : catalog === "footage" ? "Vintage Footage" : catalog === "wwii" ? "World War II" : catalog === "newsreels" ? "Newsreels" : (genre && GENRE_LABELS[genre]) || "All films";
       head.textContent = `${label}${decade ? ` · ${decade}s` : ""}${from && to ? ` · ${from}s onward` : ""}${q ? ` · “${q}”` : ""}${sort === "title" ? " · A–Z" : sort === "newest" ? " · Newest releases" : sort === "oldest" ? " · Oldest first" : " · Recently added"}`;
     }
 
@@ -1834,7 +1845,7 @@
     documentaries: "documentaries", ted: "ted", sports: "sports", shorts: "shorts",
     silents: "silents", publictv: "publictv", science: "science", govfilms: "govfilms",
     audiobooks: "audiobooks", records: "records", ephemera: "ephemera", space: "space",
-    footage: "footage",
+    footage: "footage", wwii: "wwii", newsreels: "newsreels",
   };
   function initSearchSuggest() {
     const input = $("#search-input");
@@ -2003,6 +2014,8 @@
   else if (page === "space") initSpace();
   else if (page === "ted") initTed();
   else if (page === "footage") initFootage();
+  else if (page === "wwii") initWWII();
+  else if (page === "newsreels") initNewsreels();
   else if (page === "shortfilms") initShortFilms();
   else if (page === "collections") initCollections();
   else if (page === "movie") initMovie();

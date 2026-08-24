@@ -57,12 +57,14 @@ const POOLS: { label: string; gate: string; baseline: number }[] = [
   { label: "silents", gate: "collection:silent_films AND mediatype:movies", baseline: 729 },
   { label: "publictv", gate: "collection:television AND mediatype:movies AND identifier:aapb*", baseline: 1_653 },
   { label: "science", gate: "collection:wellcomefilm AND mediatype:movies", baseline: 257 },
-  { label: "govfilms", gate: "collection:FedFlix AND mediatype:movies", baseline: 5_948 },
+  { label: "govfilms", gate: "collection:(FedFlix OR usgovfilms) AND mediatype:movies", baseline: 12_584 },
   { label: "audiobooks", gate: "collection:librivoxaudio AND mediatype:audio", baseline: 18_349 },
   { label: "records", gate: "collection:78rpm AND mediatype:audio AND year:[* TO 1926]", baseline: 5_039 },
   { label: "ephemera", gate: "collection:avgeeks AND mediatype:movies", baseline: 413 },
   { label: "space", gate: "collection:nasa AND mediatype:movies", baseline: 719 },
   { label: "footage", gate: "(collection:stock_footage OR collection:(home_movies OR home_movie)) AND mediatype:movies AND year:[* TO 1969]", baseline: 445 },
+  { label: "wwii", gate: "collection:wwIIarchive AND mediatype:movies", baseline: 2_821 },
+  { label: "newsreels", gate: "collection:universal_newsreels AND mediatype:movies", baseline: 595 },
 ];
 
 /**

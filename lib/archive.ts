@@ -162,13 +162,16 @@ export const SCIENCE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wellcomefilm 
 // documentaries pool) — this is a CURATED VIEW of Documentaries, like TED Talks.
 
 /**
- * Government films catalog gate: the same license gate over `FedFlix`, the US government's
- * public-domain film collection (NTIS-hosted on archive.org — Nixon addresses, Navy/Seabee
- * films, 1917 agriculture films, Audubon, counterguerrilla training films…). Measured live
- * 2026-08-18: 5,947 license-marked movies, all genuinely public domain (US government works).
- * Items ARE the content, so the films-only exclusion does not apply.
+ * Government films catalog gate: the same license gate over `FedFlix` AND `usgovfilms`,
+ * the US government's public-domain film collections (NTIS-hosted FedFlix — Nixon addresses,
+ * Navy/Seabee films, 1917 agriculture films, Audubon, counterguerrilla training films — plus
+ * the broad `usgovfilms` superset: House/Senate floor proceedings, NRC hearings, FDA films,
+ * congressional hearings). Measured live 2026-08-18: 5,947 FedFlix-only; re-measured
+ * 2026-08-24: 12,584 with the widened gate (FedFlix is 100% inside usgovfilms — 5,948
+ * overlap, 6,636 exclusive). All genuinely public domain (US government works). Items ARE
+ * the content, so the films-only exclusion does not apply.
  */
-export const GOV_FILMS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:FedFlix AND mediatype:movies`;
+export const GOV_FILMS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:(FedFlix OR usgovfilms) AND mediatype:movies`;
 
 /**
  * Audiobooks catalog gate: the same license gate over `librivoxaudio`, the LibriVox
@@ -247,6 +250,30 @@ export const SPACE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nasa AND mediat
  */
 export const FOOTAGE_BASE_CLAUSE = `${LEGAL_CLAUSE} AND (collection:stock_footage OR collection:(home_movies OR home_movie)) AND mediatype:movies AND year:[* TO 1969]`;
 
+/**
+ * World War II catalog gate: the same license gate over archive.org's `wwIIarchive`
+ * collection (US government WWII films — The Last Bomb 1945, Out of the Frying Pan Into the
+ * Firing Line 1942, Education for Death 1943, The New Spirit 1942, plus post-war Army/Navy
+ * nurse POW interviews and Marine Corps training films). Measured live 2026-08-24: 2,821
+ * license-marked movies, all `publicdomain/mark/1.0` institutional marks (same trust model
+ * as FedFlix/AAPB — curator-applied, not fan uploads). Year range 1936–1986; the 1980s tail
+ * is real institutional content, not re-upload spam, so no year cutoff. Fully disjoint from
+ * the films union (0 overlap, measured 2026-08-24). Items ARE the content, so the films-only
+ * exclusion does not apply.
+ */
+export const WWII_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wwIIarchive AND mediatype:movies`;
+
+/**
+ * Newsreels catalog gate: the same license gate over `universal_newsreels` (Universal
+ * Newsreels 1933–1967 — Assassination 1934, First U.S. Satellite Launched 1958, Gen. Adolf
+ * Takes Over 1942, Farmer Plays Tune With Hands 1933). Measured live 2026-08-24: 595
+ * license-marked movies, all `publicdomain` marks, cleanly bounded to the classic newsreel
+ * era (no modern uploads). Fully disjoint from the films union (0 overlap) — a distinct
+ * population from the home page's Prelinger keyword feed. Items ARE the content, so the
+ * films-only exclusion does not apply.
+ */
+export const NEWSREELS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:universal_newsreels AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -267,7 +294,9 @@ export type IndexVariant =
   | "records"
   | "ephemera"
   | "space"
-  | "footage";
+  | "footage"
+  | "wwii"
+  | "newsreels";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -312,6 +341,10 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return SPACE_BASE_CLAUSE;
     case "footage":
       return FOOTAGE_BASE_CLAUSE;
+    case "wwii":
+      return WWII_BASE_CLAUSE;
+    case "newsreels":
+      return NEWSREELS_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

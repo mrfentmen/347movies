@@ -132,6 +132,19 @@ test("renderMoviePage omits the pool strip when the pool is unknown", () => {
   assert.ok(!html.includes("chip--pool"), "no pool chip for pool:null");
 });
 
+test("renderMoviePage renders pool strips and labels for the wwii and newsreels pools", () => {
+  const wwii = { ...RECORD, pool: "wwii" as const };
+  const wwiiHtml = renderMoviePage(wwii, "https://347movies.pages.dev", undefined);
+  assert.ok(wwiiHtml.includes('data-pool="wwii"'), "wwii pool strip carries the variant");
+  assert.ok(wwiiHtml.includes('"name":"World War II"'), "JSON-LD breadcrumb includes the pool label");
+  assert.ok(wwiiHtml.includes('>World War II</a>'), "pool label renders");
+  assert.ok(wwiiHtml.includes('href="/wwii"'), "pool landing page linked");
+  const news = { ...RECORD, pool: "newsreels" as const };
+  const newsHtml = renderMoviePage(news, "https://347movies.pages.dev", undefined);
+  assert.ok(newsHtml.includes('data-pool="newsreels"'), "newsreels pool strip carries the variant");
+  assert.ok(newsHtml.includes('"name":"Newsreels"'), "JSON-LD breadcrumb includes the pool label");
+});
+
 test("renderMoviePage marks an audio item with a hero audio badge", () => {
   const audio = { ...RECORD, hasVideo: false, hasAudio: true, pool: "otr" as const };
   const html = renderMoviePage(audio, "https://347movies.pages.dev", undefined);

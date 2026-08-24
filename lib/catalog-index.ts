@@ -50,12 +50,17 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   silents: "https://347movies.internal/silents-index-v1",
   publictv: "https://347movies.internal/publictv-index-v1",
   science: "https://347movies.internal/science-index-v1",
-  govfilms: "https://347movies.internal/govfilms-index-v1",
+  // v2: the 2026-08-24 gate widening added usgovfilms to the govfilms pool (FedFlix →
+  // FedFlix OR usgovfilms) — bumping the cache key forces a rebuild instead of waiting out
+  // the 24h edge TTL on the old 5,947-item FedFlix-only index.
+  govfilms: "https://347movies.internal/govfilms-index-v2",
   audiobooks: "https://347movies.internal/audiobooks-index-v1",
   records: "https://347movies.internal/records-index-v1",
   ephemera: "https://347movies.internal/ephemera-index-v1",
   space: "https://347movies.internal/space-index-v1",
   footage: "https://347movies.internal/footage-index-v1",
+  wwii: "https://347movies.internal/wwii-index-v1",
+  newsreels: "https://347movies.internal/newsreels-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -447,6 +452,8 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "ephemera",
   "space",
   "footage",
+  "wwii",
+  "newsreels",
 ];
 
 /**

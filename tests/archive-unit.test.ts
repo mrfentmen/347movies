@@ -133,6 +133,29 @@ test("searchArchive selects the legality gate per variant (films / tv / anime / 
   assert.ok(!musicQ.includes("feature_films"), "music gate does not include the films collections");
 });
 
+test("searchArchive selects the wwii, newsreels, and widened govfilms gates", async () => {
+  const calls: string[] = [];
+  const fetchImpl = makeFetch({
+    handler: (url) => {
+      calls.push(url);
+      return jsonResponse({ response: { numFound: 0, docs: [] } });
+    },
+  });
+  await searchArchive({ page: 1, rows: 24, variant: "wwii" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "newsreels" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "govfilms" }, fetchImpl);
+  const wwiiQ = qOf(calls[0] as string);
+  const newsQ = qOf(calls[1] as string);
+  const govQ = qOf(calls[2] as string);
+  assert.ok(wwiiQ.includes("collection:wwIIarchive"), "wwii variant selects the wwIIarchive pool (case-sensitive Solr name)");
+  assert.ok(wwiiQ.includes("mediatype:movies"), "wwii gate keeps mediatype:movies");
+  assert.ok(!wwiiQ.includes("feature_films"), "wwii gate does not include the films collections");
+  assert.ok(newsQ.includes("collection:universal_newsreels"), "newsreels variant selects the universal_newsreels pool");
+  assert.ok(newsQ.includes("mediatype:movies"), "newsreels gate keeps mediatype:movies");
+  assert.ok(govQ.includes("collection:(FedFlix OR usgovfilms)"), "govfilms gate widened to FedFlix OR usgovfilms");
+  assert.ok(govQ.includes("mediatype:movies"), "govfilms gate keeps mediatype:movies");
+});
+
 test("searchArchive adds the films-only clause only when filmsOnly is true", async () => {
   const calls: string[] = [];
   const fetchImpl = makeFetch({

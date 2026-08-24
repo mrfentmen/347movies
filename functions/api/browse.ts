@@ -82,10 +82,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const ephemera = validateFlag(url.searchParams.get("ephemera"));
     const space = validateFlag(url.searchParams.get("space"));
     const footage = validateFlag(url.searchParams.get("footage"));
-    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage.");
+    const wwii = validateFlag(url.searchParams.get("wwii"));
+    const newsreels = validateFlag(url.searchParams.get("newsreels"));
+    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : wwii ? "wwii" : newsreels ? "newsreels" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an
