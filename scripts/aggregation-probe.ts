@@ -177,6 +177,8 @@ const KNOWN_CANDIDATES = new Set([
   "tornfleshrecords",        // netlabel
   "labelnetlabel",           // netlabel
   "freemusicarchive",        // modern free music (self-declared marks)
+  // 2026-08-25 etree aggregation-probe — adjudicated (see research doc, 7th confirmation):
+  "somethingbluearchives",   // netlabel; hosted taste_of_mud, the single licensed etree item outside the gate
 ]);
 
 /** Junk-drawer collection markers to strip before counting. */
