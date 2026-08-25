@@ -328,6 +328,8 @@ test("poolFromCollections maps archive.org collections to the specific pool, fil
   assert.equal(poolFromCollections(["home_movies"]), "footage");
   assert.equal(poolFromCollections(["prelingerhomemovies", "prelinger"]), "footage"); // footage wins over the films union
   assert.equal(poolFromCollections(["stock_footage", "moviesandfilms"]), "footage"); // specific curated view wins over films
+  assert.equal(poolFromCollections(["nationalfilmpreservationfoundation"]), "nfpf");
+  assert.equal(poolFromCollections(["nationalfilmpreservationfoundation", "moviesandfilms"]), "nfpf"); // nfpf wins over the films union
   assert.equal(poolFromCollections([]), null);
   assert.equal(poolFromCollections(null), null);
   assert.equal(poolFromCollections(undefined), null);

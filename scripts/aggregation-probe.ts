@@ -63,6 +63,8 @@ const KNOWN_COLLECTIONS = new Set([
   "stock_footage", "home_movies", "home_movie",
   // 2026-08-24 probe registrations
   "wwIIarchive", "universal_newsreels",
+  // 2026-08-24 provenance-find (ephemera sub-collection, step 5)
+  "nationalfilmpreservationfoundation",
 ]);
 
 /**
@@ -254,12 +256,43 @@ interface DocSample {
   title: string;
 }
 
+/** Per-item metadata fetched during provenance sampling. */
+interface ProvenanceItem {
+  identifier: string;
+  title: string;
+  year: number | null;
+  licenseurl: string | null;
+}
+
+/** Classification of a genuinely-new collection after provenance sampling. */
+type ProvenanceClass = "institutional" | "junk" | "needs_review";
+
+/** The result of auto-sampling provenance for a gate-checked candidate. */
+interface ProvenanceResult {
+  classification: ProvenanceClass;
+  /** The dominant license pattern in the sample. */
+  dominantLicense: string;
+  /** Median year of items that have a year (null when no items have years). */
+  medianYear: number | null;
+  /** How many of the sampled items carry publicdomain/mark/1.0/ (the institutional gold standard). */
+  pdMarkCount: number;
+  /** How many of the sampled items carry a CC license (red flag for self-declared). */
+  ccLicenseCount: number;
+  /** How many of the sampled items carry publicdomain/zero/1.0/ (mixed signal — institutional for government, junk for self-declared). */
+  pdZeroCount: number;
+  /** Number of items successfully sampled. */
+  sampleSize: number;
+  /** A few representative titles for the markdown report. */
+  sampleTitles: string[];
+}
+
 interface GatedCandidate {
   name: string;
   sampleCount: number;   // items in the sample
   gateCount: number;      // items passing the license gate
   poolOverlap: number;    // items also in the registered pools of this mediatype
   exclusiveCount: number; // items NOT in the registered pools of this mediatype
+  provenance?: ProvenanceResult; // auto-sampled when exclusiveCount > 0 and --provenance is on
 }
 
 interface AggregationReport {
@@ -269,9 +302,13 @@ interface AggregationReport {
   newCollections: GatedCandidate[];           // genuinely new: exclusiveCount > 0
   curatedViews: GatedCandidate[];             // 100% overlap, not suppressed
   suppressedCuratedViews: number;             // 100% overlap, in curatedSuppress (reported as a count, not a list)
+  actionableFinds: GatedCandidate[];          // subset of newCollections: provenance says institutional
+  needsReview: GatedCandidate[];              // subset of newCollections: provenance unclear or --provenance off
+  autoJunk: GatedCandidate[];                 // subset of newCollections: provenance says junk (informational only)
   errors: { name: string; error: string }[];  // candidates that failed to gate-check
-  anyChange: boolean;                         // newCollections.length > 0
+  anyChange: boolean;                         // actionableFinds.length > 0 || needsReview.length > 0
   sampleSize: number;
+  provenanceEnabled: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -283,15 +320,21 @@ interface Args {
   bodyOut: string | null;
   limit: number;
   mediatype: string;
+  provenance: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { json: false, bodyOut: null, limit: SAMPLE_SIZE, mediatype: "movies" };
+  const args: Args = { json: false, bodyOut: null, limit: SAMPLE_SIZE, mediatype: "movies", provenance: false };
   for (const arg of argv) {
     if (arg === "--json") args.json = true;
+    else if (arg === "--provenance") args.provenance = true;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: node scripts/aggregation-probe.ts [--json] [--body-out=FILE] [--limit=N] [--mediatype=movies|audio|etree]",
+        "Usage: node scripts/aggregation-probe.ts [--json] [--body-out=FILE] [--limit=N] [--mediatype=movies|audio|etree] [--provenance]",
+        "\n  --provenance   Sample item metadata for each genuinely-new candidate and classify as",
+        "\n                institutional / junk / needs-review.  The weekly workflow, which has",
+        "\n                the time, enables this; the PR CI gate-scripts job, which runs at",
+        "\n                --limit=500, skips it for speed.",
       );
       process.exit(0);
     } else if (arg.startsWith("--body-out=")) {

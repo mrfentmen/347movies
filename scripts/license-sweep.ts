@@ -65,6 +65,7 @@ const POOLS: { label: string; gate: string; baseline: number }[] = [
   { label: "footage", gate: "(collection:stock_footage OR collection:(home_movies OR home_movie)) AND mediatype:movies AND year:[* TO 1969]", baseline: 445 },
   { label: "wwii", gate: "collection:wwIIarchive AND mediatype:movies", baseline: 2_821 },
   { label: "newsreels", gate: "collection:universal_newsreels AND mediatype:movies", baseline: 595 },
+  { label: "nfpf", gate: "collection:nationalfilmpreservationfoundation AND mediatype:movies", baseline: 185 },
 ];
 
 /**

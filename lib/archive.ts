@@ -274,6 +274,19 @@ export const WWII_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:wwIIarchive AND 
  */
 export const NEWSREELS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:universal_newsreels AND mediatype:movies`;
 
+/**
+ * NFPF (National Film Preservation Foundation) catalog gate: the same license gate
+ * over `nationalfilmpreservationfoundation`, an institutional curator preserving orphan
+ * films. 185 cleanly institutionally-marked items, fully disjoint from both the films
+ * union and the avgeeks/ephemera pool. Content: educational shorts, PSAs, the classic
+ * orphan-film canon (Mutt & Jeff 1920, Pathé News 1922, U.S. Navy of 1915).
+ *
+ * Probe 2026-08-24: surfaced by provenance-sampling into the `ephemera` mega-collection
+ * (step 5), not by the top-15 aggregation surface — too small to rank above the
+ * junk-drawer long tail.
+ */
+export const NFPF_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nationalfilmpreservationfoundation AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -296,7 +309,8 @@ export type IndexVariant =
   | "space"
   | "footage"
   | "wwii"
-  | "newsreels";
+  | "newsreels"
+  | "nfpf";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -345,6 +359,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return WWII_BASE_CLAUSE;
     case "newsreels":
       return NEWSREELS_BASE_CLAUSE;
+    case "nfpf":
+      return NFPF_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

@@ -41,6 +41,7 @@ export const SITEMAP_POOLS: IndexVariant[] = [
   "footage",
   "wwii",
   "newsreels",
+  "nfpf",
 ];
 
 /** Static pages that live in their own sub-sitemap (no lastmod — they're evergreen). */

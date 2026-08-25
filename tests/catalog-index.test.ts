@@ -185,12 +185,12 @@ test("randomCatalogIdentifier returns null when every pool is empty", async () =
   assert.equal(await randomCatalogIdentifier(["films", "silents"], emptyFetch), null);
 });
 
-test("RANDOM_VARIANTS spans all twenty-one pools so Surprise me can land on any catalog item", () => {
+test("RANDOM_VARIANTS spans all twenty-two pools so Surprise me can land on any catalog item", () => {
   assert.deepEqual(RANDOM_VARIANTS, [
     "films", "tv", "anime", "cartoons", "otr", "music",
     "documentaries", "ted", "sports", "shorts", "silents", "publictv", "science",
     "govfilms", "audiobooks", "records", "ephemera", "space", "footage", "wwii",
-    "newsreels",
+    "newsreels", "nfpf",
   ]);
 });
 

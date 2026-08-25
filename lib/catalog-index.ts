@@ -61,6 +61,7 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   footage: "https://347movies.internal/footage-index-v1",
   wwii: "https://347movies.internal/wwii-index-v1",
   newsreels: "https://347movies.internal/newsreels-index-v1",
+  nfpf: "https://347movies.internal/nfpf-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -454,6 +455,7 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "footage",
   "wwii",
   "newsreels",
+  "nfpf",
 ];
 
 /**

@@ -575,6 +575,7 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   // films union for consistency with the other specific-pool mappings).
   [["wwiiarchive"], "wwii"],
   [["universal_newsreels"], "newsreels"],
+  [["nationalfilmpreservationfoundation"], "nfpf"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

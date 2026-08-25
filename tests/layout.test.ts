@@ -143,6 +143,10 @@ test("renderMoviePage renders pool strips and labels for the wwii and newsreels 
   const newsHtml = renderMoviePage(news, "https://347movies.pages.dev", undefined);
   assert.ok(newsHtml.includes('data-pool="newsreels"'), "newsreels pool strip carries the variant");
   assert.ok(newsHtml.includes('"name":"Newsreels"'), "JSON-LD breadcrumb includes the pool label");
+  const nfpf = { ...RECORD, pool: "nfpf" as const };
+  const nfpfHtml = renderMoviePage(nfpf, "https://347movies.pages.dev", undefined);
+  assert.ok(nfpfHtml.includes('data-pool="nfpf"'), "nfpf pool strip carries the variant");
+  assert.ok(nfpfHtml.includes('"name":"NFPF Orphan Films"'), "JSON-LD breadcrumb includes the pool label");
 });
 
 test("renderMoviePage marks an audio item with a hero audio badge", () => {
