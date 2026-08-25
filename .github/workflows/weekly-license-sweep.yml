@@ -60,7 +60,7 @@ jobs:
           : > /tmp/aggregation-probe.md
           ANY=false
           for MT in movies audio etree; do
-            node scripts/aggregation-probe.ts --mediatype="$MT" --json --body-out="/tmp/agg-$MT.md" > "/tmp/agg-$MT.json"
+            node scripts/aggregation-probe.ts --mediatype="$MT" --provenance --json --body-out="/tmp/agg-$MT.md" > "/tmp/agg-$MT.json"
             MT_ANY=$(node -p "JSON.parse(require('fs').readFileSync('/tmp/agg-$MT.json','utf8')).anyChange")
             cat "/tmp/agg-$MT.md" >> /tmp/aggregation-probe.md
             printf '\n' >> /tmp/aggregation-probe.md

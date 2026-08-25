@@ -435,10 +435,132 @@ async function probeCount(query: string): Promise<{ numFound: number; error?: st
 }
 
 // ---------------------------------------------------------------------------
+// Provenance sampling (step 5) — auto-classify genuinely-new candidates
+// ---------------------------------------------------------------------------
+
+const PROVENANCE_SAMPLE_SIZE = 20;
+
+/** Fetch item-level metadata for a collection (identifier, title, year, licenseurl). */
+async function sampleItems(collection: string, mediatypeClause: string): Promise<ProvenanceItem[]> {
+  const url = new URL(ARCHIVE_SEARCH_URL);
+  url.searchParams.set("q", `${LEGAL_CLAUSE} AND collection:${collection} AND ${mediatypeClause}`);
+  url.searchParams.set("output", "json");
+  url.searchParams.set("rows", String(PROVENANCE_SAMPLE_SIZE));
+  url.searchParams.set("page", "1");
+  url.searchParams.set("fl", "identifier,title,year,licenseurl");
+  url.searchParams.set("sort", "downloads desc");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": `347movies-aggregation-probe/1.0 (+${SITE_URL})` },
+      signal: controller.signal,
+    });
+    if (!res.ok) return [];
+    const body = (await res.json()) as {
+      response?: { docs?: { identifier?: string; title?: string; year?: number; licenseurl?: string }[] };
+    };
+    const docs = body.response?.docs ?? [];
+    return docs.map((d) => ({
+      identifier: typeof d.identifier === "string" ? d.identifier : "",
+      title: typeof d.title === "string" ? d.title : "",
+      year: typeof d.year === "number" ? d.year : null,
+      licenseurl: typeof d.licenseurl === "string" ? d.licenseurl : null,
+    }));
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Classify a collection from its item-level provenance sample.
+ *
+ * Heuristic (tuned against the 2026-08-24 adjudicated probe runs):
+ * - `publicdomain/mark/1.0/` (PDM) is the institutional gold standard — NARA, LOC,
+ *   Prelinger, Wellcome, NFPF all use it exclusively.  Strong institutional signal.
+ * - `publicdomain/zero/1.0/` (CC0) is a mixed signal: institutional for government
+ *   collections (FedFlix, NASA), but also the default for self-declared marks on
+ *   community uploads.  Not a tiebreaker on its own.
+ * - CC licenses (by/3.0, by-nc/4.0, by-sa/2.0, …) on a movie pool are a red flag:
+ *   institutional film archives do not use CC.  These are self-declared marks on
+ *   copyrighted or off-theme content.
+ * - Year distribution: a median year ≥ 2010 is a junk signal (the catalog's focus is
+ *   pre-1980 golden-age content; modern uploads are almost always self-declared).
+ */
+function classifyProvenance(items: ProvenanceItem[]): ProvenanceResult {
+  const PD_MARK = "http://creativecommons.org/publicdomain/mark/1.0/";
+  const CC0 = "http://creativecommons.org/publicdomain/zero/1.0/";
+
+  let pdMarkCount = 0;
+  let cc0Count = 0;
+  let ccLicenseCount = 0;
+  const years: number[] = [];
+  const titles: string[] = [];
+
+  for (const item of items) {
+    titles.push(item.title);
+    if (item.year != null && item.year > 0) years.push(item.year);
+    const lu = item.licenseurl;
+    if (!lu) continue;
+    if (lu === PD_MARK) { pdMarkCount++; continue; }
+    if (lu === CC0) { cc0Count++; continue; }
+    if (lu.includes("creativecommons.org/licenses/")) { ccLicenseCount++; }
+  }
+
+  const total = items.length;
+  const yearCount = years.length;
+  const medianYear = yearCount > 0 ? years.sort((a, b) => a - b)[Math.floor(yearCount / 2)] : null;
+
+  // Determine the dominant license label.
+  const dominantLicense = (() => {
+    if (pdMarkCount >= cc0Count && pdMarkCount >= ccLicenseCount) return "publicdomain/mark/1.0";
+    if (cc0Count >= pdMarkCount && cc0Count >= ccLicenseCount) return "publicdomain/zero/1.0";
+    if (ccLicenseCount > 0) return "CC license";
+    return "none/missing";
+  })();
+
+  // Classification decision tree.
+  let classification: ProvenanceClass;
+  if (pdMarkCount / total >= 0.6) {
+    // PDM dominance — strong institutional signal regardless of year.
+    classification = "institutional";
+  } else if (ccLicenseCount / total >= 0.4) {
+    // Significant CC presence — red flag for self-declared marks.
+    classification = "junk";
+  } else if (medianYear != null && medianYear >= 2010) {
+    // Modern content — almost certainly self-declared.
+    classification = "junk";
+  } else if (pdMarkCount > 0 && ccLicenseCount === 0) {
+    // Some PDM, no CC — weak institutional signal.
+    classification = "institutional";
+  } else if (cc0Count / total >= 0.5 && medianYear != null && medianYear < 2000) {
+    // CC0 dominance on pre-2000 content — institutional government collections.
+    classification = "institutional";
+  } else {
+    // Mixed or ambiguous — needs human review.
+    classification = "needs_review";
+  }
+
+  return {
+    classification,
+    dominantLicense,
+    medianYear,
+    pdMarkCount,
+    ccLicenseCount,
+    pdZeroCount: cc0Count,
+    sampleSize: total,
+    sampleTitles: titles.slice(0, 5),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Core pipeline
 // ---------------------------------------------------------------------------
 
-async function runProbe(sampleSize: number, mediatype: string): Promise<AggregationReport> {
+async function runProbe(sampleSize: number, mediatype: string, provenance: boolean): Promise<AggregationReport> {
   const date = new Date().toISOString().slice(0, 10);
   const cfg = mediatypeConfig(mediatype);
 
@@ -471,7 +593,7 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
     .sort((a, b) => b[1] - a[1]);
 
   if (unknown.length === 0) {
-    return { date, mediatype, candidatesChecked: 0, newCollections: [], curatedViews: [], suppressedCuratedViews: 0, errors: [], anyChange: false, sampleSize };
+    return { date, mediatype, candidatesChecked: 0, newCollections: [], curatedViews: [], suppressedCuratedViews: 0, actionableFinds: [], needsReview: [], autoJunk: [], errors: [], anyChange: false, sampleSize, provenanceEnabled: provenance };
   }
 
   // 4. Gate-check each unknown candidate — license gate + overlap with the
@@ -520,6 +642,31 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
     }
   }
 
+  // 5. Auto-sample provenance for genuinely-new candidates (when --provenance).
+  const actionableFinds: GatedCandidate[] = [];
+  const needsReview: GatedCandidate[] = [];
+  const autoJunk: GatedCandidate[] = [];
+
+  if (provenance) {
+    for (const c of newCollections) {
+      const items = await sampleItems(c.name, cfg.clause);
+      if (items.length === 0) {
+        c.provenance = undefined;
+        needsReview.push(c);
+        continue;
+      }
+      c.provenance = classifyProvenance(items);
+      switch (c.provenance.classification) {
+        case "institutional": actionableFinds.push(c); break;
+        case "junk": autoJunk.push(c); break;
+        default: needsReview.push(c); break;
+      }
+    }
+  } else {
+    // Without provenance, every genuinely-new candidate needs human review.
+    needsReview.push(...newCollections);
+  }
+
   return {
     date,
     mediatype,
@@ -527,9 +674,13 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
     newCollections,
     curatedViews,
     suppressedCuratedViews,
+    actionableFinds,
+    needsReview,
+    autoJunk,
     errors,
-    anyChange: newCollections.length > 0,
+    anyChange: actionableFinds.length > 0 || needsReview.length > 0,
     sampleSize,
+    provenanceEnabled: provenance,
   };
 }
 
@@ -596,7 +747,7 @@ function renderMarkdown(report: AggregationReport): string {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const report = await runProbe(args.limit, args.mediatype);
+  const report = await runProbe(args.limit, args.mediatype, args.provenance);
 
   if (args.json) {
     const out = {
@@ -604,11 +755,15 @@ async function main(): Promise<void> {
       mediatype: report.mediatype,
       anyChange: report.anyChange,
       newCollections: report.newCollections,
+      actionableFinds: report.actionableFinds,
+      needsReview: report.needsReview,
+      autoJunk: report.autoJunk,
       curatedViews: report.curatedViews,
       suppressedCuratedViews: report.suppressedCuratedViews,
       errors: report.errors,
       candidatesChecked: report.candidatesChecked,
       sampleSize: report.sampleSize,
+      provenanceEnabled: report.provenanceEnabled,
     };
     if (args.bodyOut) {
       const { writeFile } = await import("node:fs/promises");
