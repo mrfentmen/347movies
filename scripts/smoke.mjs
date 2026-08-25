@@ -1103,7 +1103,7 @@ try {
   ok(allCounted, `collections API returns all pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 21, "collections page carries twenty-one pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 22, "collections page carries twenty-two pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
@@ -1125,7 +1125,7 @@ try {
   // — 10 pools have 0 overlap with any other pool (wwii + newsreels added 2026-08-24, both
   // measured fully disjoint). Each carries a "Unique" badge so visitors know titles aren't
   // duplicated elsewhere.
-  ok((collectionsHtml.match(/Unique/g) || []).length === 10, "collections page badges 10 disjoint pools as Unique");
+  ok((collectionsHtml.match(/Unique/g) || []).length === 11, "collections page badges 11 disjoint pools as Unique");
   // The collections hub carries JSON-LD expressing the curated-view relationships so
   // structured-data consumers see the subset hierarchy from the hub itself.
   ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
@@ -1235,7 +1235,7 @@ try {
   // govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels). The count is
   // pinned exactly — a pool added to the catalog but not to SITEMAP_POOLS (the footage gap,
   // 2026-08-22) would shrink the index and must fail.
-  ok(fresh.subs === 22, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 22)`);
+  ok(fresh.subs === 23, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 23)`);
   ok(fresh.subFailures === 0, `every listed sub-sitemap serves 200 (failed: ${fresh.failedSubs.join(", ") || "none"})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, /footage, /shortfilms, …) carry no lastmod; every
