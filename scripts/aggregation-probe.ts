@@ -65,6 +65,8 @@ const KNOWN_COLLECTIONS = new Set([
   "wwIIarchive", "universal_newsreels",
   // 2026-08-24 provenance-find (ephemera sub-collection, step 5)
   "nationalfilmpreservationfoundation",
+  // 2026-08-25 audio provenance probe (step 5) — institutional NASA audio, pending pool registration
+  "nasaaudiocollection",
 ]);
 
 /**
@@ -181,6 +183,26 @@ const KNOWN_CANDIDATES = new Set([
   "freemusicarchive",        // modern free music (self-declared marks)
   // 2026-08-25 etree aggregation-probe — adjudicated (see research doc, 7th confirmation):
   "somethingbluearchives",   // netlabel; hosted taste_of_mud, the single licensed etree item outside the gate
+  // 2026-08-25 audio aggregation-probe (provenance-enabled) — adjudicated:
+  "radiostationarchives",    // modern amateur radio (CC, medYr 2013, self-declared marks)
+  "shortwave-airchecks",     // modern amateur radio (CC, medYr 2014, self-declared marks)
+  "airchecks",               // modern amateur radio (CC, medYr 2014, self-declared marks)
+  "monotonik",               // netlabel (CC, self-declared marks)
+  "blocsonic",               // netlabel (CC, self-declared marks)
+  "folksoundomy_podfic",     // modern podfics (CC, medYr 2023, self-declared marks)
+  "wm",                      // netlabel (CC, self-declared marks)
+  "afmusic",                 // netlabel (CC, self-declared marks)
+  "hifidelity_soundtracks",  // modern background music mix (CC+PDM, medYr 2004, self-declared)
+  "radiowolnemediaarchive",  // radio reuploads (CC, self-declared marks)
+  "cairopublicradio",        // Egyptian radio (CC, self-declared marks)
+  "pueblo_nuevo",            // netlabel (CC, self-declared marks)
+  "ffs",                     // netlabel (CC, self-declared marks)
+  "apolloaudiocollection",   // 100% inside nasaaudiocollection (curated sub-view, not a distinct source)
+  // 2026-08-25 audio provenance probe — follow-up run after suppressing round 1:
+  "audiolibrary",            // CC audiobooks (medYr 2014, self-declared marks on PD texts)
+  "AuFilDesLectures",        // CC French audiobooks (self-declared marks)
+  "fringe",                  // mixed CC/PDM junk drawer (medYr 2016, Hitler speeches + pop)
+  "techkilla",               // netlabel (CC, self-declared marks)
 ]);
 
 /** Junk-drawer collection markers to strip before counting. */

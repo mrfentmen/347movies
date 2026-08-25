@@ -298,3 +298,35 @@ the music pool (1,458 licensed items, gate `collection:(GratefulDead OR etree)`)
 **Conclusion (7th confirmation): the etree/live-music surface is dry for institutional
 collections.** 1,456/1,458 licensed items are already in the music pool; the single
 outside item is a modern netlabel release, not a source worth registering.
+
+---
+
+### 8th confirmation — nasaaudiocollection (2026-08-25, provenance-enabled)
+
+Ran `aggregation-probe.ts --mediatype=audio --provenance` (full 10,000 sample). Upon
+suppressing the 13 provenance-classified junk collections (all CC-licensed netlabels and
+modern content), exactly one genuine institutional find remains:
+
+- **`nasaaudiocollection` — 188 gated NASA audio items** (Apollo, Gemini, Mercury, Space
+  Shuttle, ISS mission audio; NASA press conferences and launch recordings). 100%
+  `publicdomain/mark/1.0/`, `creator:NASA` on the vast majority. Fully disjoint from the
+  four registered audio pools (0 overlap with OTR/LibriVox/78rpm). 5,590 total audio
+  items in the collection, but only 188 carry the license gate (`licenseurl`; the rest
+  rely on `collection:nasa` membership without explicit per-item license metadata).
+  Median year 2012 reflects upload dates, not content dates (the recordings span the
+  1960s–2010s).
+- **`apolloaudiocollection` — 16 gated items, 100% inside `nasaaudiocollection`** — a
+  curated sub-view of Apollo-specific material within the NASA audio collection. Not a
+  distinct source.
+
+**Pending decision:** register `nasaaudiocollection` as the site's first licensed audio
+pool from an institutional source (complementing the existing space/NASA video pool).
+The content is genuine NASA historical audio, properly PD-marked. 188 items warrants a
+pool (larger than the 24-item anime pool).
+
+**Suppressed in this run (19 names):** the 13 provenance-classified junk collections from
+the initial run (radiostationarchives, shortwave-airchecks, airchecks, monotonik, blocsonic,
+folksoundomy_podfic, wm, afmusic, hifidelity_soundtracks, radiowolnemediaarchive,
+cairopublicradio, pueblo_nuevo, ffs), plus `apolloaudiocollection` (curated sub-view), plus
+4 junk from the follow-up suppression run (audiolibrary, AuFilDesLectures, fringe, techkilla).
+All added to the probe's KNOWN_CANDIDATES suppress list.
