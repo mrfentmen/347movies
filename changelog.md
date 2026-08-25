@@ -4,6 +4,30 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-08-25 — NFPF Orphan Films pool (deploy 2c33cff7, 502/511 smoke, 23 sub-sitemaps)
+
+- **New pool: `nationalfilmpreservationfoundation` (185 gated movies) → `/nfpf`**: orphan
+  films preserved by the National Film Preservation Foundation — sponsored films and
+  industrial shorts from 1919–1966 (From Mud to Mug 1919, Saint Paul Police Detectives
+  1941, A Is for Atom 1953, American Look 1958), all `publicdomain/mark/1.0` institutional
+  marks, fully disjoint from the films union (0 overlap). Surfaced by the 2026-08-24
+  aggregation probe's step-5 provenance sampling but deferred to a separate registration
+  pass.
+- Full wiring: `NFPF_BASE_CLAUSE` gate constant + `IndexVariant.nfpf` + `baseClauseFor`,
+  index cache key + random variant, normalize pool mapping, `POOL_LANDING` + nav,
+  sitemap pool (23rd sub-sitemap), browse/collections flags, app.js dispatchers/search/
+  browse/home section, `/nfpf` landing page with skip-link accessibility, warmup,
+  license-sweep baseline, smoke pins, drift-guard unit tests (220/220).
+- **Verified:** typecheck clean, 220/220 tests, canonical smoke 502/511 (9 sitemap failures
+  = known rate-limiter hazard — sitemap 429s against archive.org), deploy `2c33cff7`
+  verified production via the Pages API, live proof (nfpf=185 items on the live bundle;
+  `/nfpf` serves with data-page=nfpf; Collections hub shows the NFPF card; home section
+  present; sitemap index shows 23 sub-sitemaps).
+- Commit `7394c30` + three accessibility fixup commits `8fb5d25`/`fa8d3d3`/`f908ada`,
+  deploy `2c33cff7` verified production.
+
+---
+
 ## 2026-08-24 — WWII + Newsreels pools and a widened government films gate (deploy 1e822afd, 503 checks)
 
 - **Two new pools registered** from archive.org collections the prior name-guessing sweeps
