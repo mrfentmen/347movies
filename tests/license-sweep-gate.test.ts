@@ -77,3 +77,47 @@ test("scan-longtail builds its catalog query from the exported BASE_CLAUSE, not 
   const stripped = longtail.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   assert.ok(!stripped.includes("licenseurl:"), "no hardcoded licenseurl: clause outside comments");
 });
+
+test("aggregation-probe suppresses the confirmed etree curated views, but never via KNOWN_CANDIDATES", () => {
+  const PROBE_PATH = new URL("../scripts/aggregation-probe.ts", import.meta.url).pathname;
+  const probe = readFileSync(PROBE_PATH, "utf8");
+
+  // The etree band collections confirmed as 100% inside the music pool (2026-08-25 run)
+  // must be suppressed in the etree mediatype config — the weekly report would otherwise
+  // list the same 15 band collections every Wednesday.
+  const suppressBlock = probe.match(/curatedSuppress: \[([\s\S]*?)\],\n  \},\n\};/);
+  assert.ok(suppressBlock, "the etree mediatype config carries a curatedSuppress array");
+  assert.ok(suppressBlock![1], "the curatedSuppress capture group is present");
+  const suppressNames: string = suppressBlock![1];
+  const expected = [
+    "HairyLarry", "DavidGans", "LaneFamily", "TheShipsCat", "DupreesDeadBand",
+    "StuAllenandMarsHotel", "BrokenCompassBluegrass", "BlueFunk", "PandaJAM",
+    "TheNational", "ObliviousFools", "BannedFromEden", "Pachyderm",
+    "TheBicycleThiefMusic", "TheloniousMonster",
+  ];
+  for (const name of expected) {
+    assert.ok(suppressNames.includes(name), `etree curatedSuppress lists ${name}`);
+  }
+
+  // The disjoint-alert contract: a suppressed curated view must STILL be gate-checked every
+  // run so that if it ever goes disjoint it lands in newCollections. Adding any of these
+  // names to KNOWN_CANDIDATES would skip the gate-check entirely and silently swallow the
+  // alert — the test fails if that ever happens.
+  const knownCandidatesBlock = probe.match(/const KNOWN_CANDIDATES = new Set\(\[([\s\S]*?)\]\);/);
+  assert.ok(knownCandidatesBlock, "KNOWN_CANDIDATES set found");
+  assert.ok(knownCandidatesBlock![1], "the KNOWN_CANDIDATES capture group is present");
+  const knownCandidatesNames: string = knownCandidatesBlock![1];
+  for (const name of expected) {
+    assert.ok(
+      !knownCandidatesNames.includes(`"${name}"`),
+      `${name} must NOT be in KNOWN_CANDIDATES — suppression must not skip its gate-check`,
+    );
+  }
+
+  // The suppression must only hide the confirmation, never an exclusiveCount > 0 candidate.
+  assert.match(
+    probe,
+    /if \(exclusiveCount > 0\) \{[\s\S]*?newCollections\.push\(candidate\);/,
+    "an exclusive candidate still surfaces in newCollections before the curatedSuppress check",
+  );
+});

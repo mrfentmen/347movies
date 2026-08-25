@@ -190,6 +190,14 @@ interface MediatypeConfig {
   poolUnion: string;    // collection:(...) of the registered pools for this mediatype
   overlapLabel: string; // human label for the overlap metric in the markdown report
   noun: string;         // "movies" / "audio items" / "live-music recordings"
+  /**
+   * Curated-view collections to suppress from the report. These are NOT in
+   * KNOWN_CANDIDATES on purpose: they must still be gate-checked every run so
+   * that if one ever goes disjoint (exclusiveCount > 0) it surfaces in
+   * newCollections and fires the issue. Suppression only hides the "still 100%
+   * inside the pools" confirmation from the report — the alert path is untouched.
+   */
+  curatedSuppress: string[];
 }
 
 const MEDIATYPES: Record<string, MediatypeConfig> = {
@@ -201,18 +209,29 @@ const MEDIATYPES: Record<string, MediatypeConfig> = {
     poolUnion: "collection:(feature_films OR prelinger OR moviesandfilms)",
     overlapLabel: "the films union",
     noun: "movies",
+    curatedSuppress: [],
   },
   audio: {
     clause: "mediatype:audio",
     poolUnion: "collection:(oldtimeradio OR librivoxaudio OR 78rpm)",
     overlapLabel: "the registered audio pools",
     noun: "audio items",
+    curatedSuppress: [],
   },
   etree: {
     clause: "mediatype:etree",
     poolUnion: "collection:(GratefulDead OR etree)",
     overlapLabel: "the registered music pool",
     noun: "live-music recordings",
+    // The 2026-08-25 etree probe confirmed these band collections sit 100% inside the
+    // `etree` catch-all the music pool gates on — curated views, not new content. They
+    // are still gate-checked every run (see interface doc) so a disjoint drift alerts.
+    curatedSuppress: [
+      "HairyLarry", "DavidGans", "LaneFamily", "TheShipsCat", "DupreesDeadBand",
+      "StuAllenandMarsHotel", "BrokenCompassBluegrass", "BlueFunk", "PandaJAM",
+      "TheNational", "ObliviousFools", "BannedFromEden", "Pachyderm",
+      "TheBicycleThiefMusic", "TheloniousMonster",
+    ],
   },
 };
 
@@ -248,7 +267,8 @@ interface AggregationReport {
   mediatype: string;
   candidatesChecked: number;
   newCollections: GatedCandidate[];           // genuinely new: exclusiveCount > 0
-  curatedViews: GatedCandidate[];             // 100% overlap with the registered pools
+  curatedViews: GatedCandidate[];             // 100% overlap, not suppressed
+  suppressedCuratedViews: number;             // 100% overlap, in curatedSuppress (reported as a count, not a list)
   errors: { name: string; error: string }[];  // candidates that failed to gate-check
   anyChange: boolean;                         // newCollections.length > 0
   sampleSize: number;
@@ -408,7 +428,7 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
     .sort((a, b) => b[1] - a[1]);
 
   if (unknown.length === 0) {
-    return { date, mediatype, candidatesChecked: 0, newCollections: [], curatedViews: [], errors: [], anyChange: false, sampleSize };
+    return { date, mediatype, candidatesChecked: 0, newCollections: [], curatedViews: [], suppressedCuratedViews: 0, errors: [], anyChange: false, sampleSize };
   }
 
   // 4. Gate-check each unknown candidate — license gate + overlap with the
@@ -418,6 +438,7 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
   // band collection is inside the `etree` catch-all the music pool gates on).
   const newCollections: GatedCandidate[] = [];
   const curatedViews: GatedCandidate[] = [];
+  let suppressedCuratedViews = 0;
   const errors: { name: string; error: string }[] = [];
 
   // Probe up to 15 candidates (keeps CI runtime reasonable; the top ones by
@@ -444,8 +465,16 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
       poolOverlap: overlapRes.numFound,
       exclusiveCount,
     };
-    if (exclusiveCount > 0) newCollections.push(candidate);
-    else curatedViews.push(candidate);
+    if (exclusiveCount > 0) {
+      // Genuinely new — surfaced even when the name is in curatedSuppress: a curated
+      // view that gains disjoint items is exactly the alert the suppress list must not
+      // swallow (see MediatypeConfig.curatedSuppress doc).
+      newCollections.push(candidate);
+    } else if (cfg.curatedSuppress.includes(name)) {
+      suppressedCuratedViews++;
+    } else {
+      curatedViews.push(candidate);
+    }
   }
 
   return {
@@ -454,6 +483,7 @@ async function runProbe(sampleSize: number, mediatype: string): Promise<Aggregat
     candidatesChecked: Math.min(unknown.length, 15),
     newCollections,
     curatedViews,
+    suppressedCuratedViews,
     errors,
     anyChange: newCollections.length > 0,
     sampleSize,
@@ -473,7 +503,7 @@ function renderMarkdown(report: AggregationReport): string {
     "",
   ];
 
-  if (!report.anyChange && report.curatedViews.length === 0 && report.errors.length === 0) {
+  if (!report.anyChange && report.curatedViews.length === 0 && report.suppressedCuratedViews === 0 && report.errors.length === 0) {
     lines.push("**No new collections found.** Every collection in the sample is either already registered as a pool or a previously-probed candidate. The catalog ceiling holds.", "");
     return lines.join("\n").trimEnd();
   }
@@ -497,6 +527,13 @@ function renderMarkdown(report: AggregationReport): string {
       lines.push(`- \`${c.name}\` (${c.gateCount} license-marked ${cfg.noun}, all already in the registered pools)`);
     }
     lines.push("");
+  }
+
+  if (report.suppressedCuratedViews > 0) {
+    lines.push(
+      `**${report.suppressedCuratedViews} previously-confirmed curated-view collection(s)** re-checked and still 100% inside the already-registered pools (${cfg.overlapLabel}) — suppressed, will alert if any ever goes disjoint.`,
+      "",
+    );
   }
 
   if (report.errors.length > 0) {
@@ -525,6 +562,7 @@ async function main(): Promise<void> {
       anyChange: report.anyChange,
       newCollections: report.newCollections,
       curatedViews: report.curatedViews,
+      suppressedCuratedViews: report.suppressedCuratedViews,
       errors: report.errors,
       candidatesChecked: report.candidatesChecked,
       sampleSize: report.sampleSize,
