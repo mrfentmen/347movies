@@ -228,3 +228,69 @@ test("aggregation-probe MEDIATYPES overlap baselines match the registered pool g
     "probe's etree.poolUnion covers exactly the MUSIC_BASE_CLAUSE collections",
   );
 });
+
+
+// ---------------------------------------------------------------------------
+// Bidirectional drift guard: probe KNOWN_COLLECTIONS ↔ lib/archive.ts gate
+// constants.  If a name is in the probe set but no gate constant uses it,
+// the pool was removed from the site but its probe entry is orphaned.  If a
+// gate constant references a collection the probe doesn't know about, the
+// probe may falsely surface it as "new" every week.
+// ---------------------------------------------------------------------------
+
+test("aggregation-probe KNOWN_COLLECTIONS ↔ registered gate constants are in sync", () => {
+  const ARCHIVE_PATH = new URL("../lib/archive.ts", import.meta.url).pathname;
+  const archive = readFileSync(ARCHIVE_PATH, "utf8");
+  const gateNames = new Set<string>();
+
+  // Pass 1: collection:(WORD OR WORD2 OR …) — handles all parenthesized forms
+  // including LEGAL_COLLECTIONS (double-quoted, not a backtick export).
+  const groupRegex = /collection:\(([^)]+)\)/g;
+  let gm: RegExpExecArray | null;
+  while ((gm = groupRegex.exec(archive)) !== null) {
+    for (const name of gm[1]!.split(/\s+OR\s+/)) {
+      gateNames.add(name.trim());
+    }
+  }
+
+  // Pass 2: collection:WORD that is NOT followed by a paren (singles).
+  const singleRegex = /collection:(\w+)(?!\s*\()/g;
+  let sm: RegExpExecArray | null;
+  while ((sm = singleRegex.exec(archive)) !== null) {
+    gateNames.add(sm[1]!);
+  }
+
+  // Extract every name from the probe KNOWN_COLLECTIONS set.
+  const PROBE_PATH = new URL("../scripts/aggregation-probe.ts", import.meta.url).pathname;
+  const probe = readFileSync(PROBE_PATH, "utf8");
+  const knownMatch = probe.match(/const KNOWN_COLLECTIONS = new Set\(\[([\s\S]*?)\]\);/);
+  assert.ok(knownMatch, "KNOWN_COLLECTIONS block found in probe");
+  const probeNames = new Set<string>();
+  const nameRegex = /"(\w+)"/g;
+  let nm: RegExpExecArray | null;
+  assert.ok(knownMatch![1] != null, "KNOWN_COLLECTIONS capture group found");
+  while ((nm = nameRegex.exec(knownMatch![1]!)) !== null) {
+    probeNames.add(nm[1]!);
+  }
+
+  // Forward: every probe entry must trace to a gate constant.
+  const orphans = [...probeNames].filter(n => !gateNames.has(n));
+  // nasaaudiocollection is pending pool registration — accepted exception.
+  const pending = new Set(["nasaaudiocollection"]);
+  const realOrphans = orphans.filter(n => !pending.has(n));
+  assert.deepEqual(
+    realOrphans,
+    [],
+    `probe KNOWN_COLLECTIONS entries with no corresponding gate constant (pending: ${
+      [...pending].join(", ")})`,
+  );
+
+  // Reverse: every gate collection must be in the probe known set.
+  const missing = [...gateNames].filter(n => !probeNames.has(n));
+  assert.deepEqual(
+    missing,
+    [],
+    `gate collections not in probe KNOWN_COLLECTIONS: ${
+      missing.join(", ")} — add them`,
+  );
+});

@@ -57,6 +57,8 @@ const KNOWN_COLLECTIONS = new Set([
   "oldtimeradio", "GratefulDead", "etree", "librivoxaudio", "78rpm",
   // documentary / sports / shorts / silents
   "culturalandacademicfilms", "sports", "short_films", "silent_films",
+  // ted talks
+  "tedtalks",
   // institutionally-registered pools
   "wellcomefilm", "FedFlix", "usgovfilms", "avgeeks", "nasa",
   // footage (curated view of films)
