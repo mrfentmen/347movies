@@ -13,7 +13,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { BASE_CLAUSE, LEGAL_CLAUSE } from "../lib/archive.ts";
+import {
+  AUDIOBOOKS_BASE_CLAUSE,
+  BASE_CLAUSE,
+  LEGAL_CLAUSE,
+  MUSIC_BASE_CLAUSE,
+  OTR_BASE_CLAUSE,
+  RECORDS_BASE_CLAUSE,
+} from "../lib/archive.ts";
 
 const SWEEP_PATH = new URL("../scripts/license-sweep.ts", import.meta.url).pathname;
 const LONGTAIL_PATH = new URL("../scripts/scan-longtail.mjs", import.meta.url).pathname;
@@ -119,5 +126,105 @@ test("aggregation-probe suppresses the confirmed etree curated views, but never 
     probe,
     /if \(exclusiveCount > 0\) \{[\s\S]*?newCollections\.push\(candidate\);/,
     "an exclusive candidate still surfaces in newCollections before the curatedSuppress check",
+  );
+});
+
+/**
+ * Extract every collection name from a gate constant — both single-name forms
+ * (`collection:X`) and OR-groups (`collection:(A OR B OR C)`). Returns a sorted
+ * array of lowercase names so the pool-union comparison is stable.
+ */
+function collectionNames(gate: string): string[] {
+  const names: string[] = [];
+  // Single-name: collection:foo
+  for (const m of gate.matchAll(/collection:([a-zA-Z0-9_]+)/g)) {
+    names.push(m[1]!);
+  }
+  // OR-group: collection:(A OR B OR C)
+  const orGroup = gate.match(/collection:\(([^)]+)\)/);
+  if (orGroup && orGroup[1]) {
+    for (const part of orGroup[1].split(/\s+OR\s+/)) {
+      names.push(part.trim());
+    }
+  }
+  return [...new Set(names)].sort();
+}
+
+function mediatypeFrom(gate: string): string {
+  const m = gate.match(/mediatype:(\w+)/);
+  assert.ok(m, `gate contains a mediatype: clause: ${gate.slice(0, 60)}...`);
+  assert.ok(m[1], `mediatype capture group is present`);
+  return m[1];
+}
+
+test("aggregation-probe MEDIATYPES overlap baselines match the registered pool gates", () => {
+  const PROBE_PATH = new URL("../scripts/aggregation-probe.ts", import.meta.url).pathname;
+  const probe = readFileSync(PROBE_PATH, "utf8");
+
+  // Helper: extract the poolUnion string for a given mediatype key.
+  function probePoolUnion(mediatype: string): string | undefined {
+    const block = new RegExp(
+      `${mediatype}:\\s*\\{[^}]*poolUnion:\\s*"([^"]+)"`,
+      "s",
+    );
+    const m = probe.match(block);
+    return m?.[1];
+  }
+  function probeClause(mediatype: string): string | undefined {
+    const block = new RegExp(
+      `${mediatype}:\\s*\\{[^}]*clause:\\s*"([^"]+)"`,
+      "s",
+    );
+    const m = probe.match(block);
+    return m?.[1];
+  }
+
+  // --- movies ---
+  // The films union is the three collections in BASE_CLAUSE + mediatype:movies.
+  // The probe's poolUnion covers only those three; other video pools (wwii, newsreels,
+  // govfilms…) are already in KNOWN_COLLECTIONS so they never reach the gate-check.
+  const gateMoviesNames = collectionNames(BASE_CLAUSE);
+  const gateMoviesMediatype = mediatypeFrom(BASE_CLAUSE);
+  const probeMoviesUnion = probePoolUnion("movies");
+  assert.ok(probeMoviesUnion, "probe movies poolUnion found");
+  assert.equal(gateMoviesMediatype, "movies", "BASE_CLAUSE uses mediatype:movies");
+  assert.equal(probeClause("movies"), "mediatype:movies");
+  assert.deepEqual(
+    collectionNames(probeMoviesUnion).sort(),
+    gateMoviesNames,
+    "probe's movies.poolUnion covers exactly the BASE_CLAUSE film collections",
+  );
+
+  // --- audio ---
+  // The three registered audio pools: OTR, audiobooks, records.
+  const gateAudioNames = [
+    ...collectionNames(OTR_BASE_CLAUSE),
+    ...collectionNames(AUDIOBOOKS_BASE_CLAUSE),
+    ...collectionNames(RECORDS_BASE_CLAUSE),
+  ].sort();
+  assert.equal(mediatypeFrom(OTR_BASE_CLAUSE), "audio", "OTR uses mediatype:audio");
+  assert.equal(mediatypeFrom(AUDIOBOOKS_BASE_CLAUSE), "audio", "audiobooks uses mediatype:audio");
+  assert.equal(mediatypeFrom(RECORDS_BASE_CLAUSE), "audio", "records uses mediatype:audio");
+  const probeAudioUnion = probePoolUnion("audio");
+  assert.ok(probeAudioUnion, "probe audio poolUnion found");
+  assert.equal(probeClause("audio"), "mediatype:audio");
+  assert.deepEqual(
+    collectionNames(probeAudioUnion).sort(),
+    gateAudioNames,
+    "probe's audio.poolUnion covers exactly the three audio gate collections",
+  );
+
+  // --- etree ---
+  const gateEtreeNames = collectionNames(MUSIC_BASE_CLAUSE);
+  assert.equal(gateEtreeNames.length, 2, "MUSIC_BASE_CLAUSE covers two collections");
+  assert.deepEqual(gateEtreeNames, ["GratefulDead", "etree"].sort(), "MUSIC_BASE_CLAUSE collections");
+  const gateEtreeMediatype = mediatypeFrom(MUSIC_BASE_CLAUSE);
+  const probeEtreeUnion = probePoolUnion("etree");
+  assert.ok(probeEtreeUnion, "probe etree poolUnion found");
+  assert.equal(probeClause("etree"), `mediatype:${gateEtreeMediatype}`);
+  assert.deepEqual(
+    collectionNames(probeEtreeUnion).sort(),
+    gateEtreeNames,
+    "probe's etree.poolUnion covers exactly the MUSIC_BASE_CLAUSE collections",
   );
 });
