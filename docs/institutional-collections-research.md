@@ -276,3 +276,25 @@ surfaced the collections name-guessing never saw, and they are all rejectable:
 **Conclusion (6th confirmation, now method-consistent with the video side): the audio
 ceiling holds (~27k audio items / 4 pools).** The name-guessing conclusion survives the
 aggregation method unchanged.
+
+## Re-verification 2026-08-25 (etree, aggregation method + completeness check)
+
+Ran `aggregation-probe.ts --mediatype=etree` (top 10,000 licensed live-music recordings by
+ downloads, aggregate `collection` fields). **No new institutional etree content exists —
+the music pool (1,458 licensed items, gate `collection:(GratefulDead OR etree)`) is complete.**
+
+- **0 genuinely new collections, 15 curated views** — every surfaced collection is a
+  band-specific subset (HairyLarry 210, DavidGans 92, LaneFamily 77, …) 100% inside the
+  registered `etree` catch-all. Note: because the registered gate IS the catch-all
+  `collection:(GratefulDead OR etree)`, the probe structurally cannot flag new etree
+  content; the meaningful check is the completeness query below.
+- **Completeness check (the real test):** licensed `mediatype:etree` items NOT in
+  `collection:(GratefulDead OR etree)` = **1** — `taste_of_mud`, a 2019 CC BY-SA netlabel
+  release in `folksoundomy`/`somethingbluearchives`, exactly the self-declared modern-junk
+  pattern already rejected. 1,456 of 1,458 licensed items (99.86%) sit inside the registered
+  gate. (The `numFound: 2` discrepancy on the negated query is an archive.org Solr quirk —
+  only the one real item exists.)
+
+**Conclusion (7th confirmation): the etree/live-music surface is dry for institutional
+collections.** 1,456/1,458 licensed items are already in the music pool; the single
+outside item is a modern netlabel release, not a source worth registering.
