@@ -38,6 +38,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
+import { checkRoutesProblems } from "./check-routes.ts";
 
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "ee32aa05d0ccfff9085adf3406874497";
 const PROJECT = process.env.CLOUDFLARE_PROJECT || "347movies";
@@ -213,6 +214,25 @@ async function main() {
     for (const f of secretFindings) console.error(`  - ${f}`);
     process.exit(1);
   }
+
+  // --- Routing-config gate: _routes.json must keep every static file excluded from
+  // Functions (free, unlimited) and every function route middleware-wrapped. Without this,
+  // a future edit that removes or narrows _routes.json would silently re-bill every
+  // CSS/JS/image/font fetch — the regression that burned 83,027 requests on 2026-08-25.
+  // Same pure checker as the standalone script; no override — this gate is never skippable.
+  let routesCfg: { version?: number; include?: string[]; exclude?: string[] } | null = null;
+  try {
+    routesCfg = JSON.parse(readFileSync("public/_routes.json", "utf8")) as typeof routesCfg;
+  } catch {
+    routesCfg = null;
+  }
+  const routesProblems = checkRoutesProblems(routesCfg, "public", "functions");
+  if (routesProblems.length > 0) {
+    console.error("REFUSE  routing-config gate failed — static assets would be billed or a route would die:");
+    for (const p of routesProblems) console.error(`  - ${p}`);
+    process.exit(1);
+  }
+  console.log("ok    routing-config gate: every static file excluded from Functions; all function routes keep middleware");
 
   printCiStatus(headSha);
 

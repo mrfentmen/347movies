@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "wrangler pages dev public --port 8787",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node scripts/check-scripts.mjs && node scripts/check-secrets.ts && node --test tests/*.test.ts",
+    "test": "node scripts/check-scripts.mjs && node scripts/check-secrets.ts && node scripts/check-routes.ts --check && node --test tests/*.test.ts",
     "audit": "npm audit --audit-level=high",
     "smoke": "node scripts/smoke.mjs",
     "images": "node scripts/register-images.mjs",

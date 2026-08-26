@@ -32,7 +32,11 @@ the git-less deploy model that still applies and the CI path.
 3. **Deploy hygiene gates (2026-08-16):** `scripts/deploy.ts` refuses to deploy when the
    working tree is dirty or `HEAD != origin/main` (deploys ship merged, CI-reviewed state;
    emergency override `DEPLOY_ALLOW_DIRTY=1`), scans `public/` + `functions/` + `lib/` +
-   `wrangler.jsonc` for token-shaped strings before deploying, and prints the merged
+   `wrangler.jsonc` for token-shaped strings before deploying, runs the routing-config gate
+   (`scripts/check-routes.ts` — verifies `public/_routes.json` keeps every static file
+   excluded from Functions so assets stay free/unlimited and no function route is
+   accidentally excluded; same pure checker runs in `npm test` via `--check`, so CI fails
+   on a `_routes.json` regression before it can reach deploy), and prints the merged
    commit's CI conclusions.
 4. **Every deploy is followed by the canonical smoke** (`npm run smoke`, 183 checks)
    against production, plus the browser battery (`npm run test:browser`) when product code
