@@ -16,6 +16,7 @@ public/images/registry.json
 # These must NEVER be committed.
 .freebuff/
 .venv-test/
+debug/
 
 # Root-level photo attachments (the raw originals from the design handoff — the site
 # serves the resized web copies under public/images/; the originals are never deployed).
