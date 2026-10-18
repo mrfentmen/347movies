@@ -27,7 +27,12 @@ SURFACES = [
     ("search", "/search?q=noir", lambda page: page.locator(".grid").count() >= 1),
     ("genre", "/genre", lambda page: page.locator(".grid").count() >= 1),
     ("watchlist", "/watchlist", lambda page: page.locator("main").count() == 1),
-    ("movie", "/movie/it-1927", lambda page: page.locator("iframe.player").count() == 1),
+    # The player starts as the archive.org embed (`iframe.player`) and app.js swaps it for
+    # the native `<video class="player player--video">` once a derivative is chosen, so the
+    # assertion must accept either — it previously pinned the iframe and went red on every
+    # commit once the native swap shipped. `.player` matches both and nothing else (the
+    # shell/wrap/tools all use `player-*` class tokens).
+    ("movie", "/movie/it-1927", lambda page: page.locator(".player").count() == 1),
 ]
 
 
