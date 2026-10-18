@@ -41,7 +41,11 @@ basis as git history: assume compromised, retire, recreate.
 
 ---
 
-## 1. KV cache (24h catalog cache) — needs a KV-scoped token
+## 1. KV cache (24h catalog cache) — ✅ done 2026-10-18
+
+Namespace `MOVIES_KV` created (`c4f2150c4ccf454999f2986c75c84b1d`) and bound in
+`wrangler.jsonc`; the code picked it up with no change. The steps below are kept as the
+record of how it was done and how to recreate it in another account.
 
 The site already runs a Cloudflare-native edge response cache (Cache API, verified
 `cf-cache-status: HIT`). KV adds the spec'd 24h cache so popular archive.org results aren't
