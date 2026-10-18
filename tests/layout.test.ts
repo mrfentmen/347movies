@@ -34,6 +34,21 @@ const RECORD: MovieRecord = {
   pool: null,
 };
 
+test("renderMoviePage never appends a second year when the title already has one", () => {
+  // Real case: the archive item "aces-go-places-1982_202610" carries title
+  // "Aces Go Places (1982)" but a `year` field of 2026 (the upload year).
+  const mismatched = { ...RECORD, title: "Aces Go Places (1982)", year: 2026 };
+  const html = renderMoviePage(mismatched, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes("<title>Aces Go Places (1982) — watch free"), "title keeps its own year only");
+  assert.ok(!html.includes("(1982) (2026)"), "no doubled year");
+});
+
+test("renderMoviePage appends the year when the title has none", () => {
+  const noYear = { ...RECORD, title: "Aces Go Places", year: 1982 };
+  const html = renderMoviePage(noYear, "https://347movies.pages.dev", undefined);
+  assert.ok(html.includes("<title>Aces Go Places (1982) — watch free"), "year appended once");
+});
+
 test("renderMoviePage embeds the archive.org player for playable items", () => {
   const html = renderMoviePage(RECORD, "https://347movies.pages.dev", undefined);
   assert.ok(html.includes('src="https://archive.org/embed/it-1927"'), "player iframe present");

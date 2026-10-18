@@ -259,7 +259,14 @@ export function renderMoviePage(
     : "";
 
   // Archive titles often already contain the year ("It (1927)"); avoid doubling it.
-  const yearSuffix = record.year && !title.includes(String(record.year)) ? ` (${escapeHtml(String(record.year))})` : "";
+  // The title's own year can also disagree with the `year` field (an item titled
+  // "Aces Go Places (1982)" is often uploaded with year 2026) — never append a
+  // second year once the title already carries one.
+  const titleHasYear = /\((?:1[89]|20)\d{2}\)/.test(title);
+  const yearSuffix =
+    record.year && !titleHasYear && !title.includes(String(record.year))
+      ? ` (${escapeHtml(String(record.year))})`
+      : "";
   const pageTitle = `${title}${yearSuffix}`;
 
   // The player is the above-the-fold LCP element: eager + high fetch priority (no lazy — a

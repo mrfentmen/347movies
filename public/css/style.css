@@ -2146,7 +2146,10 @@ body[data-page="tv"] .hero {
 
 .site-footer nav {
   display: flex;
-  gap: 16px;
+  /* Wrap on narrow screens: seven links on one row overflowed a 375px phone and
+     gave every page a horizontal scrollbar. */
+  flex-wrap: wrap;
+  gap: 8px 16px;
 }
 
 .site-footer nav a {
