@@ -1727,6 +1727,12 @@ body[data-page="tv"] .hero {
   line-height: 1.4;
 }
 
+/* Day-mode accent text is intentionally white for solid buttons. The curated pill
+   has a translucent tint instead, so use a darker explicit token for readable text. */
+[data-theme="light"] .curated-badge {
+  color: #714200;
+}
+
 /* "Unique" badge on hub cards whose pool is measured-disjoint (0 overlap with any other
    pool — every title appears only here). Mirrors the curated-badge styling. */
 .unique-badge {

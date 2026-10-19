@@ -698,6 +698,27 @@ try {
   pair("accent on page bg (amber links)", "accent", "bg");
   pair("accent-ink on accent (primary buttons)", "accent-ink", "accent");
   pair("text on page bg (body copy)", "text", "bg");
+  // Curated badges use accent at 12% over a transparent parent on the light
+  // surface. Read the actual override from the source CSS so this catches a
+  // removed or weakened fix, then judge the composited colors (not raw tokens).
+  const sourceCss = readFileSync("public/css/style.css", "utf8");
+  const lightBadgeRule = sourceCss.match(/\[data-theme="light"\]\s+\.curated-badge\s*\{([^}]*)\}/);
+  const lightBadgeColor = lightBadgeRule?.[1].match(/\bcolor\s*:\s*(#[0-9a-fA-F]{3,6})\s*;/)?.[1];
+  ok(Boolean(lightBadgeColor), "CSS has an explicit light-theme curated-badge text color");
+  if (lightBadgeColor) {
+    const mixSrgb = (foreground, background, percent) => {
+      const channels = (hex) => {
+        const value = hex.replace("#", "");
+        return value.length === 3 ? value.split("").map((c) => parseInt(c + c, 16)) : [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
+      };
+      const foregroundChannels = channels(foreground);
+      const backgroundChannels = channels(background);
+      return `#${foregroundChannels.map((channel, i) => Math.round(channel * percent + backgroundChannels[i] * (1 - percent)).toString(16).padStart(2, "0")).join("")}`;
+    };
+    const lightBadgeBackground = mixSrgb("#9a5b00", "#f4f1ea", 0.12);
+    const lightBadgeContrast = contrast(lightBadgeColor, lightBadgeBackground);
+    ok(lightBadgeContrast >= 4.5, `contrast light curated badge: ${lightBadgeColor} on ${lightBadgeBackground} = ${lightBadgeContrast.toFixed(2)}:1 (≥4.5 AA)`);
+  }
 } catch (err) {
   failures += 1;
   checks += 1;
