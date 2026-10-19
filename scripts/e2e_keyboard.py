@@ -176,7 +176,7 @@ with sync_playwright() as p:
     # No networkidle wait after the click: the movie page embeds the heavy archive.org
     # player iframe, whose embed requests can keep "network idle" from settling for 60s+
     # when archive.org is slow (observed locally). Match e2e_test.py — wait for the shell,
-    # then the MOVIE_READY_JS guard below drives the player/hero readiness.
+    # then the wait_movie_ready locator guard below drives the player/hero readiness.
     page.wait_for_selector("h1", timeout=30000)
     check("search: Enter on a result card opens the film", "/movie/" in page.url, page.url)
 
@@ -186,12 +186,21 @@ with sync_playwright() as p:
     # site bug — mirror e2e_test.py's resilience (wait for the full movie page, reload the
     # same URL once on a blip, same as lib/archive.ts fetchWithRetry) so a single upstream
     # transient can't flake the keyboard walk either. A second failure is a real problem.
-    MOVIE_READY_JS = "document.querySelectorAll('iframe.player').length === 1 && document.querySelectorAll('.watch-btn--hero').length === 1"
+    # Locator waits, never wait_for_function(<string>): a string expression is eval'd in the
+    # page, and the site's own CSP (script-src 'self', no 'unsafe-eval') refuses it — that is
+    # what killed the CI browser battery on 2026-10-19. Same two readiness signals, CSP-safe.
+    # `.player` covers both variants the page can render: the SSR archive.org embed
+    # (iframe.player) and the native player app.js swaps in (video.player--video), which
+    # is what a JS-enabled run sees (verified live 2026-10-19).
+    def wait_movie_ready(target, timeout):
+        target.wait_for_selector(".player", timeout=timeout)
+        target.wait_for_selector(".watch-btn--hero", timeout=timeout)
+
     try:
-        page.wait_for_function(MOVIE_READY_JS, timeout=20000)
+        wait_movie_ready(page, 20000)
     except Exception:
         page.reload(wait_until="domcontentloaded")
-        page.wait_for_function(MOVIE_READY_JS, timeout=30000)
+        wait_movie_ready(page, 30000)
 
     player_ok = walk(page, "movie")
     if not player_ok:
@@ -201,9 +210,9 @@ with sync_playwright() as p:
         # never settles), so reload once and re-walk — matching the suite's reload-once
         # resilience pattern. Two misses = a real defect.
         page.reload(wait_until="domcontentloaded")
-        page.wait_for_function(MOVIE_READY_JS, timeout=30000)
+        wait_movie_ready(page, 30000)
         player_ok = walk(page, "movie")
-    check("movie: player iframe reachable via Tab", player_ok, "" if player_ok else "iframe never focused in two walks")
+    check("movie: player reachable via Tab", player_ok, "" if player_ok else "player never focused in two walks")
     page.evaluate("document.querySelector('.watch-btn--hero').focus()")
     before = page.evaluate("document.querySelector('.watch-btn--hero').getAttribute('aria-pressed')")
     page.keyboard.press("Space")

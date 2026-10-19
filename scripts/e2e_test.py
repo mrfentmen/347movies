@@ -144,18 +144,30 @@ with sync_playwright() as p:
     # metadata fetch hits a transient 5xx (the site's own fail-closed design). That is NOT
     # a site bug — mirror the site's resilience (one automatic retry, same as lib/archive.ts
     # fetchWithRetry) before asserting, so a single upstream blip can't flake the suite.
-    MOVIE_READY_JS = "document.querySelectorAll('iframe.player').length === 1 && document.querySelectorAll('.watch-btn--hero').length === 1"
+    # Readiness is waited on with LOCATORS, not a JS string: wait_for_function(expression)
+    # evaluates the string in the page, and the site's own CSP (script-src 'self', no
+    # 'unsafe-eval') refuses that — the CI browser battery died on exactly this on 2026-10-19
+    # ("Evaluating a string as JavaScript violates the following Content Security Policy
+    # directive"). Locator waits go through CDP and are exempt, and they check the same two
+    # signals the old expression did.
+    # `.player` covers both variants: the SSR archive.org embed (iframe.player) and the
+    # native player app.js swaps in for playable items (video.player--video / audio),
+    # which is what a JS-enabled run actually sees (verified live 2026-10-19: after the
+    # bundle runs, iframe.player is gone and video.player is in its place).
+    def wait_movie_ready(target, timeout):
+        target.wait_for_selector(".player", timeout=timeout)
+        target.wait_for_selector(".watch-btn--hero", timeout=timeout)
 
     page.wait_for_selector("h1", timeout=15000)
     check("movie: h1 title present", page.locator("h1").count() == 1)
     try:
-        page.wait_for_function(MOVIE_READY_JS, timeout=20000)
+        wait_movie_ready(page, 20000)
     except Exception:
         # Upstream transient: reload the same URL once (the site's own retry pattern),
         # then wait again; a second failure is a genuine problem, not a blip.
         page.reload(wait_until="domcontentloaded")
-        page.wait_for_function(MOVIE_READY_JS, timeout=30000)
-    check("movie: archive.org player iframe", page.locator("iframe.player").count() == 1)
+        wait_movie_ready(page, 30000)
+    check("movie: player element present", page.locator(".player").count() == 1)
     check("movie: breadcrumb Home /", page.locator(".breadcrumb a[href='/']").is_visible())
     save_btn = page.locator(".watch-btn--hero")
     check("movie: save button present", save_btn.count() == 1)
@@ -254,11 +266,11 @@ with sync_playwright() as p:
     # The SSR movie page can render the honest "unavailable" variant on an upstream
     # transient (no player). Wait for the player before measuring it — same guard as the
     # desktop movie pass, with one reload for a blip.
-    m.wait_for_function("document.querySelectorAll('iframe.player').length === 1", timeout=20000)
+    m.wait_for_selector(".player", timeout=20000)  # locator wait — CSP blocks string eval
     m_sw = m.evaluate("document.documentElement.scrollWidth")
     m_cw = m.evaluate("document.documentElement.clientWidth")
     check("mobile 375 movie: no horizontal scroll", m_sw <= m_cw, f"scrollW={m_sw} vw={m_cw}")
-    check("mobile 375 movie: player fits", m.evaluate("document.querySelector('iframe.player').getBoundingClientRect().width <= document.documentElement.clientWidth"))
+    check("mobile 375 movie: player fits", m.evaluate("document.querySelector('.player').getBoundingClientRect().width <= document.documentElement.clientWidth"))
     check("mobile 375 movie: breadcrumb visible", m.locator(".breadcrumb").is_visible())
     check("mobile 375 movie: save button fits", m.evaluate("document.querySelector('.watch-btn--hero').getBoundingClientRect().right <= document.documentElement.clientWidth"))
 

@@ -30,6 +30,17 @@ const TIMEOUT_MS = 90_000;
 // reachable at other hosts). Fall back to the request origin when the var is absent.
 const siteUrlMatch = readFileSync("wrangler.jsonc", "utf8").match(/"SITE_URL"\s*:\s*"([^"]+)"/);
 const PINNED_ORIGIN = siteUrlMatch ? new URL(siteUrlMatch[1]).origin : new URL(BASE).origin;
+// The pool sub-sitemaps, parsed from lib/sitemap.ts's SITEMAP_POOLS — the same text-level read
+// this script already uses for wrangler.jsonc. Deriving the expected count removes the stale
+// number as a failure mode (2026-10-19: the hardcoded 23 went stale the day a pool landed)
+// while still failing when the deployed index is missing a pool it should list.
+const SITEMAP_POOLS = (() => {
+  const src = readFileSync("lib/sitemap.ts", "utf8");
+  const block = src.match(/SITEMAP_POOLS[^=]*=\s*\[([\s\S]*?)\]/);
+  return block ? [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]) : [];
+})();
+// static + one sub-sitemap per pool.
+const EXPECTED_SUB_SITEMAPS = SITEMAP_POOLS.length + 1;
 
 const CASES = [
   ["GET", "/", 200],
@@ -1125,11 +1136,35 @@ try {
   // 2,933 and 257 = 257), so all five must be labeled as curated views, never implied to be
   // disjoint catalogs. Guard both the hub badges and the landing-page notes.
   ok((collectionsHtml.match(/Curated view/g) || []).length === 5, "collections page badges shorts + silents + footage + TED + science as curated views");
-  // Disjoint pools: measured 2026-08-21 (cross-pool overlap matrix, docs/cross-pool-overlap-matrix.md)
-  // — 10 pools have 0 overlap with any other pool (wwii + newsreels added 2026-08-24, both
-  // measured fully disjoint). Each carries a "Unique" badge so visitors know titles aren't
-  // duplicated elsewhere.
-  ok((collectionsHtml.match(/Unique/g) || []).length === 11, "collections page badges 11 disjoint pools as Unique");
+  // Disjoint pools: each is measured against every other pool (docs/cross-pool-overlap-matrix.md)
+  // and badged "Unique" only when that measurement says 0 shared titles. Pinned by NAME rather
+  // than by a count, because a count cannot tell "a new pool was added without measuring it"
+  // from "a pool was measured and badged" — and the count went stale exactly that way
+  // (2026-10-19: vhsvault measured 0 overlap and was badged, the literal 11 was not updated).
+  // Adding a badge now means naming the pool here, which is the point: claims need evidence.
+  const UNIQUE_POOLS = [
+    "Anime",
+    "Old Time Radio",
+    "Music &amp; Concerts",
+    "Public Broadcasting",
+    "Government Films",
+    "Audiobooks",
+    "Vintage Records",
+    "Space &amp; NASA",
+    "World War II",
+    "Newsreels",
+    "VHS Vault",
+    "NFPF Orphan Films",
+  ];
+  const badgedPools = new Set(
+    [...collectionsHtml.matchAll(/<h2>([^<]*?)\s*<span class="unique-badge"/g)].map((m) => m[1].trim()),
+  );
+  const missingBadges = UNIQUE_POOLS.filter((p) => !badgedPools.has(p));
+  const unexpectedBadges = [...badgedPools].filter((p) => !UNIQUE_POOLS.includes(p));
+  ok(
+    missingBadges.length === 0 && unexpectedBadges.length === 0,
+    `collections page badges exactly the measured-disjoint pools as Unique (missing: ${missingBadges.join(", ") || "none"}; unexpected: ${unexpectedBadges.join(", ") || "none"})`,
+  );
   // The collections hub carries JSON-LD expressing the curated-view relationships so
   // structured-data consumers see the subset hierarchy from the hub itself.
   ok(collectionsHtml.includes('application/ld+json') && collectionsHtml.includes('isPartOf'), "collections hub JSON-LD discloses curated-view isPartOf relationships");
@@ -1234,12 +1269,14 @@ try {
   ok(fresh.locs >= MIN_SITEMAP_URLS + 6000, `sitemap includes the serial/audio pools (${fresh.locs} URLs, floor ${MIN_SITEMAP_URLS + 6000})`);
   // The index lists one sub-sitemap per pool (static + each pool) — a single-file sitemap
   // would have been silently truncated by the 50k protocol limit, so the split is the fix.
-  // Every pool gets its own sub-sitemap: static + 21 pools (films union + tv, anime,
-  // cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science,
-  // govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels). The count is
-  // pinned exactly — a pool added to the catalog but not to SITEMAP_POOLS (the footage gap,
-  // 2026-08-22) would shrink the index and must fail.
-  ok(fresh.subs === 23, `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected 23)`);
+  // The expected count comes from SITEMAP_POOLS in lib/sitemap.ts, so a pool added to the
+  // catalog but not to the index (the footage gap, 2026-08-22) still fails, while adding a
+  // pool to the source of truth no longer requires editing a number here.
+  ok(SITEMAP_POOLS.length > 2, `SITEMAP_POOLS parsed from lib/sitemap.ts (${SITEMAP_POOLS.length} pools)`);
+  ok(
+    fresh.subs === EXPECTED_SUB_SITEMAPS,
+    `sitemap index lists one sub-sitemap per pool (${fresh.subs} sub-sitemaps, expected ${EXPECTED_SUB_SITEMAPS} = static + ${SITEMAP_POOLS.length} pools)`,
+  );
   ok(fresh.subFailures === 0, `every listed sub-sitemap serves 200 (failed: ${fresh.failedSubs.join(", ") || "none"})`);
   // Static paths (/, /about, /privacy, /terms, /advertise, /browse, /search, /genre, /tv,
   // /anime, /cartoons, /otr, /music, /footage, /shortfilms, …) carry no lastmod; every
