@@ -41,6 +41,7 @@ const POOLS: Array<{ variant: IndexVariant; filmsOnly: boolean }> = [
   { variant: "wwii", filmsOnly: false },
   { variant: "newsreels", filmsOnly: false },
   { variant: "nfpf", filmsOnly: false },
+  { variant: "vhsvault", filmsOnly: false },
 ];
 
 export const onRequestGet: PagesFunction<Env> = async ({ request }) => {

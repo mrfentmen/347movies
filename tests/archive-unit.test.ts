@@ -145,10 +145,12 @@ test("searchArchive selects the wwii, newsreels, and widened govfilms gates", as
   await searchArchive({ page: 1, rows: 24, variant: "newsreels" }, fetchImpl);
   await searchArchive({ page: 1, rows: 24, variant: "govfilms" }, fetchImpl);
   await searchArchive({ page: 1, rows: 24, variant: "nfpf" }, fetchImpl);
+  await searchArchive({ page: 1, rows: 24, variant: "vhsvault" }, fetchImpl);
   const wwiiQ = qOf(calls[0] as string);
   const newsQ = qOf(calls[1] as string);
   const govQ = qOf(calls[2] as string);
   const nfpfQ = qOf(calls[3] as string);
+  const vhsQ = qOf(calls[4] as string);
   assert.ok(wwiiQ.includes("collection:wwIIarchive"), "wwii variant selects the wwIIarchive pool (case-sensitive Solr name)");
   assert.ok(wwiiQ.includes("mediatype:movies"), "wwii gate keeps mediatype:movies");
   assert.ok(!wwiiQ.includes("feature_films"), "wwii gate does not include the films collections");
@@ -159,6 +161,9 @@ test("searchArchive selects the wwii, newsreels, and widened govfilms gates", as
   assert.ok(nfpfQ.includes("collection:nationalfilmpreservationfoundation"), "nfpf variant selects the NFPF pool");
   assert.ok(nfpfQ.includes("mediatype:movies"), "nfpf gate keeps mediatype:movies");
   assert.ok(!nfpfQ.includes("feature_films"), "nfpf gate does not include the films collections");
+  assert.ok(vhsQ.includes("collection:vhsvault"), "vhsvault variant selects the vhsvault pool");
+  assert.ok(vhsQ.includes("mediatype:movies"), "vhsvault gate keeps mediatype:movies");
+  assert.ok(!vhsQ.includes("feature_films"), "vhsvault gate does not include the films collections");
 });
 
 test("searchArchive adds the films-only clause only when filmsOnly is true", async () => {

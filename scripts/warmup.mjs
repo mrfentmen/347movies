@@ -65,6 +65,7 @@ const PAGES = [
   "/wwii",
   "/newsreels",
   "/nfpf",
+  "/vhsvault",
   "/shortfilms",
   // Warming page 1 of each new video pool pre-builds its catalog index (one archive.org
   // fetch per pool) so the first real visitor to the home sections or pool pages never
@@ -85,6 +86,7 @@ const PAGES = [
   "/api/browse?wwii=1&sort=recent&page=1",
   "/api/browse?newsreels=1&sort=recent&page=1",
   "/api/browse?nfpf=1&sort=recent&page=1",
+  "/api/browse?vhsvault=1&sort=recent&page=1",
   "/api/youtube?q=short+film",
 ];
 

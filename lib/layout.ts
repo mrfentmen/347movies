@@ -38,6 +38,7 @@ const HEADER = `<header class="site-header">
           <a href="/wwii">World War II</a>
           <a href="/newsreels">Newsreels</a>
           <a href="/nfpf">NFPF Orphan Films</a>
+          <a href="/vhsvault">VHS Vault</a>
           <a href="/shortfilms">Short Films</a>
         </div>
       </details>
@@ -101,6 +102,7 @@ const POOL_LANDING: Record<IndexVariant, { path: string; label: string }> = {
   wwii: { path: "/wwii", label: "World War II" },
   newsreels: { path: "/newsreels", label: "Newsreels" },
   nfpf: { path: "/nfpf", label: "NFPF Orphan Films" },
+  vhsvault: { path: "/vhsvault", label: "VHS Vault" },
 };
 
 export interface PageMeta {

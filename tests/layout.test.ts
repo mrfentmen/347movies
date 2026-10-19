@@ -162,6 +162,10 @@ test("renderMoviePage renders pool strips and labels for the wwii and newsreels 
   const nfpfHtml = renderMoviePage(nfpf, "https://347movies.pages.dev", undefined);
   assert.ok(nfpfHtml.includes('data-pool="nfpf"'), "nfpf pool strip carries the variant");
   assert.ok(nfpfHtml.includes('"name":"NFPF Orphan Films"'), "JSON-LD breadcrumb includes the pool label");
+  const vhs = { ...RECORD, pool: "vhsvault" as const };
+  const vhsHtml = renderMoviePage(vhs, "https://347movies.pages.dev", undefined);
+  assert.ok(vhsHtml.includes('data-pool="vhsvault"'), "vhsvault pool strip carries the variant");
+  assert.ok(vhsHtml.includes('"name":"VHS Vault"'), "VHS Vault JSON-LD breadcrumb carries the pool label");
 });
 
 test("renderMoviePage marks an audio item with a hero audio badge", () => {

@@ -4,6 +4,28 @@ Every decision, milestone, and error-fix in the 347movies project, in reverse-ch
 
 ---
 
+## 2026-10-19 — VHS Vault pool: 12,805 new films (23rd catalog)
+
+- **New pool: `vhsvault` (12,805 gated movies) → `/vhsvault`**: tape-era pictures, drive-in
+  features, regional oddities and instructional reels from archive.org's `vhsvault`
+  collection. Chosen by measurement, not guesswork: the same `LEGAL_CLAUSE` returns 12,805
+  items, and **0** of them sit in `feature_films`, `prelinger` or `moviesandfilms` — so the
+  pool adds titles rather than a second view of the films union (contrast `SciFi_Horror`,
+  also measured: 383 licensed movies, all 383 already inside feature_films → rejected).
+- Registered everywhere a pool must be: `VHS_BASE_CLAUSE` + `IndexVariant` + `baseClauseFor`
+  (`lib/archive.ts`), `INDEX_CACHE_URLS`/`RANDOM_VARIANTS` (`lib/catalog-index.ts`),
+  `COLLECTION_TO_POOL` (`lib/normalize.ts`), `POOL_LANDING` + header nav (`lib/layout.ts`),
+  `SITEMAP_POOLS` + `STATIC_PATHS` (`lib/sitemap.ts`), `browse`/`search` flags,
+  `api/collections`, `_routes.json`, `app.js` (home shelf, browse/search chains, meta,
+  dispatcher, suggest pools), `public/vhsvault.html`, the home shelf, the collections card
+  (marked Unique), the header nav on all 34 pages, and the warm-up list.
+- Tests extended: RANDOM_VARIANTS now 23 pools, the gate assertion for the Solr clause, the
+  collection→pool mapping (incl. it winning over the films union), and the JSON-LD pool
+  breadcrumb. Smoke gains the `/vhsvault` structure page, the browse feed, and both home
+  assertions; the collections card count moves 22 → 23.
+- License baseline pinned at 12,805 in `scripts/license-sweep.ts`; `vhsvault` added to the
+  aggregation probe's known collections so the bidirectional gate-sync test stays green.
+
 ## 2026-08-25 — NFPF Orphan Films pool (deploy 2c33cff7, 502/511 smoke, 23 sub-sitemaps)
 
 - **New pool: `nationalfilmpreservationfoundation` (185 gated movies) → `/nfpf`**: orphan

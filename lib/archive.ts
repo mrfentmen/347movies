@@ -287,6 +287,16 @@ export const NEWSREELS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:universal_n
  */
 export const NFPF_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:nationalfilmpreservationfoundation AND mediatype:movies`;
 
+/**
+ * VHS Vault catalog gate: the same license gate over archive.org's `vhsvault` collection —
+ * tape-era films, drive-in pictures, regional oddities and public-domain features. Measured
+ * live 2026-10-19: 12,805 legal-marked movies, and ZERO of them sit in feature_films,
+ * prelinger or moviesandfilms, so this pool adds genuinely new titles rather than a second
+ * view of the films union. (Re-measure with scripts/license-sweep.ts before trusting the
+ * number; the baseline there is pinned to this measurement.)
+ */
+export const VHS_BASE_CLAUSE = `${LEGAL_CLAUSE} AND collection:vhsvault AND mediatype:movies`;
+
 /** Which curated catalog an index/query serves. */
 export type IndexVariant =
   | "films"
@@ -310,7 +320,8 @@ export type IndexVariant =
   | "footage"
   | "wwii"
   | "newsreels"
-  | "nfpf";
+  | "nfpf"
+  | "vhsvault";
 
 /**
  * The legality+collection gate for a catalog variant. One home for "which gate does a
@@ -361,6 +372,8 @@ function baseClauseFor(variant: IndexVariant = "films"): string {
       return NEWSREELS_BASE_CLAUSE;
     case "nfpf":
       return NFPF_BASE_CLAUSE;
+    case "vhsvault":
+      return VHS_BASE_CLAUSE;
     default:
       return BASE_CLAUSE;
   }

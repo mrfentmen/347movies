@@ -62,6 +62,7 @@ const INDEX_CACHE_URLS: Record<IndexVariant, string> = {
   wwii: "https://347movies.internal/wwii-index-v1",
   newsreels: "https://347movies.internal/newsreels-index-v1",
   nfpf: "https://347movies.internal/nfpf-index-v1",
+  vhsvault: "https://347movies.internal/vhsvault-index-v1",
 };
 
 /** Raw archive.org search doc subset carried by the index (fields from fetchCatalogIndexDocs). */
@@ -432,7 +433,7 @@ export async function queryCatalog(
   const sorted = sortIndex(filtered, sort);
   const { results, total, pages } = paginateIndex(sorted, page, rows);
   return { results: indexDocsToRecords(results), total, pages };
-}/** The fifteen pools "Surprise me" draws from, uniformly over items. */
+}/** Every pool "Surprise me" draws from, uniformly over items. */
 export const RANDOM_VARIANTS: IndexVariant[] = [
   "films",
   "tv",
@@ -456,6 +457,7 @@ export const RANDOM_VARIANTS: IndexVariant[] = [
   "wwii",
   "newsreels",
   "nfpf",
+  "vhsvault",
 ];
 
 /**

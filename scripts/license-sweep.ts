@@ -66,6 +66,9 @@ const POOLS: { label: string; gate: string; baseline: number }[] = [
   { label: "wwii", gate: "collection:wwIIarchive AND mediatype:movies", baseline: 2_821 },
   { label: "newsreels", gate: "collection:universal_newsreels AND mediatype:movies", baseline: 595 },
   { label: "nfpf", gate: "collection:nationalfilmpreservationfoundation AND mediatype:movies", baseline: 185 },
+  // Measured 2026-10-19: 12,805 licence-gated movies, 0 shared with feature_films /
+  // prelinger / moviesandfilms — the pool adds titles, not a second view of the union.
+  { label: "vhsvault", gate: "collection:vhsvault AND mediatype:movies", baseline: 12805 },
 ];
 
 /**

@@ -67,6 +67,7 @@ const KNOWN_COLLECTIONS = new Set([
   "wwIIarchive", "universal_newsreels",
   // 2026-08-24 provenance-find (ephemera sub-collection, step 5)
   "nationalfilmpreservationfoundation",
+  "vhsvault",
   // 2026-08-25 audio provenance probe (step 5) — institutional NASA audio, pending pool registration
   "nasaaudiocollection",
 ]);

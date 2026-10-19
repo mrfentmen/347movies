@@ -85,10 +85,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
     const wwii = validateFlag(url.searchParams.get("wwii"));
     const newsreels = validateFlag(url.searchParams.get("newsreels"));
     const nfpf = validateFlag(url.searchParams.get("nfpf"));
-    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels, nfpf].filter(Boolean).length > 1) {
-      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels, nfpf.");
+    const vhsvault = validateFlag(url.searchParams.get("vhsvault"));
+    if ([tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels, nfpf, vhsvault].filter(Boolean).length > 1) {
+      throw new ApiError(400, "invalid_catalog", "Use only one of tv, anime, cartoons, otr, music, documentaries, ted, sports, shorts, silents, publictv, science, govfilms, audiobooks, records, ephemera, space, footage, wwii, newsreels, nfpf, vhsvault.");
     }
-    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : wwii ? "wwii" : newsreels ? "newsreels" : nfpf ? "nfpf" : "films";
+    const variant: IndexVariant = tv ? "tv" : anime ? "anime" : cartoons ? "cartoons" : otr ? "otr" : music ? "music" : documentaries ? "documentaries" : ted ? "ted" : sports ? "sports" : shorts ? "shorts" : silents ? "silents" : publictv ? "publictv" : science ? "science" : govfilms ? "govfilms" : audiobooks ? "audiobooks" : records ? "records" : ephemera ? "ephemera" : space ? "space" : footage ? "footage" : wwii ? "wwii" : newsreels ? "newsreels" : nfpf ? "nfpf" : vhsvault ? "vhsvault" : "films";
     const serialized = variant !== "films";
 
     // Must be awaited inside the try (same bug class as search.ts, fixed 2026-08-16): an

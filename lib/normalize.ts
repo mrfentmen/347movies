@@ -576,6 +576,10 @@ const COLLECTION_TO_POOL: Array<[readonly string[], IndexVariant]> = [
   [["wwiiarchive"], "wwii"],
   [["universal_newsreels"], "newsreels"],
   [["nationalfilmpreservationfoundation"], "nfpf"],
+  // `vhsvault` is mapped BEFORE the films union: measured 2026-10-19, none of its items
+  // overlap feature_films/prelinger/moviesandfilms, so the specific pool wins on the detail
+  // page and the films union (below) stays the catch-all.
+  [["vhsvault"], "vhsvault"],
   [["feature_films", "prelinger", "moviesandfilms"], "films"],
 ];
 

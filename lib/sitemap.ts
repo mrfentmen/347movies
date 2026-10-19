@@ -42,6 +42,7 @@ export const SITEMAP_POOLS: IndexVariant[] = [
   "wwii",
   "newsreels",
   "nfpf",
+  "vhsvault",
 ];
 
 /** Static pages that live in their own sub-sitemap (no lastmod — they're evergreen). */
@@ -75,6 +76,7 @@ export const STATIC_PATHS = [
   "/wwii",
   "/newsreels",
   "/shortfilms",
+  "/vhsvault",
   "/collections",
 ];
 

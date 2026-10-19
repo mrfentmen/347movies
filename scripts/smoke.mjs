@@ -70,6 +70,7 @@ const CASES = [
   ["GET", "/api/browse?wwii=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?newsreels=1&sort=recent&page=1", 200],
   ["GET", "/api/browse?nfpf=1&sort=recent&page=1", 200],
+  ["GET", "/api/browse?vhsvault=1&sort=recent&page=1", 200],
   // Decade chips link to decade-START bounds (from/to must end in 0; the route maps to+9).
   // Each of these 200s; a chip pointing at to=1969-style bounds 400s — the TED-chip bug
   // (PR #45 shipped to=2009) is exactly the class this pins.
@@ -93,6 +94,7 @@ const CASES = [
   ["GET", "/wwii", 200],
   ["GET", "/newsreels", 200],
   ["GET", "/nfpf", 200],
+  ["GET", "/vhsvault", 200],
   ["GET", "/shortfilms", 200],
   ["GET", "/ephemera", 200],
   ["GET", "/space", 200],
@@ -325,7 +327,7 @@ console.log("\n— HTML structure (one h1, skip link, main landmark per page) �
 try {
   // The page shell must stay structurally sound: exactly one h1, a skip link, and one
   // <main> on every page type. Cheap content checks on uniquely-busted static pages.
-  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/wwii", "/newsreels", "/nfpf", "/shortfilms", "/collections", "/definitely-not-a-page"];
+  const structurePages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/wwii", "/newsreels", "/nfpf", "/vhsvault", "/shortfilms", "/collections", "/definitely-not-a-page"];
   for (const path of structurePages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     const h1s = (html.match(/<h1[ >]/g) || []).length;
@@ -413,6 +415,7 @@ try {
   ok(js.includes("/api/browse?wwii=1&sort=recent&page=1"), "JS: World War II home feed wired");
   ok(js.includes("/api/browse?newsreels=1&sort=recent&page=1"), "JS: Newsreels home feed wired (Universal Newsreels pool)");
   ok(js.includes("/api/browse?nfpf=1&sort=recent&page=1"), "JS: NFPF home feed wired (National Film Preservation Foundation pool)");
+  ok(js.includes("/api/browse?vhsvault=1&sort=recent&page=1"), "JS: VHS Vault home feed wired (archive.org vhsvault pool)");
   ok(js.includes("/api/youtube?q="), "JS: Short films page wired to the CC-filtered YouTube search");
   ok(js.includes("/api/browse?ted=1&sort=recent&page=1"), "JS: TED Talks home feed wired");
   ok(js.includes("card__meta"), "JS: audio-pool card chip (episode count + series tag) rendered");
@@ -506,6 +509,7 @@ try {
   ok(home.includes('id="music"'), "Home: Music & Concerts section present (audio feed)");
   ok(home.includes('id="newsreels"'), "Home: Newsreels section present (Universal Newsreels pool)");
   ok(home.includes('id="nfpf"'), "Home: NFPF Orphan Films section present (National Film Preservation Foundation pool)");
+  ok(home.includes('id="vhsvault"'), "Home: VHS Vault section present (archive.org vhsvault pool)");
   ok(home.includes('rel="alternate" type="application/rss+xml"'), "Home: RSS feed alternate link present");
   ok(home.includes('rel="manifest" href="/manifest.webmanifest"'), "Home: PWA manifest linked");
   ok(home.includes('class="ad-slot__cta"'), "Home: ad slots carry an email inquiry CTA");
@@ -695,7 +699,7 @@ try {
   // authentication affordance: a password input, a link to an auth route, or standalone
   // sign-up/sign-in text. Prose denial ("No accounts", "no sign-up walls", "zero
   // accounts") is expected and fine — the guard targets affordances, not the word.
-  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/wwii", "/newsreels", "/nfpf", "/shortfilms", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
+  const noAuthPages = ["/", "/browse", "/search?q=noir", "/watchlist", "/about", "/privacy", "/terms", "/advertise", "/genre", "/tv", "/anime", "/cartoons", "/otr", "/music", "/documentaries", "/ted", "/sports", "/shorts", "/silents", "/publictv", "/science", "/govfilms", "/audiobooks", "/records", "/ephemera", "/space", "/footage", "/wwii", "/newsreels", "/nfpf", "/vhsvault", "/shortfilms", "/collections", "/movie/it-1927", "/definitely-not-a-page"];
   for (const path of noAuthPages) {
     const html = await (await request("GET", `${path}?smoke=${Date.now()}`)).text();
     let reason = null;
@@ -1103,7 +1107,7 @@ try {
   ok(allCounted, `collections API returns all pools with counts (${expected.map((k) => `${k}=${pools[k]}`).join(", ")})`);
   ok(typeof pools.films === "number" && pools.films > 1000, `films count looks sane (${pools.films})`);
   const collectionsHtml = await (await request("GET", `/collections?smoke=${Date.now()}`)).text();
-  ok((collectionsHtml.match(/data-pool="/g) || []).length === 22, "collections page carries twenty-two pool cards with count targets");
+  ok((collectionsHtml.match(/data-pool="/g) || []).length === 23, "collections page carries twenty-three pool cards with count targets");
   const appJs = await (await request("GET", "/js/app.js?smoke=" + Date.now())).text();
   ok(appJs.includes("/api/collections"), "app.js wires the collections count fetch");
   // The hub is the single footer destination for the catalog: the footer links to
