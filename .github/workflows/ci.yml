@@ -230,7 +230,17 @@ jobs:
           # The UI/a11y battery (E2E flows, keyboard walk, mobile/zoom, axe-core) catches
           # regressions no unit test can: watchlist lifecycle, focus rings, reflow at
           # 375px/640px, WCAG violations. Scripts hardcode BASE=http://127.0.0.1:8787.
-          npx wrangler pages dev public --port 8787 > /tmp/wrangler-browser.log 2>&1 &
+          #
+          # RATE_LIMIT is raised for the same reason the smoke job raises it.
+          #
+          # The battery issues well over 60 requests to rate-limited paths (/api/*,
+          # /movie/*), and the production default is 60 per minute per IP — which on a dev
+          # server is this job's own traffic. A tripped limiter answers those paths with a
+          # 429 JSON body instead of the page, so every later step sees missing content:
+          # no player, no cards, no 302 from /api/random. That is precisely how this job
+          # failed from 2026-08-25 onward (deepest steps first: mobile, then surprise-me).
+          # Production and the CDN keep the default — only the local test server relaxes it.
+          npx wrangler pages dev public --port 8787 --binding RATE_LIMIT=10000 > /tmp/wrangler-browser.log 2>&1 &
           SERVER_PID=$!
           HEALTHY=0
           for i in $(seq 1 90); do
