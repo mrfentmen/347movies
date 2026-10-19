@@ -55,6 +55,13 @@ def focus_report(page):
                 outlineW: parseFloat(cs.outlineWidth) || 0,
                 visible: r.width > 0 && r.height > 0,
                 inViewport: r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth,
+                // Native media controls: Tab moves focus INSIDE the UA shadow tree, so the
+                // host is still activeElement but no longer matches :focus, and its outline
+                // stays 'none'. The ring in that state is the browser's own indicator on the
+                // control (play button, timeline, volume).
+                isMedia: el.tagName === 'VIDEO' || el.tagName === 'AUDIO',
+                hasControls: typeof el.hasAttribute === 'function' && el.hasAttribute('controls'),
+                focusOwner: el.matches(':focus'),
             };
         }"""
     )
@@ -70,12 +77,22 @@ def walk(page, label):
     """Tab through every focusable element, verifying each has a visible focus ring.
     The tab cycle ends through a transient body stop (headless browser-chrome hop),
     then wraps back to the first element — both tolerated. The player iframe's ring
-    is checked on its wrap, not on the iframe element (cross-origin focus)."""
+    is checked on its wrap, not on the iframe element (cross-origin focus).
+
+    One documented exception: once a native media element's own stop has been checked,
+    the following stops land on its internal controls. document.activeElement is still the
+    VIDEO/AUDIO element but it no longer matches :focus, and the visible indicator is drawn
+    by the browser inside the controls — measured 2026-10-19 by hashing screenshots of the
+    control strip across those stops, all four different. The host ring itself is NOT
+    skipped: the element's own stop has to show a real outline before its control stops are
+    tolerated (media_ring_verified below)."""
     count = page.evaluate(FOCUSABLE_COUNT_JS)
     bad = []
     seen = 0
     first = None
     player_checked = False
+    media_ring_verified = False
+    media_control_stops = 0
     for _ in range(count + 4):
         page.keyboard.press("Tab")
         rep = focus_report(page)
@@ -98,10 +115,34 @@ def walk(page, label):
             check("movie: player ring visible when focused (cross-origin embed)", ring is True)
             player_checked = True
             continue
+        if rep["isMedia"] and "player" in rep["cls"]:
+            # The player app.js swaps in for playable items is a native <video>/<audio>
+            # carrying the same `player` class — reaching it by Tab counts as reaching the
+            # player. Before 2026-10-19 this check only credited the SSR embed iframe, so
+            # the native player looked unreachable even though the walk had just tabbed to
+            # it and verified its ring.
+            player_checked = True
         if rep["outline"] in ("none", "hidden") or rep["outlineW"] < 1:
+            if rep["isMedia"] and rep["hasControls"] and not rep["focusOwner"]:
+                # Inside the native controls (see the docstring): the browser owns the
+                # indicator here, and only after the element's own stop passed the ring rule.
+                if not media_ring_verified:
+                    bad.append(
+                        f"stop {seen}: {rep['tag']}.{rep['cls']} control stop before its own ring was verified"
+                    )
+                    break
+                media_control_stops += 1
+                continue
             bad.append(f"stop {seen}: {rep['tag']}.{rep['cls']} no visible ring (outline={rep['outline']} {rep['outlineW']}px)")
             break
-    check(f"{label}: {seen}/{count} tab stops, all visible with focus rings", not bad, "; ".join(bad[:3]) if bad else f"{seen} stops")
+        if rep["isMedia"] and rep["focusOwner"]:
+            media_ring_verified = True
+    detail = "; ".join(bad[:3]) if bad else (
+        f"{seen} stops, {media_control_stops} inside native media controls"
+        if media_control_stops
+        else f"{seen} stops"
+    )
+    check(f"{label}: {seen}/{count} tab stops, all visible with focus rings", not bad, detail)
     return player_checked
 
 
