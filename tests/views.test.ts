@@ -120,10 +120,17 @@ test("recordPageView persists to KV when the binding exists", async () => {
   const env: Env = { MOVIES_KV: fakeKv(store) };
   await recordPageView(env, "/browse");
   await recordPageView(env, "/movie/x");
-  const daily = store.get("views:v1:d:" + new Date().toISOString().slice(0, 10));
-  assert.equal(daily, "2", "daily KV key incremented twice");
-  assert.ok([...store.keys()].some((k) => k.startsWith("views:v1:p:") && k.endsWith(":/browse")), "per-path KV key written");
-  assert.ok([...store.keys()].some((k) => k.startsWith("views:v1:p:") && k.endsWith(":/movie")), "movie bucket KV key written");
+  // v2 layout: ONE day key holding every bucket as JSON. v1 wrote a key per bucket and
+  // read them back one at a time, which cost 189 sequential KV round-trips per
+  // /api/views?days=7 request (measured 2026-10-19: ~8s, and the endpoint timed out).
+  const today = new Date().toISOString().slice(0, 10);
+  const dayKeys = [...store.keys()].filter((k) => k.startsWith("views:v2:d:"));
+  assert.deepEqual(dayKeys, ["views:v2:d:" + today], "exactly one KV key per day");
+  assert.deepEqual(
+    JSON.parse(store.get("views:v2:d:" + today) ?? "{}"),
+    { "/browse": 1, "/movie": 1 },
+    "each bucket lands in the day blob",
+  );
   assert.ok(![...store.keys()].some((k) => k.includes("/about")), "uncounted paths never reach KV");
 });
 
@@ -137,9 +144,7 @@ test("stats reconcile memory and KV by taking the larger count (multi-isolate vi
 
   // KV (a different isolate's view) says 5 — seeded directly, as if another isolate wrote it.
   const store = new Map<string, string>();
-  for (let i = 0; i < 5; i++) {
-    store.set(`views:v1:p:${today}:/browse`, String((Number(store.get(`views:v1:p:${today}:/browse`) ?? 0) + 1)));
-  }
+  store.set(`views:v2:d:${today}`, JSON.stringify({ "/browse": 5 }));
 
   const stats = await getViewStats({ MOVIES_KV: fakeKv(store) }, 7);
   assert.equal(stats.byPath["/browse"], 5, "the larger of memory/KV wins — a KV-only isolate's count is not lost");

@@ -12,18 +12,28 @@
  *   - the store is a three-layer stack: an in-isolate memory Map (exact per-isolate, resets
  *     on redeploy), the Cloudflare edge Cache API (the default cross-isolate layer — one
  *     tiny key per day, ~31-day TTL, no permissions needed, works today), and MOVIES_KV
- *     (optional when the binding exists). Every layer is written best-effort with a
- *     read-modify-write, so increments can be lost under concurrency — fine for an
- *     approximate counter; reads take the larger of the layers so no reported view is ever
- *     double-counted and a layer that missed a race never undercounts the final total.
+ *     (optional when the binding exists, one JSON day-blob per day). Every layer is written
+ *     best-effort with a read-modify-write, so increments can be lost under concurrency —
+ *     fine for an approximate counter; reads take the larger of the layers so no reported
+ *     view is ever double-counted and a layer that missed a race never undercounts the
+ *     final total.
  * The privacy page discloses all of this (public/privacy.html, "The page-view counter").
  */
 import type { KVNamespace } from "@cloudflare/workers-types";
 import type { Env } from "./env.ts";
 import { edgeCacheMatch, edgeCachePut } from "./edge-cache.ts";
 
-/** KV key prefix — bump the version to reset the counter intentionally. */
-const KV_PREFIX = "views:v1:";
+/**
+ * KV key prefix — bump the version to reset the counter intentionally.
+ *
+ * v2 (2026-10-19) is the day-blob layout: ONE key per day holding every bucket as JSON.
+ * v1 wrote one key per day AND one per (day, bucket) and read them back one at a time, so
+ * a GET /api/views?days=7 did 189 sequential KV reads (~8s, and ~30s for the 30-day
+ * window) — slow enough that the endpoint timed out under the smoke suite. v1 keys are
+ * ignored, not migrated: the counter is approximate by design and the doc above says a
+ * prefix bump is how a reset is made intentional.
+ */
+const KV_PREFIX = "views:v2:";
 /** Edge-cache key base (synthetic internal URL, never served to the public). */
 const CACHE_BASE = "https://347movies.internal/views/v1/";
 /** Edge-cache TTL: 31 days so the full 30-day stats window survives. */
@@ -110,28 +120,26 @@ export function _resetViewsForTests(): void {
   memory.clear();
 }
 
-/** Best-effort KV increment (read-modify-write; a lost race is an acceptable approximate error). */
-async function kvBump(kv: KVNamespace, key: string): Promise<void> {
-  const raw = await kv.get(key);
-  const prev = raw ? parseInt(raw, 10) : 0;
-  await kv.put(key, String(Number.isFinite(prev) ? prev + 1 : 1));
-}
-
 /** One day's counted buckets as a map (the shared payload shape across layers). */
 type DayCounts = Map<CountedPath, number>;
+
+/** Parse a JSON object of bucket -> count into a DayCounts map (shared by the KV layer). */
+function dayCountsFromJson(body: Record<string, unknown>): DayCounts {
+  const out: DayCounts = new Map();
+  for (const bucket of COUNTED_PATHS) {
+    const raw = body[bucket];
+    const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : Number.NaN;
+    if (Number.isFinite(n) && n > 0) out.set(bucket, Math.trunc(n));
+  }
+  return out;
+}
 
 /** Read one day from the edge Cache API (one key per day holds the whole day as JSON). */
 async function cacheReadDay(date: string): Promise<DayCounts | null> {
   try {
     const res = await edgeCacheMatch(CACHE_BASE + date);
     if (!res) return null;
-    const body = (await res.json()) as Record<string, unknown>;
-    const out: DayCounts = new Map();
-    for (const bucket of COUNTED_PATHS) {
-      const raw = body[bucket];
-      const n = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : Number.NaN;
-      if (Number.isFinite(n) && n > 0) out.set(bucket, Math.trunc(n));
-    }
+    const out = dayCountsFromJson((await res.json()) as Record<string, unknown>);
     return out.size > 0 ? out : null;
   } catch {
     return null; // a cache miss/failure is an optimization miss, never an error
@@ -154,17 +162,30 @@ async function cacheBumpDay(date: string, bucket: CountedPath): Promise<void> {
   }
 }
 
-/** Read a KV counter, or null when the binding is absent or the read fails. */
-async function kvRead(kv: KVNamespace | undefined, key: string): Promise<number | null> {
+/** Read one day's bucket counts from KV, or null when the binding is absent or the read fails. */
+async function kvReadDay(kv: KVNamespace | undefined, date: string): Promise<DayCounts | null> {
   if (!kv) return null;
   try {
-    const raw = await kv.get(key);
+    const raw = await kv.get(`${KV_PREFIX}d:${date}`);
     if (raw === null) return null;
-    const n = parseInt(raw, 10);
-    return Number.isFinite(n) ? n : null;
+    const out = dayCountsFromJson(JSON.parse(raw) as Record<string, unknown>);
+    return out.size > 0 ? out : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Best-effort KV increment of one day (read-modify-write of the day blob; a lost race is an
+ * acceptable approximate error). One read + one write per report — the same as the cache
+ * layer, so the two layers cost the same.
+ */
+async function kvBumpDay(kv: KVNamespace, date: string, bucket: CountedPath): Promise<void> {
+  const cur = (await kvReadDay(kv, date)) ?? new Map<CountedPath, number>();
+  cur.set(bucket, (cur.get(bucket) ?? 0) + 1);
+  const payload: Record<string, number> = {};
+  for (const [b, c] of cur) payload[b] = c;
+  await kv.put(`${KV_PREFIX}d:${date}`, JSON.stringify(payload));
 }
 
 /**
@@ -187,8 +208,7 @@ export async function recordPageView(env: Env, pathname: string, now: Date = new
   await cacheBumpDay(date, bucket);
   if (env.MOVIES_KV) {
     try {
-      await kvBump(env.MOVIES_KV, `${KV_PREFIX}d:${date}`);
-      await kvBump(env.MOVIES_KV, `${KV_PREFIX}p:${date}:${bucket}`);
+      await kvBumpDay(env.MOVIES_KV, date, bucket);
     } catch {
       /* counters are approximate; a KV hiccup never fails the request */
     }
@@ -218,26 +238,37 @@ export async function getViewStats(env: Env, days = 7, now: Date = new Date()): 
   const n = Math.min(Math.max(1, Math.trunc(days)), 30);
   const stats: ViewStats = { windowDays: n, days: [], total: 0, byPath: {} };
 
-  for (let i = n - 1; i >= 0; i--) {
+  // One cache read and one KV read per day, fetched in parallel — the loops below are pure
+  // arithmetic. Awaiting per (day, bucket) instead is what made this endpoint time out:
+  // the default 7-day window cost 189 sequential KV round-trips (~8s) and a 30-day window
+  // 810 (~30s), measured 2026-10-19 against the production KV namespace.
+  const dates = Array.from({ length: n }, (_, i) => {
     const d = new Date(now);
-    d.setUTCDate(d.getUTCDate() - i);
-    const date = dayKey(d);
+    d.setUTCDate(d.getUTCDate() - (n - 1 - i));
+    return dayKey(d);
+  });
+  const layers = await Promise.all(
+    dates.map(async (date) => ({
+      date,
+      cached: await cacheReadDay(date),
+      kv: await kvReadDay(env.MOVIES_KV, date),
+    })),
+  );
 
+  for (const { date, cached, kv } of layers) {
     const mem = memory.get(date);
-    const cached = await cacheReadDay(date);
     let dayTotal = 0;
     for (const bucket of COUNTED_PATHS) {
-      const memCount = mem?.get(bucket) ?? 0;
-      const cacheCount = cached?.get(bucket) ?? 0;
-      const kvCount = await kvRead(env.MOVIES_KV, `${KV_PREFIX}p:${date}:${bucket}`);
-      const count = Math.max(memCount, cacheCount, kvCount ?? 0);
+      const count = Math.max(
+        mem?.get(bucket) ?? 0,
+        cached?.get(bucket) ?? 0,
+        kv?.get(bucket) ?? 0,
+      );
       if (count > 0) {
         dayTotal += count;
         stats.byPath[bucket] = (stats.byPath[bucket] ?? 0) + count;
       }
     }
-    // The daily total is the sum of the buckets (KV's `d:` key is redundant bookkeeping kept
-    // for simple KV-side inspection, not read here — the buckets are the source of truth).
     stats.days.push({ date, views: dayTotal });
     stats.total += dayTotal;
   }
