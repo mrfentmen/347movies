@@ -75,6 +75,7 @@ export const STATIC_PATHS = [
   "/footage",
   "/wwii",
   "/newsreels",
+  "/nfpf",
   "/shortfilms",
   "/vhsvault",
   "/collections",
