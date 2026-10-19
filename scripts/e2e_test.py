@@ -280,9 +280,14 @@ with sync_playwright() as p:
     check("mobile 375: cards fit", m.evaluate("document.querySelector('.card').getBoundingClientRect().width <= document.documentElement.clientWidth"))
     m.goto(f"{BASE}/movie/it-1927", wait_until="domcontentloaded", timeout=60000)
     # The SSR movie page can render the honest "unavailable" variant on an upstream
-    # transient (no player). Wait for the player before measuring it — same guard as the
-    # desktop movie pass, with one reload for a blip.
-    m.wait_for_selector(".player", timeout=20000)  # locator wait — CSP blocks string eval
+    # transient (no player). Use the same readiness helper as the desktop movie pass —
+    # locator waits, and one reload for a blip. The old comment here claimed a reload guard
+    # that did not exist, so a single upstream blip failed the whole run (CI 2026-10-19).
+    try:
+        wait_movie_ready(m, 20000)
+    except Exception:
+        m.reload(wait_until="domcontentloaded")
+        wait_movie_ready(m, 30000)
     m_sw = m.evaluate("document.documentElement.scrollWidth")
     m_cw = m.evaluate("document.documentElement.clientWidth")
     check("mobile 375 movie: no horizontal scroll", m_sw <= m_cw, f"scrollW={m_sw} vw={m_cw}")
