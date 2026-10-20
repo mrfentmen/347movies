@@ -134,13 +134,19 @@ export function pageShell(meta: PageMeta, bodyHtml: string, siteUrl: string): st
   const og = meta.og
     ? `<meta property="og:type" content="${escapeHtml(meta.og.type)}">
 <meta property="og:site_name" content="347movies">
+<meta property="og:locale" content="en_US">
 <meta property="og:title" content="${escapeHtml(meta.og.title)}">
 <meta property="og:description" content="${escapeHtml(meta.og.description)}">
 <meta property="og:image" content="${escapeHtml(meta.og.image)}">
 <meta property="og:url" content="${escapeHtml(canonical)}">
-<meta name="twitter:card" content="summary_large_image">`
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@347movies">
+<meta name="twitter:title" content="${escapeHtml(meta.og.title)}">
+<meta name="twitter:description" content="${escapeHtml(meta.og.description)}">
+<meta name="twitter:image" content="${escapeHtml(meta.og.image)}">`
     : `<meta property="og:type" content="website">
 <meta property="og:site_name" content="347movies">
+<meta property="og:locale" content="en_US">
 <meta property="og:title" content="${escapeHtml(meta.title)}">
 <meta property="og:description" content="${escapeHtml(meta.description)}">
 <meta property="og:url" content="${escapeHtml(canonical)}">`;
